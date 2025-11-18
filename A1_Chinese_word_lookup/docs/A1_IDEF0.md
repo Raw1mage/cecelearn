@@ -42,7 +42,7 @@
 
 ## Mermaid 架構圖
 
-```mermaid
+<div class="mermaid">
 graph TD
   subgraph A-0 [語音及文字查字典系統]
     direction LR
@@ -59,4 +59,9 @@ graph TD
 
   C[控制<br/>使用者操作/瀏覽器權限/API可用性] --> A-0
   M[機制<br/>瀏覽器/JS/Web Speech API/萌典 API] --> A-0
-```
+</div>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true });
+</script>
