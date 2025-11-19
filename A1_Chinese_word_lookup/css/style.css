@@ -1,108 +1,75 @@
-
+/* 自定义样式 */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f2f5;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    touch-action: manipulation; /* 禁用双击缩放，提升行动装置体验 */
+}
+/* 麦克风按钮的动画效果 */
+.listening-pulse {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 1);
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); /* 缩小动画范围以适应较小的按钮 */
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+/* 对话纪录的卷动条样式 */
+#conversation-log::-webkit-scrollbar {
+    width: 6px;
+}
+#conversation-log::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+#conversation-log::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+#conversation-log::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 全新、精修后的直式注音显示样式 */
+.char-with-bopomofo {
+    display: inline-flex;
     align-items: center;
-    min-height: 100vh;
-    box-sizing: border-box;
+    vertical-align: middle;
+    line-height: 1; /* 确保国字本身行高不会干扰计算 */
+    margin: 0 0.2em;
 }
-
-.container {
-    background-color: #ffffff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 600px;
-    text-align: center;
-    transition: all 0.3s ease;
+.bopomofo-wrapper {
+    display: inline-flex;
+    flex-direction: row;
+    height: 1em; /* 关键：让注音区总高度等于国字字高 */
+    margin-left: 2px;
+    align-items: flex-start; /* 让内容物从顶部开始对齐 */
 }
-
-.container:hover {
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-}
-
-h1 {
-    color: #1a73e8;
-    margin-bottom: 25px;
-    font-size: 2em;
-}
-
-.input-area {
+.bopomofo-column {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-#wordInput {
-    flex-grow: 1;
-    padding: 12px 15px;
-    border: 2px solid #dfe1e5;
-    border-radius: 24px;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-#wordInput:focus {
-    border-color: #1a73e8;
-    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
-}
-
-button {
-    padding: 12px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 24px;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    background-color: #1a73e8;
-    color: white;
-    font-weight: bold;
-}
-
-#micButton {
-    background-color: #34a853;
-}
-
-button:hover {
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
+    font-size: 0.3em; /* 关键：缩小注音字级以容纳在高度内 */
+    font-weight: 500;
+    user-select: none;
     opacity: 0.9;
-    transform: translateY(-2px);
 }
-
-button:active {
-    transform: translateY(0);
-}
-
-#result {
-    margin-top: 20px;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    text-align: left;
-    min-height: 50px;
-    line-height: 1.6;
-}
-
-#status {
-    margin-top: 15px;
-    color: #5f6368;
-    font-style: italic;
-}
-
-hr {
-    border: 0;
-    height: 1px;
-    background-color: #dfe1e5;
-    margin: 20px 0;
-}
-
-p {
-    margin: 10px 0;
+.tone-column {
+    display: flex;
+    height: 100%;
+    font-size: 0.3em; /* 关键：与注音字级同步 */
+    font-weight: 500;
+    user-select: none;
+    opacity: 0.9;
+    /* 关键：用 padding-top 将声调向下推移，1.1em 是相对于自身字级 (0.3em) 的微调结果 */
+    padding-top: 1.1em;
+    margin-left: 1px;
 }

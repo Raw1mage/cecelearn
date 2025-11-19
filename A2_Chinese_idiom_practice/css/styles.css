@@ -1,0 +1,312 @@
+/* Local Font Stack - Using system fonts instead of Google Fonts */
+/* Previously used: Google Fonts - Noto Sans TC and Inter */
+/* Replaced with system font stack for offline capability */
+
+/* Tailwind-like Utility Classes */
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.text-gray-600 {
+    color: #718096;
+}
+
+.bg-gray-100 {
+    background-color: #f7fafc;
+}
+
+.p-3 {
+    padding: 0.75rem;
+}
+
+.rounded-lg {
+    border-radius: 0.5rem;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.text-gray-700 {
+    color: #4a5568;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.p-2 {
+    padding: 0.5rem;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.border {
+    border-width: 1px;
+}
+
+.border-gray-300 {
+    border-color: #d2d6dc;
+}
+
+.rounded {
+    border-radius: 0.25rem;
+}
+
+/* Main Styles */
+:root {
+    --color-primary: #00796b; /* 深綠色 */
+    --color-secondary: #00bcd4; /* 青色 */
+    --color-accent: #ff5722; /* 橙紅色 */
+    --color-bg-light: #e0f7fa; /* 淺藍色背景 */
+    --color-option-default: #80cbc4; /* 柔和藍綠 */
+    --color-option-selected: #ffcc80; /* 淺橘色 */
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "微軟正黑體", "PingFang TC", "Heiti TC", "Noto Sans CJK TC", sans-serif;
+    background-color: var(--color-bg-light);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+.quiz-container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 650px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+h1 {
+    color: var(--color-primary);
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* --- Setup Screen Styles --- */
+.setting-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+textarea, input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #bdbdbd;
+    margin-bottom: 20px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.generate-btn {
+    background-color: var(--color-accent);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 3px #bf360c;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.generate-btn:hover:not(:disabled) {
+    background-color: #e64a19;
+    transform: translateY(-1px);
+}
+
+.generate-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.loading-indicator {
+    text-align: center;
+    margin-top: 15px;
+    color: var(--color-accent);
+    font-weight: 700;
+}
+
+/* 新增：隨機選詞按鈕 */
+.random-btn {
+    background-color: var(--color-secondary);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 3px #00838f;
+    transition: background-color 0.2s;
+    margin-bottom: 10px;
+}
+
+.random-btn:hover {
+    background-color: #0097a7;
+}
+
+/* --- Quiz/Question Styles (reused) --- */
+.question-text {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 20px;
+    min-height: 80px;
+    background-color: #f0f4c3;
+    padding: 15px;
+    border-radius: 10px;
+    line-height: 1.8;
+}
+
+.question-text .filled-word {
+    font-weight: 700;
+    color: #d84315;
+    text-decoration: underline;
+    padding: 0 5px;
+}
+
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.option-btn {
+    background-color: var(--color-option-default);
+    color: #1a1a1a;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px #004d40;
+    position: relative;
+}
+
+.option-btn:hover:not(.disabled):not(.selected) {
+    background-color: #4db6ac;
+    transform: translateY(-2px);
+    box-shadow: 0 6px #004d40;
+}
+
+.option-btn.selected {
+    background-color: var(--color-option-selected);
+    box-shadow: 0 4px #ff9800;
+    transform: translateY(0);
+}
+
+.option-btn.disabled {
+    cursor: default;
+    opacity: 0.8;
+    box-shadow: 0 2px #004d40;
+}
+
+.option-btn.correct-answer {
+    background-color: #a5d6a7;
+    box-shadow: 0 4px #388e3c;
+}
+
+.option-btn.wrong-selected {
+    background-color: #ef9a9a;
+    box-shadow: 0 4px #c62828;
+}
+
+/* --- Nav/Result Styles (reused) --- */
+.nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    gap: 10px;
+}
+
+.nav-btn {
+    background-color: var(--color-secondary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 3px #00838f;
+    transition: background-color 0.2s;
+    flex-grow: 1;
+}
+
+.nav-btn:hover {
+    background-color: #0097a7;
+    transform: translateY(-1px);
+}
+
+.submit-btn {
+    background-color: var(--color-accent) !important;
+    box-shadow: 0 3px #bf360c !important;
+    color: white;
+    flex-grow: 1;
+}
+
+.submit-btn:hover {
+    background-color: #e64a19 !important;
+}
+
+.action-btn {
+    background-color: #ffb74d;
+    color: #333;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 3px #fb8c00;
+    margin: 0 10px;
+}
+
+.action-btn:hover {
+    background-color: #ff9800;
+    transform: translateY(-1px);
+}
+
+/* 手機響應式調整 */
+@media (max-width: 600px) {
+    .quiz-container {
+        padding: 20px 15px;
+        margin: 10px;
+    }
+    .question-text {
+        font-size: 1.1rem;
+    }
+    .option-btn {
+        font-size: 1rem;
+        padding: 12px 15px;
+    }
+    .nav-buttons {
+        flex-direction: column;
+    }
+    .nav-btn, .action-btn, .submit-btn, .generate-btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+}

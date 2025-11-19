@@ -1,0 +1,3 @@
+# This directory will contain downloaded models
+# Models are large files and should not be committed to git
+# Use scripts/download_model.py to download models

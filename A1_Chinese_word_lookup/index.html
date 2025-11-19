@@ -3,19 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>語音及文字查字典</title>
+    <title>語音查字典</title>
+    <!-- 引入 Hanzi Writer -->
+    <script src="js/hanzi-writer.min.js"></script>
+    <!-- 引入 Tailwind CSS (Minimal) -->
+    <link rel="stylesheet" href="css/tailwind-minimal.css">
+    <!-- 引入 Font Awesome 以使用图示 -->
+    <link rel="stylesheet" href="css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-    <div class="container">
-        <h1>中文字詞查詢</h1>
-        <div class="input-area">
-            <input type="text" id="wordInput" placeholder="輸入要查詢的詞或字">
-            <button type="button" id="lookupButton">查詢</button>
-            <button type="button" id="micButton">🎤 語音</button>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col items-center p-4 sm:p-6 md:p-8 transition-colors duration-300">
+
+    
+    <!-- 字体与造词显示区 -->
+    <div id="display-area" class="relative w-full max-w-2xl h-screen bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-8 text-center flex flex-col justify-center items-center overflow-y-auto">
+        
+        <!-- 麦克风与重播按钮容器 -->
+        <div class="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 flex flex-col items-center gap-y-3">
+            <!-- 麦克风按钮 -->
+            <button id="mic-btn" class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full flex justify-center items-center shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800">
+                <i id="mic-icon" class="fas fa-microphone text-xl sm:text-2xl"></i>
+            </button>
+            <!-- 重播按钮 -->
+            <button id="replay-btn" class="w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex justify-center items-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition hidden">
+                <i class="fas fa-redo-alt text-xl sm:text-2xl"></i>
+            </button>
         </div>
-        <div id="status"></div>
-        <div id="result"></div>
+        
+        <div id="main-char-display" class="my-4 flex flex-row justify-center items-stretch min-h-[10rem] sm:min-h-[12rem] w-full">
+            <div class="relative w-32 h-32 sm:w-40 sm:h-40 flex justify-center items-center">
+                <div id="stroke-order-target" class="w-full h-full flex justify-center items-center"></div>
+            </div>
+            <div id="main-bopomofo-container" class="ml-4 text-7xl sm:text-8xl text-gray-500 dark:text-gray-400 flex items-center justify-center">
+                <!-- JS will inject content here -->
+            </div>
+        </div>
+        <div id="words-list" class="flex flex-wrap justify-center items-center gap-x-4 gap-y-3 sm:gap-x-6 sm:gap-y-4 text-3xl sm:text-4xl text-gray-600 dark:text-gray-300">
+            <!-- 初始提示讯息 -->
+            <span class="text-lg sm:text-xl">點擊右上角麥克風</span>
+            <span class="text-lg sm:text-xl">說出您想查的字</span>
+        </div>
+         <div id="status-text" class="mt-4 text-gray-500 dark:text-gray-400 h-6 flex-shrink-0"></div>
+    </div>
+
+    <!-- 对话纪录区 -->
+    <div class="w-full max-w-2xl mt-6">
+        <div class="bg-white dark:bg-gray-800 rounded-t-xl shadow-lg">
+            <button id="toggle-log-btn" class="w-full flex justify-between items-center p-4 text-left font-semibold text-lg focus:outline-none">
+                <span>對話紀錄</span>
+                <i id="log-arrow" class="fas fa-chevron-down transition-transform duration-300"></i>
+            </button>
+            <div id="conversation-log-container" class="hidden">
+                <div id="conversation-log" class="p-4 border-t border-gray-200 dark:border-gray-700 max-h-48 overflow-y-auto flex flex-col-reverse">
+                    <p class="text-center text-gray-400">目前沒有紀錄</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/main.js"></script>
