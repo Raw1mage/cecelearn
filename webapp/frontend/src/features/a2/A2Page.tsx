@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { apiClient, type A2QuizItem } from '../../shared/api/client'
+import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
+import { useScore } from '../../shared/ScoreContext'
 import { defaultIdioms } from './constants'
 
 type Mode = 'setup' | 'loading' | 'quiz' | 'result' | 'review'
@@ -19,6 +21,7 @@ function parseIdioms(value: string) {
 }
 
 export function A2Page() {
+  const { addScore } = useScore()
   const [mode, setMode] = useState<Mode>('setup')
   const [questionCount, setQuestionCount] = useState(5)
   const [bankText, setBankText] = useState(defaultIdioms.join(', '))
@@ -60,6 +63,9 @@ export function A2Page() {
       isCorrect: item.selected === quizItems[idx].correctAnswer,
     }))
     setAnswers(next)
+    const correctCount = next.filter((a) => a.isCorrect).length
+    if (correctCount > 0) addScore(correctCount)
+    if (correctCount === quizItems.length) celebrate()
     setMode('result')
   }
 

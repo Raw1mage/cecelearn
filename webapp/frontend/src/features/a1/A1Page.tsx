@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient, type A1LookupResponse, type A1LookupWord } from '../../shared/api/client'
 import { celebrate } from '../../shared/celebrate'
+import { useScore } from '../../shared/ScoreContext'
 import { Panel } from '../../shared/components/Panel'
 import { parseBopomofo } from './bopomofo'
 import { createHanziWriter, getSpeechRecognitionConstructor, type HanziWriterInstance } from './hanziWriterAdapter'
@@ -46,6 +47,7 @@ const initialResult: A1LookupResponse = {
 }
 
 export function A1Page() {
+  const { addScore } = useScore()
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<A1LookupResponse>(initialResult)
   const [history, setHistory] = useState<A1LookupResponse[]>([])
@@ -141,6 +143,7 @@ export function A1Page() {
     writerRef.current.quiz({
       onComplete: () => {
         celebrate()
+        addScore(1)
         setPracticing(false)
       },
     })

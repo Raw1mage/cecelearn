@@ -4,9 +4,11 @@ import { A2Page } from './features/a2/A2Page'
 import { A3Page } from './features/a3/A3Page'
 import { AppLayout } from './shared/components/AppLayout'
 import { PortalPage } from './routes/PortalPage'
+import { ScoreProvider } from './shared/ScoreContext'
 
 export default function App() {
   return (
+    <ScoreProvider>
     <AppLayout>
       <Routes>
         <Route path="/" element={<PortalPage />} />
@@ -15,5 +17,6 @@ export default function App() {
         <Route path="/a3" element={<A3Page />} />
       </Routes>
     </AppLayout>
+    </ScoreProvider>
   )
 }
