@@ -58,9 +58,9 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ query }),
     }),
-  generateQuiz: (idioms: string[], questionCount: number) =>
+  generateQuiz: (questionCount: number, mode: 'random' | 'custom' = 'random', idioms: string[] = []) =>
     request<A2QuizResponse>('/a2/quiz', {
       method: 'POST',
-      body: JSON.stringify({ idioms, questionCount }),
+      body: JSON.stringify({ mode, idioms, questionCount }),
     }),
 }

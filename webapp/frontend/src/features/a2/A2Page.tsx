@@ -7,6 +7,7 @@ import { useScore } from '../../shared/ScoreContext'
 import { defaultIdioms } from './constants'
 
 type Mode = 'setup' | 'loading' | 'quiz' | 'result' | 'review'
+type QuizMode = 'random' | 'custom'
 
 type AnswerState = {
   selected: number | null
@@ -23,8 +24,9 @@ function parseIdioms(value: string) {
 export function A2Page() {
   const { addScore } = useScore()
   const [mode, setMode] = useState<Mode>('setup')
+  const [quizMode, setQuizMode] = useState<QuizMode>('random')
   const [questionCount, setQuestionCount] = useState(5)
-  const [bankText, setBankText] = useState(defaultIdioms.join(', '))
+  const [bankText, setBankText] = useState(defaultIdioms.join('、'))
   const [quizItems, setQuizItems] = useState<A2QuizItem[]>([])
   const [answers, setAnswers] = useState<AnswerState[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -34,15 +36,23 @@ export function A2Page() {
   const currentItem = quizItems[currentIndex]
 
   async function generateQuiz() {
-    const idioms = parseIdioms(bankText)
-    if (idioms.length < 4) {
-      setError('請至少輸入 4 個成語。')
-      return
+    if (quizMode === 'custom') {
+      const idioms = parseIdioms(bankText)
+      if (idioms.length < 4) {
+        setError('請至少輸入 4 個成語。')
+        return
+      }
     }
     setError('')
     setMode('loading')
     try {
-      const response = await apiClient.generateQuiz(idioms, questionCount)
+      const idioms = quizMode === 'custom' ? parseIdioms(bankText) : []
+      const response = await apiClient.generateQuiz(questionCount, quizMode, idioms)
+      if (!response.items || response.items.length === 0) {
+        setError('出題失敗，請重試。')
+        setMode('setup')
+        return
+      }
       setQuizItems(response.items)
       setAnswers(response.items.map(() => ({ selected: null, isCorrect: null })))
       setCurrentIndex(0)
@@ -78,45 +88,48 @@ export function A2Page() {
 
   return (
     <div className="feature-page">
-      <Panel>
-        <h2>成語練習</h2>
-        <p className="muted">從成語詞庫出題，練習完可以查看結果和錯題解釋。</p>
-      </Panel>
-
       {mode === 'setup' && (
         <Panel>
           <h3>出題設定</h3>
           <label className="field-block">
-            題目數量
-            <input type="number" min={1} max={10} value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))} />
+            出題模式
+            <select value={quizMode} onChange={(e) => setQuizMode(e.target.value as QuizMode)}>
+              <option value="random">隨機出題（從成語庫）</option>
+              <option value="custom">指定範圍（自訂成語）</option>
+            </select>
           </label>
           <label className="field-block">
-            成語詞庫
-            <textarea rows={7} value={bankText} onChange={(event) => setBankText(event.target.value)} />
+            題目數量
+            <input type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))} />
           </label>
+          {quizMode === 'custom' && (
+            <label className="field-block">
+              成語詞庫
+              <textarea rows={5} value={bankText} onChange={(event) => setBankText(event.target.value)} placeholder="輸入成語，用逗號或換行分隔" />
+            </label>
+          )}
           {error ? <p className="error-text">{error}</p> : null}
           <div className="toolbar-row">
-            <Button onClick={generateQuiz}>產生題目</Button>
+            <Button onClick={generateQuiz}>開始練習</Button>
           </div>
         </Panel>
       )}
 
       {mode === 'loading' && (
         <Panel>
-          <h3>出題中</h3>
-          <p>後端正在整理題目...</p>
+          <p>出題中...</p>
         </Panel>
       )}
 
       {mode === 'quiz' && currentItem && (
         <Panel>
           <h3>第 {currentIndex + 1} / {quizItems.length} 題</h3>
-          <p className="quiz-prompt">{currentItem.prompt}</p>
-          <div className="quiz-options">
+          <p className="a2-prompt">{currentItem.prompt}</p>
+          <div className="a2-options">
             {currentItem.options.map((option, optionIndex) => (
               <Button
                 key={option}
-                variant={answers[currentIndex]?.selected === optionIndex ? 'secondary' : 'primary'}
+                variant={answers[currentIndex]?.selected === optionIndex ? 'primary' : 'secondary'}
                 onClick={() => chooseAnswer(optionIndex)}
               >
                 {option}
@@ -143,32 +156,31 @@ export function A2Page() {
           <h3>結果</h3>
           <p className="score-text">答對 {score} / {quizItems.length} 題</p>
           <div className="toolbar-row">
-            <Button onClick={() => setMode('review')}>查看錯題</Button>
-            <Button variant="secondary" onClick={resetQuiz}>重新設定</Button>
+            <Button onClick={() => setMode('review')}>查看詳解</Button>
+            <Button variant="secondary" onClick={resetQuiz}>再來一次</Button>
           </div>
         </Panel>
       )}
 
       {mode === 'review' && (
         <Panel>
-          <h3>錯題回顧</h3>
+          <h3>題目回顧</h3>
           <div className="review-list">
             {quizItems.map((item, idx) => {
               const answer = answers[idx]
-              if (answer?.isCorrect) return null
               return (
-                <article key={item.id} className="review-item">
+                <article key={item.id} className={`review-item ${answer?.isCorrect ? 'review-item--correct' : 'review-item--wrong'}`}>
                   <p>{item.prompt}</p>
-                  <p>你的答案：{answer?.selected == null ? '未作答' : item.options[answer.selected]}</p>
-                  <p>正確答案：{item.options[item.correctAnswer]}</p>
+                  {!answer?.isCorrect && (
+                    <p className="error-text">你的答案：{answer?.selected == null ? '未作答' : item.options[answer.selected]}</p>
+                  )}
                   <p className="muted">{item.explanation}</p>
                 </article>
               )
             })}
           </div>
           <div className="toolbar-row">
-            <Button onClick={() => setMode('result')}>返回結果</Button>
-            <Button variant="secondary" onClick={resetQuiz}>重新設定</Button>
+            <Button variant="secondary" onClick={resetQuiz}>再來一次</Button>
           </div>
         </Panel>
       )}

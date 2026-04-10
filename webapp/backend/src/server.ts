@@ -2,12 +2,13 @@ import { createServer } from 'node:http'
 import { loadEnv } from './config/env.js'
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
-import { LocalIdiomQuizProvider } from './providers/localProviders.js'
+import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
 
 const env = loadEnv()
 const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
-const a2 = createA2Module(new LocalIdiomQuizProvider())
+const idiomEngine = new IdiomQuizEngine()
+const a2 = createA2Module(idiomEngine)
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })
@@ -70,10 +71,18 @@ const server = createServer(async (request, response) => {
   }
 
   if (url === '/api/a2/quiz' && method === 'POST') {
-    const payload = JSON.parse((await readBody(request)) || '{}') as { idioms?: string[]; questionCount?: number }
-    const idioms = Array.isArray(payload.idioms) ? payload.idioms : []
+    const payload = JSON.parse((await readBody(request)) || '{}') as {
+      mode?: 'random' | 'custom'
+      idioms?: string[]
+      questionCount?: number
+    }
     const questionCount = Number(payload.questionCount || 5)
-    sendJson(response, 200, a2.generateQuiz(idioms, questionCount))
+    if (payload.mode === 'random') {
+      sendJson(response, 200, idiomEngine.generateRandom(questionCount))
+    } else {
+      const idioms = Array.isArray(payload.idioms) ? payload.idioms : []
+      sendJson(response, 200, idiomEngine.generate(idioms, questionCount))
+    }
     return
   }
 
