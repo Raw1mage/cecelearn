@@ -15,7 +15,7 @@ export function FeatureCard({ code, title, description, to }: FeatureCardProps) 
       <h2>{title}</h2>
       <p>{description}</p>
       <LinkButton className="feature-card__link" to={to}>
-        Open {code}
+        進入 {code}
       </LinkButton>
     </Panel>
   )

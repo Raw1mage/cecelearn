@@ -73,8 +73,8 @@ export function A2Page() {
   return (
     <div className="feature-page">
       <Panel>
-        <h2>A2 - Chinese Idiom Practice</h2>
-        <p className="muted">題目由 backend 產生，前端維持 setup / quiz / result / review 明確狀態。</p>
+        <h2>成語練習</h2>
+        <p className="muted">從成語詞庫出題，練習完可以查看結果和錯題解釋。</p>
       </Panel>
 
       {mode === 'setup' && (
@@ -97,7 +97,7 @@ export function A2Page() {
 
       {mode === 'loading' && (
         <Panel>
-          <h3>AI Quiz Boundary</h3>
+          <h3>出題中</h3>
           <p>後端正在整理題目...</p>
         </Panel>
       )}

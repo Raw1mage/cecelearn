@@ -14,7 +14,7 @@ export function PlaceholderPage({ code, title, description }: PlaceholderPagePro
         <h1>{title}</h1>
         <p>{description}</p>
         <Link className="feature-card__link" to="/">
-          Back to portal
+          回到首頁
         </Link>
       </div>
     </main>

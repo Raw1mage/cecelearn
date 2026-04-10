@@ -25,7 +25,12 @@ function readBody(request: import('node:http').IncomingMessage) {
 }
 
 const server = createServer(async (request, response) => {
-  const { url = '/', method = 'GET' } = request
+  const { method = 'GET' } = request
+  // Strip PUBLIC_BASE_PATH prefix so route matching stays path-agnostic
+  let url = request.url || '/'
+  if (env.basePath && url.startsWith(env.basePath)) {
+    url = url.slice(env.basePath.length) || '/'
+  }
 
   response.setHeader('Access-Control-Allow-Origin', '*')
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
@@ -38,7 +43,7 @@ const server = createServer(async (request, response) => {
   }
 
   if (url === '/api/health' && method === 'GET') {
-    sendJson(response, 200, { ok: true, service: 'cecelearn-backend', port: env.port })
+    sendJson(response, 200, { ok: true, service: '希希小家教-backend', port: env.port })
     return
   }
 

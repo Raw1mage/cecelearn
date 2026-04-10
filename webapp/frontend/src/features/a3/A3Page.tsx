@@ -1,9 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
-import { buildOperationSteps, type Operation } from './engine'
+import { buildVertical, type Operation, type VRow } from './engine'
 
 const keypad = ['1', '2', '3', '+', '4', '5', '6', '-', '7', '8', '9', '*', 'C', '0', 'DEL', '/']
+
+function VerticalRow({ row, highlight }: { row: VRow; highlight: boolean }) {
+  const maxDigits = row.digits.length
+  return (
+    <div
+      className={`vrow ${row.lineAbove ? 'vrow--line-above' : ''} ${highlight ? 'vrow--highlight' : ''} vrow--${row.kind}`}
+    >
+      {row.label && <span className="vrow__label">{row.label}</span>}
+      <div className="vrow__digits" style={{ gridTemplateColumns: `repeat(${maxDigits}, 2.2rem)` }}>
+        {row.digits.map((d, i) => (
+          <span key={i} className={`vrow__cell ${d === '' ? 'vrow__cell--empty' : ''}`}>
+            {d}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function A3Page() {
   const [numA, setNumA] = useState('')
@@ -11,32 +29,29 @@ export function A3Page() {
   const [activeField, setActiveField] = useState<'a' | 'b'>('a')
   const [operation, setOperation] = useState<Operation>('+')
   const [speed, setSpeed] = useState(1500)
-  const [allSteps, setAllSteps] = useState<string[]>([])
-  const [visibleSteps, setVisibleSteps] = useState<string[]>([])
-  const [answer, setAnswer] = useState('-')
-  const [index, setIndex] = useState(0)
+  const [allRows, setAllRows] = useState<VRow[]>([])
+  const [visibleCount, setVisibleCount] = useState(0)
+  const [answer, setAnswer] = useState('')
+  const [error, setError] = useState('')
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [runId, setRunId] = useState(0)
-  const answerRef = useRef('-')
-
-  const summary = useMemo(() => `${numA || '?'} ${operation} ${numB || '?'} = ${answer}`, [answer, numA, numB, operation])
+  const answerRef = useRef('')
 
   useEffect(() => {
     if (!isRunning || isPaused) return
-    if (index >= allSteps.length) {
+    if (visibleCount >= allRows.length) {
       setIsRunning(false)
       setAnswer(answerRef.current)
       return
     }
 
     const timer = window.setTimeout(() => {
-      setVisibleSteps((current) => [...current, allSteps[index]])
-      setIndex((current) => current + 1)
+      setVisibleCount((c) => c + 1)
     }, speed)
 
     return () => window.clearTimeout(timer)
-  }, [allSteps, index, isPaused, isRunning, speed])
+  }, [allRows, visibleCount, isPaused, isRunning, speed])
 
   function updateField(value: string) {
     if (activeField === 'a') setNumA(value)
@@ -62,36 +77,48 @@ export function A3Page() {
   }
 
   function calculate() {
-    const result = buildOperationSteps(Number(numA), Number(numB), operation)
+    setError('')
+    const result = buildVertical(Number(numA), Number(numB), operation)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
     answerRef.current = result.answer
-    setAllSteps(result.steps)
-    setVisibleSteps([])
-    setAnswer('-')
-    setIndex(0)
+    setAllRows(result.rows)
+    setVisibleCount(0)
+    setAnswer('')
     setIsPaused(false)
     setIsRunning(true)
-    setRunId((current) => current + 1)
+    setRunId((c) => c + 1)
   }
 
   function cancel() {
     setIsRunning(false)
     setIsPaused(false)
-    setVisibleSteps([])
-    setAllSteps([])
-    setIndex(0)
-    setAnswer('-')
-    answerRef.current = '-'
+    setAllRows([])
+    setVisibleCount(0)
+    setAnswer('')
+    answerRef.current = ''
   }
+
+  function showAll() {
+    setVisibleCount(allRows.length)
+    setIsRunning(false)
+    setAnswer(answerRef.current)
+  }
+
+  const visibleRows = allRows.slice(0, visibleCount)
+  const currentNote = visibleCount > 0 && visibleCount <= allRows.length ? allRows[visibleCount - 1].note : null
 
   return (
     <div className="feature-page">
       <Panel>
-        <h2>A3 - Math 4 Operations Learn</h2>
-        <p className="muted">輸入兩個數字，選擇運算子，逐步播放計算說明。</p>
+        <h2>四則運算</h2>
+        <p className="muted">輸入兩個數字，選擇運算子，逐步播放直式計算過程。</p>
         <div className="math-inputs">
-          <input value={numA} onChange={(event) => setNumA(event.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setActiveField('a')} placeholder="數字 A" />
+          <input value={numA} onChange={(e) => setNumA(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setActiveField('a')} placeholder="數字 A" />
           <div className="math-operator">{operation}</div>
-          <input value={numB} onChange={(event) => setNumB(event.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setActiveField('b')} placeholder="數字 B" />
+          <input value={numB} onChange={(e) => setNumB(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setActiveField('b')} placeholder="數字 B" />
         </div>
         <div className="keypad-grid">
           {keypad.map((item) => (
@@ -103,36 +130,34 @@ export function A3Page() {
         <div className="toolbar-row">
           <label>
             播放速度
-            <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
+            <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))}>
               <option value={800}>快</option>
               <option value={1500}>中</option>
               <option value={2500}>慢</option>
             </select>
           </label>
           <Button onClick={calculate}>開始計算</Button>
-          <Button variant="secondary" onClick={() => setIsPaused((current) => !current)} disabled={!isRunning}>
+          <Button variant="secondary" onClick={() => setIsPaused((c) => !c)} disabled={!isRunning}>
             {isPaused ? '繼續' : '暫停'}
           </Button>
-          <Button variant="secondary" onClick={cancel}>
-            取消
-          </Button>
+          <Button variant="secondary" onClick={cancel}>取消</Button>
+          {isRunning && <Button variant="secondary" onClick={showAll}>直接顯示</Button>}
         </div>
+        {error && <p className="error-text">{error}</p>}
       </Panel>
 
-      <Panel>
-        <h3>目前算式</h3>
-        <p className="math-summary">{summary}</p>
-        <div className="answer-box">答案：{answer}</div>
-      </Panel>
-
-      <Panel>
-        <h3>步驟播放</h3>
-        <ol className="step-list">
-          {visibleSteps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-      </Panel>
+      {(visibleRows.length > 0 || answer) && (
+        <Panel>
+          <h3>直式計算</h3>
+          <div className="vertical-math">
+            {visibleRows.map((row, i) => (
+              <VerticalRow key={i} row={row} highlight={i === visibleCount - 1 && isRunning} />
+            ))}
+          </div>
+          {currentNote && <p className="vrow-note">{currentNote}</p>}
+          {answer && <div className="answer-box">答案：{answer}</div>}
+        </Panel>
+      )}
     </div>
   )
 }

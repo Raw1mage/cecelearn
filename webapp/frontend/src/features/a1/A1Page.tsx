@@ -125,8 +125,8 @@ export function A1Page() {
   return (
     <div className="feature-page">
       <Panel>
-        <h2>A1 - Chinese Word Lookup</h2>
-        <p className="muted">前端保留語音輸入與 HanziWriter，查詢邏輯已改走 backend boundary。</p>
+        <h2>國字查詢</h2>
+        <p className="muted">輸入或說出想查的字，可以看注音、詞組和筆順動畫。</p>
         <div className="toolbar-row">
           <input className="query-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="例如：字、學、勇、百" />
           <Button onClick={() => void lookup()}>查詢</Button>

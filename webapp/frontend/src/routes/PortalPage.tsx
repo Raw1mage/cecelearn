@@ -3,20 +3,20 @@ import { FeatureCard } from '../components/FeatureCard'
 const features = [
   {
     code: 'A1',
-    title: 'Chinese Word Lookup',
-    description: 'Speech-assisted lookup with bopomofo, backend-backed query parsing, and stroke-order replay.',
+    title: '國字查詢',
+    description: '語音輸入查詢注音、詞組，還有筆順動畫可以重播學習。',
     to: '/a1',
   },
   {
     code: 'A2',
-    title: 'Chinese Idiom Practice',
-    description: 'Backend-generated quiz items with setup, answer flow, result, and review states.',
+    title: '成語練習',
+    description: '從成語詞庫出題，選擇題作答後可以查看錯題和解釋。',
     to: '/a2',
   },
   {
     code: 'A3',
-    title: 'Math 4 Operations Learn',
-    description: 'Unified arithmetic practice with keypad input and pause/resume/cancel step playback.',
+    title: '四則運算',
+    description: '輸入數字選運算，逐步播放計算過程，支援暫停和重播。',
     to: '/a3',
   },
 ]
@@ -25,9 +25,9 @@ export function PortalPage() {
   return (
     <>
       <section className="hero">
-        <span className="hero__eyebrow">Learning Portal</span>
-        <h2>Choose a learning activity</h2>
-        <p>A single webapp home for CeceLearn activities. Start from a portal card, then enter A1, A2, or A3.</p>
+        <span className="hero__eyebrow">學習入口</span>
+        <h2>選擇一個學習活動</h2>
+        <p>希希小家教的學習園地，從下面的卡片開始吧！</p>
       </section>
 
       <section className="feature-grid" aria-label="Learning features">

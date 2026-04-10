@@ -3,10 +3,10 @@ import { NavLink } from 'react-router-dom'
 import { env } from '../config/env'
 
 const navItems = [
-  { to: '/', label: 'Portal' },
-  { to: '/a1', label: 'A1' },
-  { to: '/a2', label: 'A2' },
-  { to: '/a3', label: 'A3' },
+  { to: '/', label: '首頁' },
+  { to: '/a1', label: '查字詞' },
+  { to: '/a2', label: '成語練習' },
+  { to: '/a3', label: '四則運算' },
 ]
 
 export function AppLayout({ children }: PropsWithChildren) {
@@ -14,7 +14,7 @@ export function AppLayout({ children }: PropsWithChildren) {
     <div className="app-frame">
       <header className="app-header">
         <div>
-          <p className="app-header__eyebrow">Unified webapp</p>
+          <p className="app-header__eyebrow">學習平台</p>
           <h1>{env.appName}</h1>
         </div>
         <nav className="app-nav" aria-label="Primary">

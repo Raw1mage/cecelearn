@@ -11,7 +11,7 @@ declare global {
 export function createHanziWriter(target: HTMLElement, character: string) {
   const constructor = window.HanziWriter
   if (!constructor) {
-    throw new Error('HanziWriter script is not available in the current runtime.')
+    throw new Error('筆順元件尚未載入，請重新整理頁面。')
   }
 
   return constructor.create(target, character, {

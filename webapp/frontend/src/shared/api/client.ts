@@ -44,7 +44,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`)
+    throw new Error(`請求失敗：${response.status}`)
   }
 
   return (await response.json()) as T
