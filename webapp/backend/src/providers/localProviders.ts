@@ -1,12 +1,126 @@
 import type { A1LookupResponse, A2QuizItem, A2QuizResponse, IdiomQuizProvider, WordLookupProvider } from '../contracts/providers.js'
 
-const dictionary: Record<string, { bopomofo: string; words: { term: string; bopomofo: string }[] }> = {
-  字: { bopomofo: 'ㄗˋ', words: [{ term: '文字', bopomofo: 'ㄨㄣˊ ㄗˋ' }, { term: '字典', bopomofo: 'ㄗˋ ㄉㄧㄢˇ' }] },
-  學: { bopomofo: 'ㄒㄩㄝˊ', words: [{ term: '學習', bopomofo: 'ㄒㄩㄝˊ ㄒㄧˊ' }, { term: '學生', bopomofo: 'ㄒㄩㄝˊ ㄕㄥ' }] },
-  勇: { bopomofo: 'ㄩㄥˇ', words: [{ term: '勇敢', bopomofo: 'ㄩㄥˇ ㄍㄢˇ' }, { term: '勇氣', bopomofo: 'ㄩㄥˇ ㄑㄧˋ' }] },
-  百: { bopomofo: 'ㄅㄞˇ', words: [{ term: '百合', bopomofo: 'ㄅㄞˇ ㄏㄜˊ' }, { term: '百分', bopomofo: 'ㄅㄞˇ ㄈㄣ' }] },
-  山: { bopomofo: 'ㄕㄢ', words: [{ term: '高山', bopomofo: 'ㄍㄠ ㄕㄢ' }, { term: '山谷', bopomofo: 'ㄕㄢ ㄍㄨˇ' }] },
-  心: { bopomofo: 'ㄒㄧㄣ', words: [{ term: '開心', bopomofo: 'ㄎㄞ ㄒㄧㄣ' }, { term: '心情', bopomofo: 'ㄒㄧㄣ ㄑㄧㄥˊ' }] },
+type DictEntry = {
+  bopomofo: string
+  words: { term: string; bopomofo: string }[]
+  idioms: { term: string; bopomofo: string }[]
+}
+
+const dictionary: Record<string, DictEntry> = {
+  字: {
+    bopomofo: 'ㄗˋ',
+    words: [
+      { term: '文字', bopomofo: 'ㄨㄣˊ ㄗˋ' },
+      { term: '字典', bopomofo: 'ㄗˋ ㄉㄧㄢˇ' },
+      { term: '寫字', bopomofo: 'ㄒㄧㄝˇ ㄗˋ' },
+      { term: '字體', bopomofo: 'ㄗˋ ㄊㄧˇ' },
+      { term: '字詞', bopomofo: 'ㄗˋ ㄘˊ' },
+      { term: '識字', bopomofo: 'ㄕˋ ㄗˋ' },
+    ],
+    idioms: [
+      { term: '字字珠璣', bopomofo: 'ㄗˋ ㄗˋ ㄓㄨ ㄐㄧ' },
+      { term: '一字千金', bopomofo: 'ㄧ ㄗˋ ㄑㄧㄢ ㄐㄧㄣ' },
+      { term: '字斟句酌', bopomofo: 'ㄗˋ ㄓㄣ ㄐㄩˋ ㄓㄨㄛˊ' },
+      { term: '咬文嚼字', bopomofo: 'ㄧㄠˇ ㄨㄣˊ ㄐㄧㄠˊ ㄗˋ' },
+      { term: '金字招牌', bopomofo: 'ㄐㄧㄣ ㄗˋ ㄓㄠ ㄆㄞˊ' },
+      { term: '十字路口', bopomofo: 'ㄕˊ ㄗˋ ㄌㄨˋ ㄎㄡˇ' },
+    ],
+  },
+  學: {
+    bopomofo: 'ㄒㄩㄝˊ',
+    words: [
+      { term: '學習', bopomofo: 'ㄒㄩㄝˊ ㄒㄧˊ' },
+      { term: '學生', bopomofo: 'ㄒㄩㄝˊ ㄕㄥ' },
+      { term: '學校', bopomofo: 'ㄒㄩㄝˊ ㄒㄧㄠˋ' },
+      { term: '學問', bopomofo: 'ㄒㄩㄝˊ ㄨㄣˋ' },
+      { term: '科學', bopomofo: 'ㄎㄜ ㄒㄩㄝˊ' },
+      { term: '自學', bopomofo: 'ㄗˋ ㄒㄩㄝˊ' },
+    ],
+    idioms: [
+      { term: '學以致用', bopomofo: 'ㄒㄩㄝˊ ㄧˇ ㄓˋ ㄩㄥˋ' },
+      { term: '勤學不倦', bopomofo: 'ㄑㄧㄣˊ ㄒㄩㄝˊ ㄅㄨˋ ㄐㄩㄢˋ' },
+      { term: '好學不倦', bopomofo: 'ㄏㄠˋ ㄒㄩㄝˊ ㄅㄨˋ ㄐㄩㄢˋ' },
+      { term: '學富五車', bopomofo: 'ㄒㄩㄝˊ ㄈㄨˋ ㄨˇ ㄐㄩ' },
+      { term: '牙牙學語', bopomofo: 'ㄧㄚˊ ㄧㄚˊ ㄒㄩㄝˊ ㄩˇ' },
+      { term: '活到老學到老', bopomofo: 'ㄏㄨㄛˊ ㄉㄠˋ ㄌㄠˇ ㄒㄩㄝˊ ㄉㄠˋ ㄌㄠˇ' },
+    ],
+  },
+  勇: {
+    bopomofo: 'ㄩㄥˇ',
+    words: [
+      { term: '勇敢', bopomofo: 'ㄩㄥˇ ㄍㄢˇ' },
+      { term: '勇氣', bopomofo: 'ㄩㄥˇ ㄑㄧˋ' },
+      { term: '勇士', bopomofo: 'ㄩㄥˇ ㄕˋ' },
+      { term: '英勇', bopomofo: 'ㄧㄥ ㄩㄥˇ' },
+      { term: '勇猛', bopomofo: 'ㄩㄥˇ ㄇㄥˇ' },
+      { term: '奮勇', bopomofo: 'ㄈㄣˋ ㄩㄥˇ' },
+    ],
+    idioms: [
+      { term: '勇往直前', bopomofo: 'ㄩㄥˇ ㄨㄤˇ ㄓˊ ㄑㄧㄢˊ' },
+      { term: '見義勇為', bopomofo: 'ㄐㄧㄢˋ ㄧˋ ㄩㄥˇ ㄨㄟˊ' },
+      { term: '自告奮勇', bopomofo: 'ㄗˋ ㄍㄠˋ ㄈㄣˋ ㄩㄥˇ' },
+      { term: '急流勇退', bopomofo: 'ㄐㄧˊ ㄌㄧㄡˊ ㄩㄥˇ ㄊㄨㄟˋ' },
+      { term: '智勇雙全', bopomofo: 'ㄓˋ ㄩㄥˇ ㄕㄨㄤ ㄑㄩㄢˊ' },
+      { term: '匹夫之勇', bopomofo: 'ㄆㄧˇ ㄈㄨ ㄓ ㄩㄥˇ' },
+    ],
+  },
+  百: {
+    bopomofo: 'ㄅㄞˇ',
+    words: [
+      { term: '百合', bopomofo: 'ㄅㄞˇ ㄏㄜˊ' },
+      { term: '百分', bopomofo: 'ㄅㄞˇ ㄈㄣ' },
+      { term: '百貨', bopomofo: 'ㄅㄞˇ ㄏㄨㄛˋ' },
+      { term: '百姓', bopomofo: 'ㄅㄞˇ ㄒㄧㄥˋ' },
+      { term: '百科', bopomofo: 'ㄅㄞˇ ㄎㄜ' },
+      { term: '百年', bopomofo: 'ㄅㄞˇ ㄋㄧㄢˊ' },
+    ],
+    idioms: [
+      { term: '百發百中', bopomofo: 'ㄅㄞˇ ㄈㄚ ㄅㄞˇ ㄓㄨㄥˋ' },
+      { term: '百折不撓', bopomofo: 'ㄅㄞˇ ㄓㄜˊ ㄅㄨˋ ㄋㄠˊ' },
+      { term: '千奇百怪', bopomofo: 'ㄑㄧㄢ ㄑㄧˊ ㄅㄞˇ ㄍㄨㄞˋ' },
+      { term: '百花齊放', bopomofo: 'ㄅㄞˇ ㄏㄨㄚ ㄑㄧˊ ㄈㄤˋ' },
+      { term: '百聞不如一見', bopomofo: 'ㄅㄞˇ ㄨㄣˊ ㄅㄨˋ ㄖㄨˊ ㄧ ㄐㄧㄢˋ' },
+      { term: '百尺竿頭', bopomofo: 'ㄅㄞˇ ㄔˇ ㄍㄢ ㄊㄡˊ' },
+    ],
+  },
+  山: {
+    bopomofo: 'ㄕㄢ',
+    words: [
+      { term: '高山', bopomofo: 'ㄍㄠ ㄕㄢ' },
+      { term: '山谷', bopomofo: 'ㄕㄢ ㄍㄨˇ' },
+      { term: '山脈', bopomofo: 'ㄕㄢ ㄇㄞˋ' },
+      { term: '山頂', bopomofo: 'ㄕㄢ ㄉㄧㄥˇ' },
+      { term: '登山', bopomofo: 'ㄉㄥ ㄕㄢ' },
+      { term: '山水', bopomofo: 'ㄕㄢ ㄕㄨㄟˇ' },
+    ],
+    idioms: [
+      { term: '山明水秀', bopomofo: 'ㄕㄢ ㄇㄧㄥˊ ㄕㄨㄟˇ ㄒㄧㄡˋ' },
+      { term: '開門見山', bopomofo: 'ㄎㄞ ㄇㄣˊ ㄐㄧㄢˋ ㄕㄢ' },
+      { term: '排山倒海', bopomofo: 'ㄆㄞˊ ㄕㄢ ㄉㄠˇ ㄏㄞˇ' },
+      { term: '翻山越嶺', bopomofo: 'ㄈㄢ ㄕㄢ ㄩㄝˋ ㄌㄧㄥˇ' },
+      { term: '愚公移山', bopomofo: 'ㄩˊ ㄍㄨㄥ ㄧˊ ㄕㄢ' },
+      { term: '山窮水盡', bopomofo: 'ㄕㄢ ㄑㄩㄥˊ ㄕㄨㄟˇ ㄐㄧㄣˋ' },
+    ],
+  },
+  心: {
+    bopomofo: 'ㄒㄧㄣ',
+    words: [
+      { term: '開心', bopomofo: 'ㄎㄞ ㄒㄧㄣ' },
+      { term: '心情', bopomofo: 'ㄒㄧㄣ ㄑㄧㄥˊ' },
+      { term: '用心', bopomofo: 'ㄩㄥˋ ㄒㄧㄣ' },
+      { term: '心意', bopomofo: 'ㄒㄧㄣ ㄧˋ' },
+      { term: '細心', bopomofo: 'ㄒㄧˋ ㄒㄧㄣ' },
+      { term: '愛心', bopomofo: 'ㄞˋ ㄒㄧㄣ' },
+    ],
+    idioms: [
+      { term: '心想事成', bopomofo: 'ㄒㄧㄣ ㄒㄧㄤˇ ㄕˋ ㄔㄥˊ' },
+      { term: '專心致志', bopomofo: 'ㄓㄨㄢ ㄒㄧㄣ ㄓˋ ㄓˋ' },
+      { term: '心花怒放', bopomofo: 'ㄒㄧㄣ ㄏㄨㄚ ㄋㄨˋ ㄈㄤˋ' },
+      { term: '一心一意', bopomofo: 'ㄧ ㄒㄧㄣ ㄧ ㄧˋ' },
+      { term: '三心二意', bopomofo: 'ㄙㄢ ㄒㄧㄣ ㄦˋ ㄧˋ' },
+      { term: '心曠神怡', bopomofo: 'ㄒㄧㄣ ㄎㄨㄤˋ ㄕㄣˊ ㄧˊ' },
+    ],
+  },
 }
 
 function pickCharacter(query: string) {
@@ -28,6 +142,7 @@ export class LocalWordLookupProvider implements WordLookupProvider {
       character,
       bopomofo: entry.bopomofo,
       words: entry.words,
+      idioms: entry.idioms,
       note: '目前使用本地 lookup provider；之後可替換成正式 AI / dictionary backend。',
     }
   }

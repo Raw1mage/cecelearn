@@ -15,9 +15,9 @@ export function createHanziWriter(target: HTMLElement, character: string) {
   }
 
   return constructor.create(target, character, {
-    width: 180,
-    height: 180,
-    padding: 5,
+    width: 200,
+    height: 200,
+    padding: 10,
     showOutline: true,
     strokeAnimationSpeed: 1.2,
     delayBetweenStrokes: 150,

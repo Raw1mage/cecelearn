@@ -17,6 +17,7 @@ export type A1LookupResponse = {
   character: string
   bopomofo: string
   words: A1LookupWord[]
+  idioms: A1LookupWord[]
   note?: string
 }
 

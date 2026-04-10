@@ -1,22 +1,16 @@
-import { LinkButton } from '../shared/components/Button'
-import { Panel } from '../shared/components/Panel'
+import { Link } from 'react-router-dom'
 
 type FeatureCardProps = {
-  code: string
   title: string
   description: string
   to: string
 }
 
-export function FeatureCard({ code, title, description, to }: FeatureCardProps) {
+export function FeatureCard({ title, description, to }: FeatureCardProps) {
   return (
-    <Panel>
-      <div className="feature-card__code">{code}</div>
+    <Link to={to} className="ui-panel feature-card-link">
       <h2>{title}</h2>
       <p>{description}</p>
-      <LinkButton className="feature-card__link" to={to}>
-        進入 {code}
-      </LinkButton>
-    </Panel>
+    </Link>
   )
 }
