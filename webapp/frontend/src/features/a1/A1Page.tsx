@@ -1,7 +1,36 @@
 import { useEffect, useRef, useState } from 'react'
-import { apiClient, type A1LookupResponse } from '../../shared/api/client'
+import { apiClient, type A1LookupResponse, type A1LookupWord } from '../../shared/api/client'
+import { celebrate } from '../../shared/celebrate'
 import { Panel } from '../../shared/components/Panel'
-import { createHanziWriter, getSpeechRecognitionConstructor } from './hanziWriterAdapter'
+import { parseBopomofo } from './bopomofo'
+import { createHanziWriter, getSpeechRecognitionConstructor, type HanziWriterInstance } from './hanziWriterAdapter'
+
+/** Render a word with vertical bopomofo annotation to the right of each character */
+function RubyWord({ term, bopomofo }: A1LookupWord) {
+  const chars = term.split('')
+  const phonetics = bopomofo.split(' ').filter(Boolean)
+
+  return (
+    <span className="ruby-word">
+      {chars.map((char, i) => {
+        const ph = i < phonetics.length ? parseBopomofo(phonetics[i]) : null
+        return (
+          <span key={i} className="ruby-char">
+            <span className="ruby-char__main">{char}</span>
+            {ph && (
+              <span className="ruby-char__phon">
+                <span className="ruby-char__initials">
+                  {ph.phonetics.map((p, j) => <span key={j}>{p}</span>)}
+                </span>
+                <span className="ruby-char__tone">{ph.tone || '\u00A0'}</span>
+              </span>
+            )}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
 
 const initialResult: A1LookupResponse = {
   ok: true,
@@ -23,8 +52,11 @@ export function A1Page() {
   const [status, setStatus] = useState('')
   const [speechReady, setSpeechReady] = useState(false)
   const [listening, setListening] = useState(false)
+  const [practicing, setPracticing] = useState(false)
+  const [wordsOpen, setWordsOpen] = useState(true)
+  const [idiomsOpen, setIdiomsOpen] = useState(true)
   const writerTargetRef = useRef<HTMLDivElement | null>(null)
-  const writerRef = useRef<{ animateCharacter: () => void } | null>(null)
+  const writerRef = useRef<HanziWriterInstance | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
 
   useEffect(() => {
@@ -63,6 +95,7 @@ export function A1Page() {
   useEffect(() => {
     if (!writerTargetRef.current) return
     writerTargetRef.current.innerHTML = ''
+    setPracticing(false)
 
     try {
       writerRef.current = createHanziWriter(writerTargetRef.current, result.character)
@@ -84,6 +117,7 @@ export function A1Page() {
     try {
       const response = await apiClient.lookupWord(normalized)
       setResult(response)
+      setQuery(response.character)
       setHistory((current) => [response, ...current].slice(0, 8))
       setStatus(response.note ?? '')
     } catch (error) {
@@ -96,7 +130,20 @@ export function A1Page() {
       setStatus('目前沒有可重播的筆順動畫。')
       return
     }
+    setPracticing(false)
+    writerRef.current.showCharacter()
     writerRef.current.animateCharacter()
+  }
+
+  function startPractice() {
+    if (!writerRef.current) return
+    setPracticing(true)
+    writerRef.current.quiz({
+      onComplete: () => {
+        celebrate()
+        setPracticing(false)
+      },
+    })
   }
 
   function toggleListening() {
@@ -143,40 +190,49 @@ export function A1Page() {
         {status ? <p className="muted" style={{ marginTop: '0.5rem' }}>{status}</p> : null}
       </Panel>
 
-      <Panel>
-        <div className="a1-stroke-container">
-          <div className="a1-stroke-box" ref={writerTargetRef} />
-          <button className="a1-replay-btn" onClick={replay} aria-label="重播筆順">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+      <div className="a1-stroke-container">
+        <div className={`a1-stroke-box${practicing ? ' a1-stroke-box--practice' : ''}`} ref={writerTargetRef} />
+        <div className="a1-stroke-actions">
+          <button className="a1-action-btn" onClick={replay} aria-label="重播筆順" title="重播">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          </button>
+          <button className={`a1-action-btn${practicing ? ' a1-action-btn--active' : ''}`} onClick={startPractice} aria-label="練習寫字" title="練習">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
           </button>
         </div>
-      </Panel>
+      </div>
 
       <Panel>
-        <h3>造詞</h3>
-        <div className="word-chip-list a1-chip-grid">
-          {result.words.map((word) => (
-            <article key={`${word.term}-${word.bopomofo}`} className="word-chip">
-              <strong>{word.term}</strong>
-              <span>{word.bopomofo}</span>
-            </article>
-          ))}
-        </div>
+        <button className="a1-collapse-header" onClick={() => setWordsOpen(o => !o)}>
+          <span className={`a1-collapse-arrow${wordsOpen ? ' a1-collapse-arrow--open' : ''}`}>▶</span>
+          <h3>造詞</h3>
+        </button>
+        {wordsOpen && (
+          <div className="word-chip-list a1-chip-grid">
+            {result.words.map((word) => (
+              <article key={`${word.term}-${word.bopomofo}`} className="word-chip">
+                <RubyWord {...word} />
+              </article>
+            ))}
+          </div>
+        )}
       </Panel>
 
       {result.idioms && result.idioms.length > 0 && (
         <Panel>
-          <h3>相關成語</h3>
-          <div className="word-chip-list a1-chip-grid">
-            {result.idioms.map((idiom) => (
-              <article key={`${idiom.term}-${idiom.bopomofo}`} className="word-chip">
-                <strong>{idiom.term}</strong>
-                <span>{idiom.bopomofo}</span>
-              </article>
-            ))}
-          </div>
+          <button className="a1-collapse-header" onClick={() => setIdiomsOpen(o => !o)}>
+            <span className={`a1-collapse-arrow${idiomsOpen ? ' a1-collapse-arrow--open' : ''}`}>▶</span>
+            <h3>相關成語</h3>
+          </button>
+          {idiomsOpen && (
+            <div className="word-chip-list a1-chip-grid">
+              {result.idioms.map((idiom) => (
+                <article key={`${idiom.term}-${idiom.bopomofo}`} className="word-chip">
+                  <RubyWord {...idiom} />
+                </article>
+              ))}
+            </div>
+          )}
         </Panel>
       )}
 

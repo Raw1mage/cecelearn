@@ -8,7 +8,21 @@ const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemi
 /*  Gemini AI — speech correction                                     */
 /* ------------------------------------------------------------------ */
 
-const GEMINI_PROMPT = `你是語音校正助理。規則：使用者說「A的B」，檢查B是否在A中。如果B不在A中，在A中找讀音最接近B的字。範例：老師的詩 → 師。愚公移山的贏 → 移。學校的笑 → 校。如果B在A中，目標就是B。範例：學校的學 → 學。如果是單字或詞語，取最後一個字。範例：微笑 → 笑。現在處理：{QUERY}`
+const GEMINI_PROMPT = `你是小學國語字典的語音校正助理。小朋友用語音說出想查的字，你要判斷他想查哪個字。
+
+核心規則：如果是「A的B」結構，目標字一定在A裡面。B只是小朋友發的音，可能被語音辨識聽錯。你必須在A的字裡面，找讀音最接近B的那個字。
+
+範例：
+- 老師的詩 → 師（詩不在老師中，師在老師中且讀音最近）
+- 老師的溼 → 師（溼不在老師中，師在老師中且讀音最近）
+- 愚公移山的贏 → 移（贏不在愚公移山中，移讀音最近）
+- 學校的笑 → 校（笑不在學校中，校讀音最近）
+- 學校的學 → 學（學在學校中，直接採用）
+- 微笑 → 笑（非「A的B」結構，取最後一個字）
+
+重要：目標字必須是A裡面的字。絕不可以回傳A以外的字。
+
+現在處理：{QUERY}`
 
 /** Round-robin key index — rotates across requests */
 let keyIndex = 0
@@ -98,6 +112,66 @@ function pickCharacter(query: string): string {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Gemini AI — fallback word/idiom generation                        */
+/* ------------------------------------------------------------------ */
+
+const GEMINI_WORDS_PROMPT = `為「{CHAR}」這個繁體中文字提供造詞和成語。
+- words：6個常見的兩字或三字詞語，每個附注音（每字注音用空格隔開）
+- idioms：6個包含此字的四字成語，每個附注音（每字注音用空格隔開）
+- bopomofo：這個字本身的注音`
+
+async function geminiFillWords(character: string, apiKeys: string[]): Promise<{ bopomofo: string; words: A1LookupWord[]; idioms: A1LookupWord[] } | null> {
+  if (apiKeys.length === 0) return null
+
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: GEMINI_WORDS_PROMPT.replace('{CHAR}', character) }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          bopomofo: { type: 'STRING' },
+          words: { type: 'ARRAY', items: { type: 'OBJECT', properties: { term: { type: 'STRING' }, bopomofo: { type: 'STRING' } }, required: ['term', 'bopomofo'] } },
+          idioms: { type: 'ARRAY', items: { type: 'OBJECT', properties: { term: { type: 'STRING' }, bopomofo: { type: 'STRING' } }, required: ['term', 'bopomofo'] } },
+        },
+        required: ['bopomofo', 'words', 'idioms'],
+      },
+    },
+  })
+
+  for (let attempt = 0; attempt < apiKeys.length; attempt++) {
+    const idx = (keyIndex + attempt) % apiKeys.length
+    const key = apiKeys[idx]
+    try {
+      const res = await fetch(`${GEMINI_URL}?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(5000),
+        body,
+      })
+      if (res.status === 429) continue
+      keyIndex = (idx + 1) % apiKeys.length
+      if (!res.ok) return null
+
+      const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!text) return null
+
+      const parsed = JSON.parse(text) as { bopomofo?: string; words?: A1LookupWord[]; idioms?: A1LookupWord[] }
+      console.log(`[Gemini] words fallback for "${character}": ${parsed.words?.length ?? 0} words, ${parsed.idioms?.length ?? 0} idioms`)
+      return {
+        bopomofo: parsed.bopomofo ?? '',
+        words: (parsed.words ?? []).slice(0, 6),
+        idioms: (parsed.idioms ?? []).slice(0, 6),
+      }
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
+/* ------------------------------------------------------------------ */
 /*  MOE Dictionary scraping                                           */
 /* ------------------------------------------------------------------ */
 
@@ -114,6 +188,17 @@ function parsePhonTags(html: string): string {
 
 function stripTags(html: string): string {
   return html.replace(/<[^>]+>/g, '').trim()
+}
+
+/** Common variant ↔ standard character mappings (台灣教育部標準) */
+const VARIANTS: Record<string, string> = {
+  台: '臺', 裡: '裏', 群: '羣', 峰: '峯', 床: '牀',
+  才: '纔', 麻: '蔴', 注: '註', 占: '佔', 线: '線',
+}
+
+/** Try the standard form if variant search fails */
+function getVariant(char: string): string | null {
+  return VARIANTS[char] ?? null
 }
 
 async function fetchWords(character: string, maxResults = 6): Promise<{ bopomofo: string; words: A1LookupWord[] }> {
@@ -182,28 +267,71 @@ export class MoeWordLookupProvider implements WordLookupProvider {
   }
 
   async lookup(query: string): Promise<A1LookupResponse> {
-    const [aiChar] = await Promise.all([
-      geminiCorrect(query, this.apiKeys),
-    ])
+    let aiChar = await geminiCorrect(query, this.apiKeys)
+
+    // Validate: for "A的B" pattern, AI result must be in A
+    const clean = query.replace(/\s+/g, '')
+    const deIdx = clean.lastIndexOf('的')
+    if (aiChar && deIdx >= 0) {
+      const contextA = clean.slice(0, deIdx)
+      if (!contextA.includes(aiChar)) {
+        console.warn(`[MoeProvider] AI returned "${aiChar}" but it's not in "${contextA}", rejecting`)
+        aiChar = null
+      }
+    }
+
     const character = aiChar ?? pickCharacter(query)
 
-    // Step 2: Fetch dictionary data
+    // Step 2: Fetch dictionary data (retry with variant if no results)
     try {
-      const [dictResult, idioms] = await Promise.all([
+      let [dictResult, idioms] = await Promise.all([
         fetchWords(character),
         fetchIdioms(character),
       ])
+
+      // If no results, try the standard variant (e.g., 台 → 臺)
+      const variant = getVariant(character)
+      if (dictResult.words.length === 0 && variant) {
+        console.log(`[MoeProvider] "${character}" no results, trying variant "${variant}"`)
+        const [varDict, varIdioms] = await Promise.all([
+          fetchWords(variant),
+          fetchIdioms(variant),
+        ])
+        if (varDict.words.length > 0) {
+          dictResult = varDict
+          if (varIdioms.length > 0) idioms = varIdioms
+        }
+      }
+
+      // Step 3: If dictionary results are sparse, fill with Gemini
+      let { bopomofo } = dictResult
+      let { words } = dictResult
+      const needMoreWords = words.length < 4
+      const needMoreIdioms = idioms.length < 4
+      if (needMoreWords || needMoreIdioms) {
+        const aiWords = await geminiFillWords(character, this.apiKeys)
+        if (aiWords) {
+          if (!bopomofo) bopomofo = aiWords.bopomofo
+          if (needMoreWords) words = aiWords.words
+          if (needMoreIdioms) idioms = aiWords.idioms
+        }
+      }
 
       return {
         ok: true,
         query,
         character,
-        bopomofo: dictResult.bopomofo || '',
-        words: dictResult.words,
+        bopomofo,
+        words,
         idioms,
       }
     } catch (error) {
       console.warn('[MoeProvider] fetch failed:', error instanceof Error ? error.message : error)
+      // Last resort: try Gemini for everything
+      const aiWords = await geminiFillWords(character, this.apiKeys)
+      if (aiWords) {
+        return { ok: true, query, character, ...aiWords }
+      }
       return {
         ok: true,
         query,
@@ -211,7 +339,7 @@ export class MoeWordLookupProvider implements WordLookupProvider {
         bopomofo: '',
         words: [],
         idioms: [],
-        note: '查詢教育部辭典失敗，請稍後再試。',
+        note: '查詢失敗，請稍後再試。',
       }
     }
   }
