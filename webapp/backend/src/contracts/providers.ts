@@ -28,7 +28,7 @@ export type A2QuizResponse = {
 }
 
 export interface WordLookupProvider {
-  lookup(query: string): A1LookupResponse
+  lookup(query: string): A1LookupResponse | Promise<A1LookupResponse>
 }
 
 export interface IdiomQuizProvider {

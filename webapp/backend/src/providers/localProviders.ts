@@ -143,7 +143,7 @@ export class LocalWordLookupProvider implements WordLookupProvider {
       bopomofo: entry.bopomofo,
       words: entry.words,
       idioms: entry.idioms,
-      note: '目前使用本地 lookup provider；之後可替換成正式 AI / dictionary backend。',
+      note: undefined,
     }
   }
 }

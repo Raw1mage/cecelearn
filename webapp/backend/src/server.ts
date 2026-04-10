@@ -2,10 +2,11 @@ import { createServer } from 'node:http'
 import { loadEnv } from './config/env.js'
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
-import { LocalIdiomQuizProvider, LocalWordLookupProvider } from './providers/localProviders.js'
+import { LocalIdiomQuizProvider } from './providers/localProviders.js'
+import { MoeWordLookupProvider } from './providers/moeProvider.js'
 
 const env = loadEnv()
-const a1 = createA1Module(new LocalWordLookupProvider())
+const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
 const a2 = createA2Module(new LocalIdiomQuizProvider())
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
@@ -64,7 +65,7 @@ const server = createServer(async (request, response) => {
 
   if (url === '/api/a1/lookup' && method === 'POST') {
     const payload = JSON.parse((await readBody(request)) || '{}') as { query?: string }
-    sendJson(response, 200, a1.lookup(payload.query?.trim() || '字'))
+    sendJson(response, 200, await a1.lookup(payload.query?.trim() || '字'))
     return
   }
 
