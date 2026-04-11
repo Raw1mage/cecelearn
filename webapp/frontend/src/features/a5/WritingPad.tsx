@@ -1,17 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
-
-declare global {
-  interface Window {
-    HanziWriter?: {
-      create: (target: HTMLElement, character: string, options: Record<string, unknown>) => {
-        animateCharacter: (options?: { onComplete?: () => void }) => void
-        hideCharacter: () => void
-        showOutline: () => void
-        quiz: (options?: { onComplete?: () => void; onMistake?: () => void; onCorrectStroke?: () => void }) => void
-      }
-    }
-  }
-}
+// HanziWriter global type declared in ../a1/hanziWriterAdapter.ts
 
 type Props = {
   width?: number
@@ -39,7 +27,9 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gridRef = useRef<ImageData | null>(null)
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const areaRef = useRef<HTMLDivElement | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
+  const [sizes, setSizes] = useState({ canvas: 0, thumb: 0 })
   const hintContainerRef = useRef<HTMLDivElement | null>(null)
   const hintWriters = useRef<unknown[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
@@ -163,14 +153,47 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     setTool('pen')
     hintWriters.current = []
     if (hintContainerRef.current) hintContainerRef.current.innerHTML = ''
-    // Clear thumbnails
+    // Clear thumbnails — remove HanziWriter SVG wrappers and restore canvas
     for (let i = 0; i < thumbRefs.current.length; i++) {
       const t = thumbRefs.current[i]
-      if (t) t.getContext('2d')?.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
+      if (!t) continue
+      t.getContext('2d')?.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
+      t.style.display = ''  // restore canvas visibility (renderThumbChar hides it)
+      const hw = t.parentElement?.querySelector('.a5-thumb-hw')
+      if (hw) hw.remove()
     }
     onStrokesChange?.(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawGrid, answer])
+
+  // Compute optimal square sizes: canvas fills available space, thumbs ≤ canvas/2
+  useEffect(() => {
+    const area = areaRef.current
+    if (!area) return
+    const GAP = 6
+    function measure() {
+      const rect = area!.getBoundingClientRect()
+      const availW = rect.width
+      const availH = rect.height
+      const n = charCount > 1 ? charCount : 0
+      let S: number, T: number
+      if (n === 0) {
+        S = Math.min(availW, availH)
+        T = 0
+      } else {
+        // S + GAP + T ≤ availH, T ≤ S/2, N*T + (N-1)*GAP ≤ availW
+        S = Math.min(availW, (availH - GAP) / 1.5)
+        T = Math.min(S / 2, (availW - (n - 1) * GAP) / n)
+        // Ensure vertical fit
+        if (S + GAP + T > availH) S = availH - GAP - T
+      }
+      setSizes({ canvas: Math.floor(Math.max(S, 50)), thumb: Math.floor(Math.max(T, 20)) })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(area)
+    return () => observer.disconnect()
+  }, [charCount])
 
   // Block native gestures on canvas
   useEffect(() => {
@@ -259,8 +282,10 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     let totalStrokes = 0
     let cancelled = false
 
+    const startIdx = activeIdx
     async function runHintSequence() {
-      for (let i = 0; i < chars.length; i++) {
+      if (!container) return
+      for (let i = startIdx; i < chars.length; i++) {
         if (cancelled) return
         setActiveIdx(i)
         container.innerHTML = ''
@@ -402,8 +427,8 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
   const chars = answer ? answer.split('') : ['']
 
   return (
-    <div className="a5-writing-area">
-      <div ref={wrapRef} className="a5-canvas-wrap">
+    <div ref={areaRef} className="a5-writing-area">
+      <div ref={wrapRef} className="a5-canvas-wrap" style={sizes.canvas > 0 ? { width: sizes.canvas, height: sizes.canvas } : undefined}>
         <canvas
           ref={(el) => { canvasRef.current = el; if (canvasElRef) canvasElRef.current = el }}
           width={width}
@@ -480,6 +505,7 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
               key={i}
               className={`a5-thumb${i === activeIdx ? ' a5-thumb--active' : ''}${strokeFlagsRef.current[i] ? ' a5-thumb--written' : ''}`}
               onClick={() => switchChar(i)}
+              style={sizes.thumb > 0 ? { width: sizes.thumb, height: sizes.thumb } : undefined}
             >
               <canvas
                 ref={el => { thumbRefs.current[i] = el }}

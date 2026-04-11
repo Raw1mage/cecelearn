@@ -221,13 +221,13 @@ html.a5-active .a5-page {
   -webkit-touch-callout: none;
 }
 
-/* Writing area — column layout, canvas + thumbs */
+/* Writing area — canvas + thumbs, sizes computed by JS */
 .a5-writing-area {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
 }
 
 /* Side toolbar — overlaid inside canvas, bottom-left */
@@ -288,13 +288,9 @@ html.a5-active .a5-page {
 .a5-tool-btn--active { background: #fbbf24; color: #1e293b; }
 .a5-tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* Canvas — fixed 440px square, shrinks on narrow screens */
+/* Canvas — size set by JS inline style */
 .a5-canvas-wrap {
   position: relative;
-  width: 100%;
-  max-width: 440px;
-  aspect-ratio: 1;
-  align-self: center;
   flex-shrink: 0;
 }
 .a5-canvas {
@@ -309,29 +305,25 @@ html.a5-active .a5-page {
 .a5-thumb-bar {
   display: flex;
   gap: 6px;
-  align-items: stretch;
-  flex: 1;
-  min-height: 0;
-  padding: 4px 0;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 0;
+  flex-shrink: 0;
   overflow-x: auto;
-  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
 }
 .a5-thumb {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  aspect-ratio: 1;
   flex-shrink: 0;
-  scroll-snap-align: center;
   border: 2px solid rgba(139,170,255,0.2);
   border-radius: 0.5rem;
   background: rgba(7,12,24,0.5);
   cursor: pointer;
   padding: 0;
+  /* width/height set by JS inline style */
 }
 .a5-thumb--active {
   border-color: #3f82ff;

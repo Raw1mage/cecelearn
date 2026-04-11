@@ -1,6 +1,6 @@
 export type HanziWriterInstance = {
-  animateCharacter: () => void
-  quiz: (options?: Record<string, unknown>) => void
+  animateCharacter: (options?: { onComplete?: () => void }) => void
+  quiz: (options?: { onComplete?: () => void; onMistake?: () => void; onCorrectStroke?: () => void }) => void
   hideCharacter: () => void
   showCharacter: () => void
   showOutline: () => void
