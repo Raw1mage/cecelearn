@@ -33,7 +33,7 @@ button, input, textarea, select { font: inherit; }
 .hero h2 { margin: 1rem 0 0.75rem; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; }
 .hero p, .muted { margin: 0; color: #b5c2d9; }
 .feature-grid, .feature-page { display: grid; gap: 1rem; }
-.feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ui-panel { border: 1px solid rgba(139,170,255,0.2); border-radius: 1.5rem; padding: 1.5rem; background: rgba(12, 21, 39, 0.88); box-shadow: 0 20px 60px rgba(0,0,0,0.2); backdrop-filter: blur(12px); }
 .ui-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.8rem; padding: 0.8rem 1rem; border: 0; border-radius: 0.95rem; text-decoration: none; cursor: pointer; }
 .ui-button:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -167,6 +167,50 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 /* A1 — chip grid (responsive) */
 .a1-chip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .history-item { text-align: left; background: rgba(7,12,24,0.6); color: #eef4ff; border: 1px solid rgba(139,170,255,0.16); padding: 0.9rem 1rem; border-radius: 1rem; }
+/* A5 — Dictation practice */
+.a5-page .ui-panel { max-width: 420px; margin-left: auto; margin-right: auto; }
+.a5-quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.a5-progress { color: #9bc1ff; font-weight: 600; }
+.a5-combo { color: #fbbf24; font-weight: 700; font-size: 1rem; animation: a5-combo-pulse 0.5s ease; }
+@keyframes a5-combo-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+/* Writing pad */
+.a5-writing-pad { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.a5-canvas-wrap { position: relative; width: min(320px, calc(100vw - 4rem)); height: min(320px, calc(100vw - 4rem)); }
+.a5-canvas { width: 100%; height: 100%; border-radius: 1rem; cursor: crosshair; touch-action: none; }
+.a5-hint-overlay { position: absolute; inset: 0; display: grid; place-items: center; font-size: 8rem; color: rgba(59,130,246,0.12); pointer-events: none; font-weight: 700; }
+
+/* Toolbar */
+.a5-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center; }
+.a5-toolbar-group { display: flex; gap: 0.3rem; align-items: center; padding: 0 0.3rem; }
+.a5-color-btn { width: 1.6rem; height: 1.6rem; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+.a5-color-btn--active { border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251,191,36,0.4); }
+.a5-thick-btn { display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.5rem; background: transparent; cursor: pointer; }
+.a5-thick-btn--active { background: rgba(117,167,255,0.18); border-color: #9bc1ff; }
+.a5-thick-dot { background: #e5eefc; border-radius: 50%; display: block; }
+.a5-tool-btn { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.6rem; background: rgba(117,167,255,0.18); color: #9bc1ff; cursor: pointer; }
+.a5-tool-btn:hover { background: rgba(117,167,255,0.3); }
+.a5-tool-btn--submit { background: #3f82ff; color: #fff; }
+.a5-tool-btn--submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Actions (replay / hint) */
+.a5-actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 0.5rem; }
+.a5-action-btn { display: flex; align-items: center; gap: 0.3rem; padding: 0.5rem 0.9rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.8rem; background: transparent; color: #9bc1ff; cursor: pointer; font-size: 0.85rem; }
+.a5-action-btn:hover { background: rgba(117,167,255,0.12); }
+
+/* Feedback */
+.a5-feedback { text-align: center; padding: 0.5rem; border-radius: 0.75rem; margin-top: 0.5rem; font-weight: 600; }
+.a5-feedback--correct { background: rgba(52,211,153,0.15); color: #34d399; }
+
+/* Result */
+.a5-result-stats { display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0; }
+.a5-stat { display: flex; flex-direction: column; align-items: center; }
+.a5-stat-value { font-size: 2rem; font-weight: 700; color: #fbbf24; }
+.a5-stat-label { font-size: 0.85rem; color: #9bc1ff; }
+.a5-result-words { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+.a5-result-word { padding: 0.4rem 0.8rem; border-radius: 0.6rem; background: rgba(117,167,255,0.12); color: #dbe8ff; font-size: 1.1rem; }
+.a5-result-word--hinted { border: 1px dashed rgba(251,191,36,0.4); }
+
 @media (max-width: 900px) {
   .feature-grid { grid-template-columns: 1fr; }
   .app-header { align-items: center; }

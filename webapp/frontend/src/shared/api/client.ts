@@ -51,6 +51,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T
 }
 
+export type A5QuizItem = {
+  id: string
+  word: string
+  bopomofo: string
+  characters: string[]
+}
+
+export type A5QuizResponse = {
+  ok: boolean
+  quizId: string
+  items: A5QuizItem[]
+}
+
 export const apiClient = {
   getHealth: () => request<HealthResponse>('/health'),
   lookupWord: (query: string) =>
@@ -62,5 +75,17 @@ export const apiClient = {
     request<A2QuizResponse>('/a2/quiz', {
       method: 'POST',
       body: JSON.stringify({ mode, idioms, questionCount }),
+    }),
+  generateVocabQuiz: (options: {
+    mode: 'random' | 'curriculum' | 'custom'
+    publisher?: string
+    grade?: string
+    lessons?: string[]
+    customChars?: string
+    questionCount: number
+  }) =>
+    request<A5QuizResponse>('/a5/quiz', {
+      method: 'POST',
+      body: JSON.stringify(options),
     }),
 }

@@ -34,3 +34,27 @@ export interface WordLookupProvider {
 export interface IdiomQuizProvider {
   generate(idioms: string[], questionCount: number): A2QuizResponse
 }
+
+/* A5 — Dictation Practice */
+
+export type A5QuizItem = {
+  id: string
+  word: string          // 詞語或成語（答案）
+  bopomofo: string      // 注音
+  characters: string[]   // 逐字拆分
+}
+
+export type A5QuizResponse = {
+  ok: boolean
+  quizId: string
+  items: A5QuizItem[]
+}
+
+export type A5QuizOptions = {
+  mode: 'random' | 'curriculum' | 'custom'
+  publisher?: string
+  grade?: string
+  lessons?: string[]
+  customChars?: string
+  questionCount: number
+}

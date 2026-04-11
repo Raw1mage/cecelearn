@@ -4,11 +4,13 @@ import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
+import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
 
 const env = loadEnv()
 const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
+const vocabEngine = new VocabQuizEngine()
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })
@@ -83,6 +85,33 @@ const server = createServer(async (request, response) => {
       const idioms = Array.isArray(payload.idioms) ? payload.idioms : []
       sendJson(response, 200, idiomEngine.generate(idioms, questionCount))
     }
+    return
+  }
+
+  if (url === '/api/a5/quiz' && method === 'POST') {
+    const payload = JSON.parse((await readBody(request)) || '{}') as {
+      mode?: 'random' | 'curriculum' | 'custom'
+      publisher?: string
+      grade?: string
+      lessons?: string[]
+      customChars?: string
+      questionCount?: number
+    }
+    sendJson(response, 200, vocabEngine.generate({
+      mode: payload.mode ?? 'random',
+      publisher: payload.publisher,
+      grade: payload.grade,
+      lessons: payload.lessons,
+      customChars: payload.customChars,
+      questionCount: Number(payload.questionCount || 5),
+    }))
+    return
+  }
+
+  if (url === '/api/a5/meta' && method === 'GET') {
+    sendJson(response, 200, {
+      publishers: vocabEngine.getPublishers(),
+    })
     return
   }
 

@@ -16,6 +16,11 @@ const features = [
     description: '輸入數字選運算，逐步播放計算過程，支援暫停和重播。',
     to: '/a3',
   },
+  {
+    title: '聽寫練習',
+    description: '語音唸出詞語，在畫板上手寫作答，支援按年級出題。',
+    to: '/a5',
+  },
 ]
 
 export function PortalPage() {
