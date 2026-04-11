@@ -1,5 +1,7 @@
 import { createServer } from 'node:http'
+import { resolve } from 'node:path'
 import { loadEnv } from './config/env.js'
+import { initAccessLog, logAccess } from './logging/accessLog.js'
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
@@ -7,6 +9,7 @@ import { MoeWordLookupProvider } from './providers/moeProvider.js'
 import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
 
 const env = loadEnv()
+initAccessLog(resolve(process.env.HOME || '/tmp', '.local/state/cecelearn/logs/access.log'))
 const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
@@ -29,6 +32,8 @@ function readBody(request: import('node:http').IncomingMessage) {
 }
 
 const server = createServer(async (request, response) => {
+  const startTime = Date.now()
+  response.on('finish', () => logAccess(request, response, startTime))
   const { method = 'GET' } = request
   // Strip PUBLIC_BASE_PATH prefix so route matching stays path-agnostic
   let url = request.url || '/'
