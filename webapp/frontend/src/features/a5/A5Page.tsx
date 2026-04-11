@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiClient, type A5QuizItem } from '../../shared/api/client'
 import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
@@ -24,10 +24,21 @@ export function A5Page() {
   const [phase, setPhase] = useState<Phase>('setup')
   const [rangeMode, setRangeMode] = useState<RangeMode>('random')
   const [publisher, setPublisher] = useState('康軒版')
-  const [grade, setGrade] = useState('3年級')
+  const [grade, setGrade] = useState('1年級')
+  const [availableLessons, setAvailableLessons] = useState<string[]>([])
+  const [selectedLessons, setSelectedLessons] = useState<string[]>([])
   const [questionCount, setQuestionCount] = useState(5)
   const [customChars, setCustomChars] = useState('')
   const [error, setError] = useState('')
+
+  // Fetch available lessons when publisher/grade changes
+  useEffect(() => {
+    if (rangeMode !== 'curriculum') return
+    apiClient.getVocabMeta(publisher, grade).then(meta => {
+      setAvailableLessons(meta.lessons)
+      setSelectedLessons([]) // reset selection
+    }).catch(() => setAvailableLessons([]))
+  }, [publisher, grade, rangeMode])
 
   // Quiz state
   const [items, setItems] = useState<A5QuizItem[]>([])
@@ -49,6 +60,7 @@ export function A5Page() {
         mode: rangeMode,
         publisher: rangeMode === 'curriculum' ? publisher : undefined,
         grade: rangeMode === 'curriculum' ? grade : undefined,
+        lessons: rangeMode === 'curriculum' && selectedLessons.length > 0 ? selectedLessons : undefined,
         customChars: rangeMode === 'custom' ? customChars : undefined,
         questionCount,
       })
@@ -65,25 +77,31 @@ export function A5Page() {
       setShowHint(false)
       setPhase('quiz')
       // Auto-play first question
-      setTimeout(() => playWord(res.items[0].word), 500)
+      setTimeout(() => playQuestion(res.items[0]), 500)
     } catch (e) {
       setError(e instanceof Error ? e.message : '出題失敗')
       setPhase('setup')
     }
   }
 
-  async function playWord(word: string) {
+  async function playQuestion(item: A5QuizItem) {
     if (!isTTSSupported()) return
     setSpeaking(true)
     try {
-      await speak(word, 0.7)
+      // Read the full sentence, then ask "X怎麼寫"
+      await speak(item.sentence, 0.8)
+      await speak(`${item.word}，怎麼寫？`, 0.7)
     } catch { /* ignore */ }
     setSpeaking(false)
   }
 
-  function handleHint() {
+  function hintDown() {
     setShowHint(true)
     setAnswers(prev => prev.map((a, i) => i === currentIdx ? { ...a, hinted: true } : a))
+  }
+
+  function hintUp() {
+    setShowHint(false)
   }
 
   function handleSubmit() {
@@ -111,7 +129,7 @@ export function A5Page() {
         setCurrentIdx(prev => prev + 1)
         setShowHint(false)
         // Play next word
-        playWord(items[currentIdx + 1].word)
+        playQuestion(items[currentIdx + 1])
       }, 800)
     } else {
       // All done
@@ -139,7 +157,7 @@ export function A5Page() {
     setMaxCombo(0)
     setShowHint(false)
     setPhase('quiz')
-    setTimeout(() => playWord(items[0].word), 500)
+    setTimeout(() => playQuestion(items[0]), 500)
   }
 
   return (
@@ -173,6 +191,26 @@ export function A5Page() {
                   ))}
                 </select>
               </label>
+              {availableLessons.length > 0 && (
+                <div className="field-block">
+                  <span>課次（不選 = 全部）</span>
+                  <div className="a5-lesson-grid">
+                    {availableLessons.map(lesson => (
+                      <label key={lesson} className="a5-lesson-check">
+                        <input
+                          type="checkbox"
+                          checked={selectedLessons.includes(lesson)}
+                          onChange={e => {
+                            if (e.target.checked) setSelectedLessons(prev => [...prev, lesson])
+                            else setSelectedLessons(prev => prev.filter(l => l !== lesson))
+                          }}
+                        />
+                        <span>{lesson}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
           {rangeMode === 'custom' && (
@@ -210,11 +248,11 @@ export function A5Page() {
           />
 
           <div className="a5-actions">
-            <button className="a5-action-btn" onClick={() => playWord(currentItem.word)} disabled={speaking} aria-label="重聽">
+            <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={speaking} aria-label="重聽">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               <span>重聽</span>
             </button>
-            <button className="a5-action-btn" onClick={handleHint} aria-label="提示">
+            <button className="a5-action-btn" onMouseDown={hintDown} onMouseUp={hintUp} onMouseLeave={hintUp} onTouchStart={hintDown} onTouchEnd={hintUp} aria-label="提示">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <span>提示</span>
             </button>
@@ -222,8 +260,8 @@ export function A5Page() {
 
           {answers[currentIdx]?.submitted && (
             <div className="a5-feedback a5-feedback--correct">
-              ✓ {answers[currentIdx].hinted ? '+1' : '+3'} 分
-              {combo >= 3 && ` (combo ×${combo >= 10 ? '2' : combo >= 5 ? '1.5' : '1'})`}
+              <span className="a5-feedback-answer">{currentItem.word}</span>
+              <span className="a5-feedback-score">✓ {answers[currentIdx].hinted ? '+1' : '+3'} 分</span>
             </div>
           )}
         </Panel>

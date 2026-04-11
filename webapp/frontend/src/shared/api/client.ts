@@ -56,6 +56,7 @@ export type A5QuizItem = {
   word: string
   bopomofo: string
   characters: string[]
+  sentence: string
 }
 
 export type A5QuizResponse = {
@@ -76,6 +77,12 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ mode, idioms, questionCount }),
     }),
+  getVocabMeta: (publisher?: string, grade?: string) => {
+    const params = new URLSearchParams()
+    if (publisher) params.set('publisher', publisher)
+    if (grade) params.set('grade', grade)
+    return request<{ publishers: string[]; grades: string[]; lessons: string[] }>(`/a5/meta?${params}`)
+  },
   generateVocabQuiz: (options: {
     mode: 'random' | 'curriculum' | 'custom'
     publisher?: string

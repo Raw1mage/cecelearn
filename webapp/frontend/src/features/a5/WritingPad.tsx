@@ -3,7 +3,7 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 type Props = {
   width?: number
   height?: number
-  onSubmit: (imageData: ImageData) => void
+  onSubmit: () => void
   answer?: string
   showHint: boolean
 }
@@ -11,7 +11,7 @@ type Props = {
 const COLORS = ['#1e293b', '#dc2626', '#2563eb', '#16a34a']
 const THICKNESSES = [3, 6, 10]
 
-export function WritingPad({ width = 320, height = 320, onSubmit, answer, showHint }: Props) {
+export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHint }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [color, setColor] = useState(COLORS[0])
@@ -21,22 +21,36 @@ export function WritingPad({ width = 320, height = 320, onSubmit, answer, showHi
 
   const getCtx = useCallback(() => canvasRef.current?.getContext('2d') ?? null, [])
 
+  const charCount = answer ? answer.length : 1
+
   useEffect(() => {
     const ctx = getCtx()
     if (!ctx) return
     ctx.fillStyle = '#f8fafc'
     ctx.fillRect(0, 0, width, height)
-    // Draw grid lines
+    // Draw grid: horizontal dividers for each character cell + cross guides
     ctx.strokeStyle = '#e2e8f0'
     ctx.lineWidth = 1
-    ctx.setLineDash([4, 4])
-    ctx.beginPath()
-    ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height)
-    ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2)
-    ctx.stroke()
+    const cellH = height / charCount
+    for (let i = 0; i < charCount; i++) {
+      const y = i * cellH
+      // Horizontal divider between cells
+      if (i > 0) {
+        ctx.setLineDash([])
+        ctx.beginPath()
+        ctx.moveTo(0, y); ctx.lineTo(width, y)
+        ctx.stroke()
+      }
+      // Cross guide lines (dashed)
+      ctx.setLineDash([4, 4])
+      ctx.beginPath()
+      ctx.moveTo(width / 2, y); ctx.lineTo(width / 2, y + cellH)
+      ctx.moveTo(0, y + cellH / 2); ctx.lineTo(width, y + cellH / 2)
+      ctx.stroke()
+    }
     ctx.setLineDash([])
     setHasStrokes(false)
-  }, [width, height, getCtx, answer]) // reset when answer changes (new question)
+  }, [width, height, getCtx, answer, charCount])
 
   function getPos(e: React.MouseEvent | React.TouchEvent): { x: number; y: number } {
     const canvas = canvasRef.current!
@@ -96,9 +110,7 @@ export function WritingPad({ width = 320, height = 320, onSubmit, answer, showHi
   }
 
   function handleSubmit() {
-    const ctx = getCtx()
-    if (!ctx) return
-    onSubmit(ctx.getImageData(0, 0, width, height))
+    onSubmit()
   }
 
   return (
@@ -118,7 +130,11 @@ export function WritingPad({ width = 320, height = 320, onSubmit, answer, showHi
           onTouchEnd={endDraw}
         />
         {showHint && answer && (
-          <div className="a5-hint-overlay">{answer}</div>
+          <div className="a5-hint-overlay">
+            {answer.split('').map((ch, i) => (
+              <span key={i} className="a5-hint-char" style={{ height: `${100 / answer.length}%` }}>{ch}</span>
+            ))}
+          </div>
         )}
       </div>
       <div className="a5-toolbar">

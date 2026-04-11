@@ -42,6 +42,7 @@ export type A5QuizItem = {
   word: string          // 詞語或成語（答案）
   bopomofo: string      // 注音
   characters: string[]   // 逐字拆分
+  sentence: string      // 含答案的例句（TTS 唸）
 }
 
 export type A5QuizResponse = {

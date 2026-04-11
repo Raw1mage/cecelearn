@@ -17,7 +17,7 @@ type VocabDb = {
   lessons: Lesson[]
 }
 
-type IdiomEntry = { idiom: string }
+type IdiomEntry = { idiom: string; examples?: string[] }
 
 const DICT_URL = 'https://dict.concised.moe.edu.tw/search.jsp'
 
@@ -45,6 +45,30 @@ function pickRandom<T>(arr: T[], n: number): T[] {
 
 function stripTags(html: string): string {
   return html.replace(/<[^>]+>/g, '').trim()
+}
+
+/** Fetch a definition/example sentence for a word from MOE dictionary */
+async function fetchSentence(word: string): Promise<string> {
+  try {
+    const url = `https://dict.concised.moe.edu.tw/search.jsp?md=1&word=${encodeURIComponent(word)}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
+    const html = await res.text()
+    // Look for example sentences in ［例］ patterns
+    const exMatch = html.match(/\[例\](.*?)(?:\n|<|。)/s)
+    if (exMatch) {
+      const sentence = stripTags(exMatch[1]).trim()
+      if (sentence.length > 3) return sentence.endsWith('。') ? sentence : sentence + '。'
+    }
+    // Fallback: extract first definition line
+    const defMatch = html.match(/<td[^>]*>([^<]*[\u4e00-\u9fff][^<]{5,})/s)
+    if (defMatch) {
+      const def = stripTags(defMatch[1]).trim().split('。')[0]
+      if (def.length > 4) return def + '。'
+    }
+    return ''
+  } catch {
+    return ''
+  }
 }
 
 /** Fetch 2-char compound words from MOE dictionary for a character */
@@ -75,6 +99,7 @@ export class VocabQuizEngine {
   private db: VocabDb
   private allChars: string[]
   private idiomsByChar: Map<string, string[]>
+  private idiomExamples: Map<string, string[]>
 
   constructor() {
     const db = loadJson<VocabDb>('../../data/vocabulary.json')
@@ -82,14 +107,18 @@ export class VocabQuizEngine {
     this.allChars = [...new Set(this.db.lessons.flatMap(l => l.characters))]
     console.log(`[VocabQuiz] loaded ${this.allChars.length} unique chars from ${this.db.stats.lessons} lessons`)
 
-    // Build idiom index by character
+    // Build idiom index by character (with examples)
     this.idiomsByChar = new Map()
+    this.idiomExamples = new Map()
     const idioms = loadJson<IdiomEntry[]>('../../data/idioms.json') ?? []
-    for (const { idiom } of idioms) {
-      for (const char of new Set(idiom.split(''))) {
+    for (const entry of idioms) {
+      for (const char of new Set(entry.idiom.split(''))) {
         const list = this.idiomsByChar.get(char) ?? []
-        list.push(idiom)
+        list.push(entry.idiom)
         this.idiomsByChar.set(char, list)
+      }
+      if (entry.examples && entry.examples.length > 0) {
+        this.idiomExamples.set(entry.idiom, entry.examples)
       }
     }
     console.log(`[VocabQuiz] indexed ${idioms.length} idioms`)
@@ -128,29 +157,40 @@ export class VocabQuizEngine {
   }
 
   /**
-   * Build a word/idiom for a character.
-   * Priority: idiom (30%) > MOE dictionary compound word > fallback repeat-char
+   * Build a word/idiom + example sentence for a character.
    */
-  private async makeWord(char: string): Promise<string> {
+  private async makeWordWithSentence(char: string): Promise<{ word: string; sentence: string }> {
     // 30% chance: pick an idiom containing this character
     const idioms = this.idiomsByChar.get(char)
     if (idioms && idioms.length > 0 && Math.random() < 0.3) {
-      return idioms[Math.floor(Math.random() * idioms.length)]
+      const idiom = idioms[Math.floor(Math.random() * idioms.length)]
+      const examples = this.idiomExamples.get(idiom)
+      const sentence = examples && examples.length > 0
+        ? examples[Math.floor(Math.random() * examples.length)]
+        : `請寫出「${idiom}」。`
+      return { word: idiom, sentence }
     }
 
     // 70% chance: fetch a 2-char compound word from MOE dictionary
     const words = await fetchCompoundWords(char)
     if (words.length > 0) {
-      return words[Math.floor(Math.random() * words.length)]
+      const word = words[Math.floor(Math.random() * words.length)]
+      // Try to get an example sentence for this word
+      const sentence = await fetchSentence(word)
+      return { word, sentence: sentence || `請寫出「${word}」。` }
     }
 
-    // Fallback: try idiom even if random didn't pick it
+    // Fallback: try idiom
     if (idioms && idioms.length > 0) {
-      return idioms[Math.floor(Math.random() * idioms.length)]
+      const idiom = idioms[Math.floor(Math.random() * idioms.length)]
+      const examples = this.idiomExamples.get(idiom)
+      const sentence = examples && examples.length > 0
+        ? examples[Math.floor(Math.random() * examples.length)]
+        : `請寫出「${idiom}」。`
+      return { word: idiom, sentence }
     }
 
-    // Last resort: just the character (should rarely happen)
-    return char
+    return { word: char, sentence: `請寫出「${char}」。` }
   }
 
   async generate(options: A5QuizOptions): Promise<A5QuizResponse> {
@@ -161,14 +201,15 @@ export class VocabQuizEngine {
 
     const selected = pickRandom(pool, Math.min(options.questionCount, pool.length))
 
-    // Fetch words in parallel (batched to avoid overwhelming MOE)
-    const words = await Promise.all(selected.map(char => this.makeWord(char)))
+    // Fetch words + sentences in parallel
+    const results = await Promise.all(selected.map(char => this.makeWordWithSentence(char)))
 
-    const items: A5QuizItem[] = selected.map((char, i) => ({
+    const items: A5QuizItem[] = results.map((r, i) => ({
       id: `q-${i + 1}`,
-      word: words[i],
+      word: r.word,
       bopomofo: '',
-      characters: words[i].split(''),
+      characters: r.word.split(''),
+      sentence: r.sentence,
     }))
 
     return {

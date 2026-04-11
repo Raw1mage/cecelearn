@@ -108,9 +108,14 @@ const server = createServer(async (request, response) => {
     return
   }
 
-  if (url === '/api/a5/meta' && method === 'GET') {
+  if (url?.startsWith('/api/a5/meta') && method === 'GET') {
+    const params = new URL(url, 'http://localhost').searchParams
+    const pub = params.get('publisher')
+    const gr = params.get('grade')
     sendJson(response, 200, {
       publishers: vocabEngine.getPublishers(),
+      grades: pub ? vocabEngine.getGrades(pub) : [],
+      lessons: pub && gr ? vocabEngine.getLessons(pub, gr) : [],
     })
     return
   }
