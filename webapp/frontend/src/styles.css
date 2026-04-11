@@ -169,50 +169,170 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .history-item { text-align: left; background: rgba(7,12,24,0.6); color: #eef4ff; border: 1px solid rgba(139,170,255,0.16); padding: 0.9rem 1rem; border-radius: 1rem; }
 /* A5 — Dictation practice */
 .a5-page .ui-panel { width: 100%; }
-.a5-quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-.a5-progress { color: #9bc1ff; font-weight: 600; }
-.a5-combo { color: #fbbf24; font-weight: 700; font-size: 1rem; animation: a5-combo-pulse 0.5s ease; }
-@keyframes a5-combo-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
 
-/* Writing pad */
-.a5-writing-pad { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-.a5-canvas-wrap { position: relative; width: min(360px, calc(100vw - 4rem)); height: min(520px, calc(100vh - 16rem)); }
-.a5-canvas { width: 100%; height: 100%; border-radius: 1rem; cursor: crosshair; touch-action: none; }
-.a5-hint-overlay { position: absolute; inset: 0; flex-direction: column; pointer-events: none; }
+/* ── A5 viewport-fit: flex chain from html to content ── */
+html.a5-active,
+html.a5-active body {
+  height: var(--app-vh, 100dvh);   /* JS-measured visual viewport; dvh fallback */
+  min-height: 0;                   /* kill base min-height:100vh — it's LARGER than visible viewport on iOS */
+  overflow: hidden;
+}
+html.a5-active #root { height: 100%; min-height: 0; }
+html.a5-active .app-frame {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+html.a5-active .page-shell {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+html.a5-active .a5-page {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  gap: 0; padding: 0;
+}
 
-/* Toolbar */
-.a5-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center; }
-.a5-toolbar-group { display: flex; gap: 0.3rem; align-items: center; padding: 0 0.3rem; }
-.a5-color-btn { width: 1.6rem; height: 1.6rem; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+/* Setup panel — fill remaining height, push button to bottom */
+.a5-setup-panel {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+.a5-setup-bottom { margin-top: auto; }
+
+/* Quiz layout — fill remaining space, no scroll, no text selection */
+.a5-quiz-layout {
+  flex: 1; min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  overflow: hidden;
+  background: rgba(12, 21, 39, 0.88);
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Writing area — side toolbar + canvas */
+.a5-writing-area {
+  flex: 1;
+  display: flex;
+  gap: 0.4rem;
+  min-height: 0;
+  align-items: stretch;
+}
+
+/* Side toolbar — vertical, bottom-aligned */
+.a5-side-toolbar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+  flex-shrink: 0;
+}
+.a5-side-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: center;
+}
+.a5-color-btn { width: 1.5rem; height: 1.5rem; border: 2px solid transparent; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
 .a5-color-btn--active { border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251,191,36,0.4); }
-.a5-thick-btn { display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.5rem; background: transparent; cursor: pointer; }
+.a5-color-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.a5-thick-btn { display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.5rem; background: transparent; cursor: pointer; flex-shrink: 0; }
 .a5-thick-btn--active { background: rgba(117,167,255,0.18); border-color: #9bc1ff; }
+.a5-thick-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .a5-thick-dot { background: #e5eefc; border-radius: 50%; display: block; }
-.a5-tool-btn { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.6rem; background: rgba(117,167,255,0.18); color: #9bc1ff; cursor: pointer; }
+.a5-tool-btn { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 0; border-radius: 0.6rem; background: rgba(117,167,255,0.18); color: #9bc1ff; cursor: pointer; flex-shrink: 0; }
 .a5-tool-btn:hover { background: rgba(117,167,255,0.3); }
 .a5-tool-btn--active { background: #fbbf24; color: #1e293b; }
-.a5-tool-btn--submit { background: #3f82ff; color: #fff; }
-.a5-canvas--eraser { cursor: cell; }
-.a5-tool-btn--submit:disabled { opacity: 0.4; cursor: not-allowed; }
+.a5-tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* Actions (replay / hint) */
-.a5-actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 0.5rem; }
-.a5-action-btn { display: flex; align-items: center; gap: 0.3rem; padding: 0.5rem 0.9rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.8rem; background: transparent; color: #9bc1ff; cursor: pointer; font-size: 0.85rem; }
+/* Canvas */
+.a5-canvas-wrap { flex: 1; position: relative; min-height: 0; min-width: 0; }
+.a5-canvas { width: 100%; height: 100%; border-radius: 1rem; cursor: crosshair; touch-action: none; }
+.a5-canvas--eraser { cursor: cell; }
+.a5-hint-overlay { position: absolute; inset: 0; flex-direction: column; pointer-events: none; }
+
+/* Progress overlay — semi-transparent, top-right of canvas */
+.a5-progress-overlay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  pointer-events: none;
+  color: rgba(100, 116, 139, 0.55);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.a5-combo-overlay {
+  color: rgba(251, 191, 36, 0.6);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Bottom action bar */
+.a5-bottom-bar {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 0 0.25rem;
+  flex-shrink: 0;
+}
+.a5-action-btn { display: flex; align-items: center; gap: 0.3rem; padding: 0.55rem 1rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.8rem; background: transparent; color: #9bc1ff; cursor: pointer; font-size: 0.9rem; touch-action: manipulation; }
 .a5-action-btn:hover { background: rgba(117,167,255,0.12); }
+.a5-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .a5-action-btn--active { background: rgba(251,191,36,0.2); border-color: rgba(251,191,36,0.4); color: #fbbf24; }
+.a5-action-btn--submit { background: #3f82ff; color: #fff; border-color: #3f82ff; }
+.a5-action-btn--submit:disabled { opacity: 0.35; cursor: not-allowed; }
+.a5-action-btn--next { background: #3f82ff; color: #fff; border-color: #3f82ff; font-weight: 600; }
+.a5-score-badge { color: #34d399; font-weight: 700; font-size: 0.95rem; }
+
+/* Setup form — 2-column grid, inline labels */
+.a5-setup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.a5-field-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.a5-field-inline select,
+.a5-field-inline input { flex: 1; min-width: 0; margin: 0; }
+.a5-field-label {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: #9bc1ff;
+  white-space: nowrap;
+}
+.a5-setup-full { grid-column: 1 / -1; }
+
+/* Lesson section — grows to fill remaining panel space */
+.a5-lesson-section {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
 
 /* Lesson checkboxes */
-.a5-lesson-grid { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 0.3rem; max-height: 14rem; overflow-y: auto; padding: 0.25rem 0; border: 1px solid rgba(139,170,255,0.12); border-radius: 0.75rem; background: rgba(7,12,24,0.4); }
+.a5-lesson-grid { display: grid; grid-template-columns: 1fr; gap: 0; flex: 1; min-height: 3rem; overflow-y: auto; padding: 0.25rem 0; border: 1px solid rgba(139,170,255,0.12); border-radius: 0.75rem; background: rgba(7,12,24,0.4); }
 .a5-lesson-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; padding: 0.45rem 0.75rem; }
 .a5-lesson-check:hover { background: rgba(117,167,255,0.08); }
 .a5-lesson-check input { accent-color: #3f82ff; flex-shrink: 0; width: 1rem; height: 1rem; }
 .a5-lesson-check span { line-height: 1.3; }
-
-/* Feedback */
-.a5-feedback { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 0.6rem; border-radius: 0.75rem; margin-top: 0.5rem; }
-.a5-feedback--correct { background: rgba(52,211,153,0.15); }
-.a5-feedback-answer { font-size: 1.6rem; font-weight: 700; color: #e5eefc; }
-.a5-feedback-score { color: #34d399; font-weight: 600; }
 
 /* Result */
 .a5-result-stats { display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0; }

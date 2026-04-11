@@ -15,16 +15,19 @@ declare global {
 type Props = {
   width?: number
   height?: number
-  onSubmit: (canvas: HTMLCanvasElement) => void
   answer?: string
   showHint: boolean
+  submitted?: boolean
+  progressText?: string
+  comboText?: string
+  onStrokesChange?: (has: boolean) => void
 }
 
 const COLORS = ['#1e293b', '#dc2626', '#2563eb', '#16a34a']
 const THICKNESSES = [3, 6, 10]
 type Tool = 'pen' | 'eraser'
 
-export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHint }: Props) {
+export function WritingPad({ width = 360, height = 520, answer, showHint, submitted, progressText, comboText, onStrokesChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gridRef = useRef<ImageData | null>(null)
   const hintContainerRef = useRef<HTMLDivElement | null>(null)
@@ -39,6 +42,11 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
   const getCtx = useCallback(() => canvasRef.current?.getContext('2d') ?? null, [])
 
   const charCount = answer ? answer.length : 1
+
+  function updateHasStrokes(v: boolean) {
+    setHasStrokes(v)
+    onStrokesChange?.(v)
+  }
 
   /** Draw the grid (background + guide lines) and snapshot it */
   const drawGrid = useCallback(() => {
@@ -70,11 +78,29 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
 
   useEffect(() => {
     drawGrid()
-    setHasStrokes(false)
+    updateHasStrokes(false)
     setTool('pen')
     hintWriters.current = []
     if (hintContainerRef.current) hintContainerRef.current.innerHTML = ''
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawGrid, answer])
+
+  // Draw correct answer overlay when submitted
+  useEffect(() => {
+    if (!submitted || !answer) return
+    const ctx = getCtx()
+    if (!ctx) return
+    const chars = answer.split('')
+    const cellH = height / chars.length
+    ctx.fillStyle = 'rgba(220, 38, 38, 0.38)'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    const fontSize = Math.min(width * 0.6, cellH * 0.7)
+    ctx.font = `bold ${fontSize}px "Noto Sans TC", "Microsoft JhengHei", sans-serif`
+    for (let i = 0; i < chars.length; i++) {
+      ctx.fillText(chars[i], width / 2, i * cellH + cellH / 2)
+    }
+  }, [submitted, answer, width, height, getCtx])
 
   // Show/hide HanziWriter outlines as hint
   useEffect(() => {
@@ -109,7 +135,6 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
           strokeAnimationSpeed: 1,
           delayBetweenStrokes: 120,
         })
-        // Animate with staggered delay per character
         setTimeout(() => writer.animateCharacter(), i * 800)
         hintWriters.current.push(writer)
       } catch { /* char not in HanziWriter db */ }
@@ -129,13 +154,14 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
   }
 
   function startDraw(e: React.MouseEvent | React.TouchEvent) {
+    if (submitted) return
     e.preventDefault()
     setIsDrawing(true)
     lastPoint.current = getPos(e)
   }
 
   function draw(e: React.MouseEvent | React.TouchEvent) {
-    if (!isDrawing) return
+    if (!isDrawing || submitted) return
     e.preventDefault()
     const ctx = getCtx()
     if (!ctx || !lastPoint.current) return
@@ -143,7 +169,6 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
     const size = tool === 'eraser' ? thickness * 3 : thickness
 
     if (tool === 'eraser') {
-      // Erase by painting the grid background over the stroke area
       ctx.save()
       ctx.beginPath()
       ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2)
@@ -164,7 +189,7 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
       ctx.moveTo(lastPoint.current.x, lastPoint.current.y)
       ctx.lineTo(pos.x, pos.y)
       ctx.stroke()
-      setHasStrokes(true)
+      if (!hasStrokes) updateHasStrokes(true)
     }
 
     lastPoint.current = pos
@@ -177,20 +202,55 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
 
   function clearCanvas() {
     drawGrid()
-    setHasStrokes(false)
-  }
-
-  function selectPen() {
-    setTool('pen')
+    updateHasStrokes(false)
   }
 
   function selectEraser() {
-    // Save current strokes to grid snapshot so eraser restores grid (not strokes)
     setTool(t => t === 'eraser' ? 'pen' : 'eraser')
   }
 
+  const toolsDisabled = !!submitted
+
   return (
-    <div className="a5-writing-pad">
+    <div className="a5-writing-area">
+      {/* Side toolbar - vertical, bottom-aligned */}
+      <div className="a5-side-toolbar">
+        <div className="a5-side-group">
+          {COLORS.map((c) => (
+            <button
+              key={c}
+              className={`a5-color-btn${color === c && tool === 'pen' ? ' a5-color-btn--active' : ''}`}
+              style={{ background: c }}
+              onClick={() => { setColor(c); setTool('pen') }}
+              disabled={toolsDisabled}
+              aria-label="顏色"
+            />
+          ))}
+        </div>
+        <div className="a5-side-group">
+          {THICKNESSES.map((t) => (
+            <button
+              key={t}
+              className={`a5-thick-btn${thickness === t ? ' a5-thick-btn--active' : ''}`}
+              onClick={() => setThickness(t)}
+              disabled={toolsDisabled}
+              aria-label="筆畫粗細"
+            >
+              <span className="a5-thick-dot" style={{ width: t * 2, height: t * 2 }} />
+            </button>
+          ))}
+        </div>
+        <div className="a5-side-group">
+          <button className={`a5-tool-btn${tool === 'eraser' ? ' a5-tool-btn--active' : ''}`} onClick={selectEraser} disabled={toolsDisabled} aria-label="橡皮擦">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+          </button>
+          <button className="a5-tool-btn" onClick={clearCanvas} disabled={toolsDisabled} aria-label="全部清除">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M5 6v14h14V6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Canvas area with overlays */}
       <div className="a5-canvas-wrap">
         <canvas
           ref={canvasRef}
@@ -206,42 +266,12 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
           onTouchEnd={endDraw}
         />
         <div className="a5-hint-overlay" ref={hintContainerRef} style={{ display: showHint ? 'flex' : 'none' }} />
-      </div>
-      <div className="a5-toolbar">
-        <div className="a5-toolbar-group">
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              className={`a5-color-btn${color === c && tool === 'pen' ? ' a5-color-btn--active' : ''}`}
-              style={{ background: c }}
-              onClick={() => { setColor(c); setTool('pen') }}
-              aria-label={`顏色`}
-            />
-          ))}
-        </div>
-        <div className="a5-toolbar-group">
-          {THICKNESSES.map((t) => (
-            <button
-              key={t}
-              className={`a5-thick-btn${thickness === t ? ' a5-thick-btn--active' : ''}`}
-              onClick={() => setThickness(t)}
-              aria-label={`筆畫粗細`}
-            >
-              <span className="a5-thick-dot" style={{ width: t * 2, height: t * 2 }} />
-            </button>
-          ))}
-        </div>
-        <div className="a5-toolbar-group">
-          <button className={`a5-tool-btn${tool === 'eraser' ? ' a5-tool-btn--active' : ''}`} onClick={selectEraser} aria-label="橡皮擦">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
-          </button>
-          <button className="a5-tool-btn" onClick={clearCanvas} aria-label="全部清除">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M5 6v14h14V6"/></svg>
-          </button>
-          <button className="a5-tool-btn a5-tool-btn--submit" onClick={onSubmit} disabled={!hasStrokes} aria-label="提交">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </button>
-        </div>
+        {progressText && (
+          <div className="a5-progress-overlay">
+            <span>{progressText}</span>
+            {comboText && <span className="a5-combo-overlay">{comboText}</span>}
+          </div>
+        )}
       </div>
     </div>
   )

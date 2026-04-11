@@ -58,8 +58,10 @@ export function A5Page() {
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [speaking, setSpeaking] = useState(false)
+  const [hasStrokes, setHasStrokes] = useState(false)
   const totalCorrect = answers.filter(a => a.correct).length
   const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
+  const isSubmitted = answers[currentIdx]?.submitted ?? false
 
   // Prefetch buffer: keep 3 items ahead of currentIdx
   useEffect(() => {
@@ -126,6 +128,7 @@ export function A5Page() {
       setCombo(0)
       setMaxCombo(0)
       setShowHint(false)
+      setHasStrokes(false)
       fetchingRef.current.clear()
       setPhase('quiz')
     } catch (e) {
@@ -138,9 +141,17 @@ export function A5Page() {
     if (!isTTSSupported()) return
     setSpeaking(true)
     try {
-      // Read the full sentence, then ask "X怎麼寫"
       await speak(item.sentence, 0.8)
       await speak(`${item.word}，怎麼寫？`, 0.7)
+    } catch { /* ignore */ }
+    setSpeaking(false)
+  }
+
+  async function playAnswer(item: A5QuizItem) {
+    if (!isTTSSupported()) return
+    setSpeaking(true)
+    try {
+      await speak(item.word, 0.7)
     } catch { /* ignore */ }
     setSpeaking(false)
   }
@@ -177,19 +188,48 @@ export function A5Page() {
     })
     setShowHint(false)
 
-    // Auto advance after brief delay
+    // Read the correct answer aloud
+    playAnswer(currentItem)
+  }
+
+  function handleNext() {
     if (currentIdx < totalQuestions - 1) {
-      setTimeout(() => {
-        setCurrentIdx(prev => prev + 1)
-        setShowHint(false)
-      }, 1200)
+      setCurrentIdx(prev => prev + 1)
+      setShowHint(false)
+      setHasStrokes(false)
     } else {
-      setTimeout(() => {
-        setPhase('result')
-        celebrate()
-      }, 1200)
+      setPhase('result')
+      celebrate()
     }
   }
+
+  // A5 page active: viewport-fit flex chain + real viewport height detection
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.add('a5-active')
+
+    function updateVh() {
+      // visualViewport gives the ACTUAL visible area excluding browser chrome
+      const h = window.visualViewport?.height ?? window.innerHeight
+      root.style.setProperty('--app-vh', `${h}px`)
+    }
+    updateVh()
+
+    window.visualViewport?.addEventListener('resize', updateVh)
+    window.addEventListener('resize', updateVh)
+
+    return () => {
+      root.classList.remove('a5-active')
+      root.style.removeProperty('--app-vh')
+      window.visualViewport?.removeEventListener('resize', updateVh)
+      window.removeEventListener('resize', updateVh)
+    }
+  }, [])
+
+  // Quiz phase: snap to top
+  useEffect(() => {
+    if (phase === 'quiz') window.scrollTo(0, 0)
+  }, [phase])
 
   // Auto-play TTS when currentItem loads
   useEffect(() => {
@@ -209,6 +249,7 @@ export function A5Page() {
     setCombo(0)
     setMaxCombo(0)
     setShowHint(false)
+    setHasStrokes(false)
     fetchingRef.current.clear()
   }
 
@@ -219,6 +260,7 @@ export function A5Page() {
     setCombo(0)
     setMaxCombo(0)
     setShowHint(false)
+    setHasStrokes(false)
     fetchingRef.current.clear()
     setPhase('quiz')
   }
@@ -226,84 +268,86 @@ export function A5Page() {
   return (
     <div className="feature-page a5-page">
       {phase === 'setup' && (
-        <Panel>
-          <h3>聽寫設定</h3>
-          <label className="field-block">
-            出題範圍
-            <select value={rangeMode} onChange={e => setRangeMode(e.target.value as RangeMode)}>
-              <option value="random">隨機出題</option>
-              <option value="curriculum">按課綱篩選</option>
-              <option value="custom">自訂生字</option>
-            </select>
-          </label>
-          {rangeMode === 'curriculum' && (
-            <>
-              <label className="field-block">
-                出版社
-                <select value={publisher} onChange={e => setPublisher(e.target.value)}>
-                  <option value="南一版">南一版</option>
-                  <option value="康軒版">康軒版</option>
-                  <option value="翰林版">翰林版</option>
-                </select>
-              </label>
-              <label className="field-block">
-                年級
-                <select value={grade} onChange={e => setGrade(e.target.value)}>
-                  {['1年級','2年級','3年級','4年級','5年級','6年級'].map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </label>
-              {availableSemesters.length > 0 && (
-                <label className="field-block">
-                  學期
-                  <select value={semester} onChange={e => setSemester(e.target.value)}>
-                    {availableSemesters.map(s => (
-                      <option key={s} value={s}>{s}</option>
+        <Panel className="a5-setup-panel">
+          <h3 style={{ margin: '0 0 0.5rem' }}>聽寫設定</h3>
+          <div className="a5-setup-grid">
+            <label className="a5-field-inline">
+              <span className="a5-field-label">範圍</span>
+              <select value={rangeMode} onChange={e => setRangeMode(e.target.value as RangeMode)}>
+                <option value="random">隨機出題</option>
+                <option value="curriculum">按課綱篩選</option>
+                <option value="custom">自訂生字</option>
+              </select>
+            </label>
+            <label className="a5-field-inline">
+              <span className="a5-field-label">題數</span>
+              <select value={questionCount} onChange={e => setQuestionCount(Number(e.target.value))}>
+                <option value={0}>自動（全部）</option>
+                <option value={5}>5 題</option>
+                <option value={10}>10 題</option>
+                <option value={15}>15 題</option>
+                <option value={20}>20 題</option>
+              </select>
+            </label>
+            {rangeMode === 'curriculum' && (
+              <>
+                <label className="a5-field-inline">
+                  <span className="a5-field-label">出版社</span>
+                  <select value={publisher} onChange={e => setPublisher(e.target.value)}>
+                    <option value="南一版">南一版</option>
+                    <option value="康軒版">康軒版</option>
+                    <option value="翰林版">翰林版</option>
+                  </select>
+                </label>
+                <label className="a5-field-inline">
+                  <span className="a5-field-label">年級</span>
+                  <select value={grade} onChange={e => setGrade(e.target.value)}>
+                    {['1年級','2年級','3年級','4年級','5年級','6年級'].map(g => (
+                      <option key={g} value={g}>{g}</option>
                     ))}
                   </select>
                 </label>
-              )}
-              {availableLessons.length > 0 && (
-                <div className="field-block">
-                  <span>課次（不選 = 全部）</span>
-                  <div className="a5-lesson-grid">
-                    {availableLessons.map(lesson => (
-                      <label key={lesson} className="a5-lesson-check">
-                        <input
-                          type="checkbox"
-                          checked={selectedLessons.includes(lesson)}
-                          onChange={e => {
-                            if (e.target.checked) setSelectedLessons(prev => [...prev, lesson])
-                            else setSelectedLessons(prev => prev.filter(l => l !== lesson))
-                          }}
-                        />
-                        <span>{lesson}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+                {availableSemesters.length > 0 && (
+                  <label className="a5-field-inline">
+                    <span className="a5-field-label">學期</span>
+                    <select value={semester} onChange={e => setSemester(e.target.value)}>
+                      {availableSemesters.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </>
+            )}
+            {rangeMode === 'custom' && (
+              <label className="a5-field-inline a5-setup-full">
+                <span className="a5-field-label">自訂</span>
+                <input value={customChars} onChange={e => setCustomChars(e.target.value)} placeholder="例如：學校花草天地" />
+              </label>
+            )}
+          </div>
+          {rangeMode === 'curriculum' && availableLessons.length > 0 && (
+            <div className="a5-lesson-section">
+              <span className="a5-field-label">課次（不選 = 全部）</span>
+              <div className="a5-lesson-grid">
+                {availableLessons.map(lesson => (
+                  <label key={lesson} className="a5-lesson-check">
+                    <input
+                      type="checkbox"
+                      checked={selectedLessons.includes(lesson)}
+                      onChange={e => {
+                        if (e.target.checked) setSelectedLessons(prev => [...prev, lesson])
+                        else setSelectedLessons(prev => prev.filter(l => l !== lesson))
+                      }}
+                    />
+                    <span>{lesson}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           )}
-          {rangeMode === 'custom' && (
-            <label className="field-block">
-              自訂生字
-              <input value={customChars} onChange={e => setCustomChars(e.target.value)} placeholder="輸入生字，例如：學校花草天地" />
-            </label>
-          )}
-          <label className="field-block">
-            題數
-            <select value={questionCount} onChange={e => setQuestionCount(Number(e.target.value))}>
-              <option value={0}>自動（全部）</option>
-              <option value={5}>5 題</option>
-              <option value={10}>10 題</option>
-              <option value={15}>15 題</option>
-              <option value={20}>20 題</option>
-            </select>
-          </label>
           {error && <p className="error-text">{error}</p>}
-          <div className="toolbar-row">
+          <div className="toolbar-row a5-setup-bottom">
             <Button onClick={startQuiz}>開始聽寫</Button>
           </div>
         </Panel>
@@ -318,36 +362,48 @@ export function A5Page() {
       )}
 
       {phase === 'quiz' && currentItem && (
-        <Panel>
-          <div className="a5-quiz-header">
-            <span className="a5-progress">第 {currentIdx + 1} / {totalQuestions} 題</span>
-            {combo >= 3 && <span className="a5-combo">🔥 {combo} 連擊{combo >= 5 ? ' ×1.5' : ''}{combo >= 10 ? ' ×2' : ''}</span>}
-          </div>
-
+        <div className="a5-quiz-layout">
           <WritingPad
-            onSubmit={handleSubmit}
             answer={currentItem.word}
             showHint={showHint}
+            submitted={isSubmitted}
+            progressText={`第${currentIdx + 1}/${totalQuestions}題`}
+            comboText={combo >= 3 ? `${combo}連擊${combo >= 10 ? ' x2' : combo >= 5 ? ' x1.5' : ''}` : undefined}
+            onStrokesChange={setHasStrokes}
           />
 
-          <div className="a5-actions">
-            <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={speaking} aria-label="重聽">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              <span>重聽</span>
-            </button>
-            <button className={`a5-action-btn${showHint ? ' a5-action-btn--active' : ''}`} onClick={toggleHint} aria-label="提示">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <span>提示</span>
-            </button>
+          <div className="a5-bottom-bar">
+            {!isSubmitted ? (
+              <>
+                <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={speaking} aria-label="重聽">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span>重聽</span>
+                </button>
+                <button className={`a5-action-btn${showHint ? ' a5-action-btn--active' : ''}`} onClick={toggleHint} aria-label="提示">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span>提示</span>
+                </button>
+                <button className="a5-action-btn a5-action-btn--submit" onClick={handleSubmit} disabled={!hasStrokes} aria-label="提交">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>提交</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="a5-action-btn" onClick={() => playAnswer(currentItem)} disabled={speaking} aria-label="再聽一次">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span>重聽</span>
+                </button>
+                <span className="a5-score-badge">
+                  {answers[currentIdx]?.hinted ? '+1' : '+3'} 分
+                </span>
+                <button className="a5-action-btn a5-action-btn--next" onClick={handleNext} aria-label="下一題">
+                  <span>{currentIdx < totalQuestions - 1 ? '下一題 →' : '完成 ✓'}</span>
+                </button>
+              </>
+            )}
           </div>
-
-          {answers[currentIdx]?.submitted && (
-            <div className="a5-feedback a5-feedback--correct">
-              <span className="a5-feedback-answer">{currentItem.word}</span>
-              <span className="a5-feedback-score">✓ {answers[currentIdx].hinted ? '+1' : '+3'} 分</span>
-            </div>
-          )}
-        </Panel>
+        </div>
       )}
 
       {phase === 'result' && (
