@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { apiClient, type A5QuizItem } from '../../shared/api/client'
 import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
@@ -48,6 +48,36 @@ export function A5Page() {
   const [customChars, setCustomChars] = useState('')
   const [error, setError] = useState('')
 
+  // Prefetch buffer: keep 3 items ahead of currentIdx
+  const prefetch = useCallback(async (pool: string[], startIdx: number, existing: A5QuizItem[]) => {
+    const BUFFER = 3
+    const needed: number[] = []
+    for (let i = startIdx; i < Math.min(startIdx + BUFFER, pool.length); i++) {
+      if (!existing.find(item => item.id === `q-${i + 1}`) && !fetchingRef.current.has(i)) {
+        needed.push(i)
+      }
+    }
+    for (const idx of needed) {
+      fetchingRef.current.add(idx)
+      apiClient.fetchNextQuestion(pool[idx], idx).then(item => {
+        setItemBuffer(prev => {
+          if (prev.find(p => p.id === item.id)) return prev
+          return [...prev, item].sort((a, b) => Number(a.id.split('-')[1]) - Number(b.id.split('-')[1]))
+        })
+        fetchingRef.current.delete(idx)
+      }).catch(() => fetchingRef.current.delete(idx))
+    }
+  }, [])
+
+  // Trigger prefetch when currentIdx or charPool changes
+  useEffect(() => {
+    if (phase === 'quiz' && charPool.length > 0) {
+      prefetch(charPool, currentIdx, itemBuffer)
+    }
+  }, [phase, charPool, currentIdx, itemBuffer, prefetch])
+
+  const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
+
   // Fetch semesters when publisher/grade changes
   useEffect(() => {
     if (rangeMode !== 'curriculum') return
@@ -68,15 +98,17 @@ export function A5Page() {
   }, [publisher, grade, semester, rangeMode])
 
   // Quiz state
-  const [items, setItems] = useState<A5QuizItem[]>([])
+  const [charPool, setCharPool] = useState<string[]>([])
+  const [itemBuffer, setItemBuffer] = useState<A5QuizItem[]>([]) // prefetched items
   const [currentIdx, setCurrentIdx] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState(0)
   const [answers, setAnswers] = useState<AnswerRecord[]>([])
+  const fetchingRef = useRef(new Set<number>()) // track in-flight fetches
   const [showHint, setShowHint] = useState(false)
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [speaking, setSpeaking] = useState(false)
 
-  const currentItem = items[currentIdx]
   const totalCorrect = answers.filter(a => a.correct).length
 
   async function startQuiz() {
@@ -84,7 +116,7 @@ export function A5Page() {
     savePrefs({ rangeMode, publisher, grade, questionCount: questionCount === 0 ? 'auto' : String(questionCount) })
     setPhase('loading')
     try {
-      const res = await apiClient.generateVocabQuiz({
+      const res = await apiClient.prepareVocabQuiz({
         mode: rangeMode,
         publisher: rangeMode === 'curriculum' ? publisher : undefined,
         grade: rangeMode === 'curriculum' ? grade : undefined,
@@ -93,20 +125,21 @@ export function A5Page() {
         customChars: rangeMode === 'custom' ? customChars : undefined,
         questionCount: questionCount === 0 ? 9999 : questionCount,
       })
-      if (!res.items || res.items.length === 0) {
+      if (!res.chars || res.chars.length === 0) {
         setError('出題失敗，範圍內沒有足夠的生字。')
         setPhase('setup')
         return
       }
-      setItems(res.items)
-      setAnswers(res.items.map(item => ({ word: item.word, submitted: false, correct: false, hinted: false })))
+      setCharPool(res.chars)
+      setTotalQuestions(res.total)
+      setItemBuffer([])
+      setAnswers([])
       setCurrentIdx(0)
       setCombo(0)
       setMaxCombo(0)
       setShowHint(false)
+      fetchingRef.current.clear()
       setPhase('quiz')
-      // Auto-play first question
-      setTimeout(() => playQuestion(res.items[0]), 500)
     } catch (e) {
       setError(e instanceof Error ? e.message : '出題失敗')
       setPhase('setup')
@@ -128,64 +161,78 @@ export function A5Page() {
     const next = !showHint
     setShowHint(next)
     if (next) {
-      setAnswers(prev => prev.map((a, i) => i === currentIdx ? { ...a, hinted: true } : a))
+      setAnswers(prev => {
+        const updated = [...prev]
+        if (updated[currentIdx]) updated[currentIdx] = { ...updated[currentIdx], hinted: true }
+        return updated
+      })
     }
   }
 
   function handleSubmit() {
-    // For now, any submission with strokes = correct (no OCR)
-    // If hint was used, reduced score
-    const hinted = answers[currentIdx].hinted
-    const isCorrect = true // Accept all handwriting submissions
+    if (!currentItem) return
+    const answer = answers[currentIdx]
+    const hinted = answer?.hinted ?? false
     const points = hinted ? 1 : 3
 
-    const newCombo = isCorrect ? combo + 1 : 0
+    const newCombo = combo + 1
     setCombo(newCombo)
     if (newCombo > maxCombo) setMaxCombo(newCombo)
 
-    // Apply combo multiplier
     const multiplier = newCombo >= 10 ? 2 : newCombo >= 5 ? 1.5 : 1
-    const finalPoints = Math.round(points * multiplier)
-    addScore(finalPoints)
+    addScore(Math.round(points * multiplier))
 
-    setAnswers(prev => prev.map((a, i) => i === currentIdx ? { ...a, submitted: true, correct: isCorrect } : a))
+    setAnswers(prev => {
+      const updated = [...prev]
+      updated[currentIdx] = { word: currentItem.word, submitted: true, correct: true, hinted }
+      return updated
+    })
     setShowHint(false)
 
     // Auto advance after brief delay
-    if (currentIdx < items.length - 1) {
+    if (currentIdx < totalQuestions - 1) {
       setTimeout(() => {
         setCurrentIdx(prev => prev + 1)
         setShowHint(false)
-        // Play next word
-        playQuestion(items[currentIdx + 1])
-      }, 800)
+      }, 1200)
     } else {
-      // All done
       setTimeout(() => {
         setPhase('result')
-        if (totalCorrect + 1 === items.length) celebrate()
-      }, 800)
+        celebrate()
+      }, 1200)
     }
   }
 
+  // Auto-play TTS when currentItem loads
+  useEffect(() => {
+    if (phase === 'quiz' && currentItem) {
+      playQuestion(currentItem)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentItem?.id])
+
   function resetQuiz() {
     setPhase('setup')
-    setItems([])
+    setCharPool([])
+    setItemBuffer([])
+    setAnswers([])
+    setCurrentIdx(0)
+    setTotalQuestions(0)
+    setCombo(0)
+    setMaxCombo(0)
+    setShowHint(false)
+    fetchingRef.current.clear()
+  }
+
+  function replay() {
+    setItemBuffer([])
     setAnswers([])
     setCurrentIdx(0)
     setCombo(0)
     setMaxCombo(0)
     setShowHint(false)
-  }
-
-  function replay() {
-    setCurrentIdx(0)
-    setAnswers(items.map(item => ({ word: item.word, submitted: false, correct: false, hinted: false })))
-    setCombo(0)
-    setMaxCombo(0)
-    setShowHint(false)
+    fetchingRef.current.clear()
     setPhase('quiz')
-    setTimeout(() => playQuestion(items[0]), 500)
   }
 
   return (
@@ -278,10 +325,14 @@ export function A5Page() {
         <Panel><p>出題中...</p></Panel>
       )}
 
+      {phase === 'quiz' && !currentItem && (
+        <Panel><p>準備題目中...</p></Panel>
+      )}
+
       {phase === 'quiz' && currentItem && (
         <Panel>
           <div className="a5-quiz-header">
-            <span className="a5-progress">第 {currentIdx + 1} / {items.length} 題</span>
+            <span className="a5-progress">第 {currentIdx + 1} / {totalQuestions} 題</span>
             {combo >= 3 && <span className="a5-combo">🔥 {combo} 連擊{combo >= 5 ? ' ×1.5' : ''}{combo >= 10 ? ' ×2' : ''}</span>}
           </div>
 
@@ -320,7 +371,7 @@ export function A5Page() {
               <span className="a5-stat-label">答對</span>
             </div>
             <div className="a5-stat">
-              <span className="a5-stat-value">{items.length}</span>
+              <span className="a5-stat-value">{totalQuestions}</span>
               <span className="a5-stat-label">總題數</span>
             </div>
             <div className="a5-stat">
@@ -329,10 +380,10 @@ export function A5Page() {
             </div>
           </div>
           <div className="a5-result-words">
-            {items.map((item, i) => (
-              <span key={item.id} className={`a5-result-word${answers[i]?.hinted ? ' a5-result-word--hinted' : ''}`}>
-                {item.word}
-                {answers[i]?.hinted && <small>（提示）</small>}
+            {answers.map((a, i) => (
+              <span key={i} className={`a5-result-word${a.hinted ? ' a5-result-word--hinted' : ''}`}>
+                {a.word}
+                {a.hinted && <small>（提示）</small>}
               </span>
             ))}
           </div>

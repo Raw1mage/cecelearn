@@ -263,29 +263,26 @@ export class VocabQuizEngine {
     return { word: char, sentence: `請寫出「${char}」。` }
   }
 
-  async generate(options: A5QuizOptions): Promise<A5QuizResponse> {
+  /** Prepare the quiz: return shuffled character pool only (fast, no HTTP) */
+  prepare(options: A5QuizOptions): { ok: boolean; quizId: string; chars: string[]; total: number } {
     const pool = this.filterChars(options)
     if (pool.length === 0) {
-      return { ok: false, quizId: '', items: [] } as A5QuizResponse & { ok: false }
+      return { ok: false, quizId: '', chars: [], total: 0 }
     }
+    const count = options.questionCount >= 9999 ? pool.length : Math.min(options.questionCount, pool.length)
+    const chars = pickRandom(pool, count)
+    return { ok: true, quizId: `vocab-${Date.now()}`, chars, total: chars.length }
+  }
 
-    const selected = pickRandom(pool, Math.min(options.questionCount, pool.length))
-
-    // Fetch words + sentences in parallel
-    const results = await Promise.all(selected.map(char => this.makeWordWithSentence(char)))
-
-    const items: A5QuizItem[] = results.map((r, i) => ({
-      id: `q-${i + 1}`,
-      word: r.word,
-      bopomofo: '',
-      characters: r.word.split(''),
-      sentence: r.sentence,
-    }))
-
+  /** Generate a single question for one character (called per-question) */
+  async generateOne(char: string, index: number): Promise<A5QuizItem> {
+    const result = await this.makeWordWithSentence(char)
     return {
-      ok: true,
-      quizId: `vocab-${Date.now()}`,
-      items,
+      id: `q-${index + 1}`,
+      word: result.word,
+      bopomofo: '',
+      characters: result.word.split(''),
+      sentence: result.sentence,
     }
   }
 }

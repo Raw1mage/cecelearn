@@ -84,7 +84,7 @@ export const apiClient = {
     if (semester) params.set('semester', semester)
     return request<{ publishers: string[]; grades: string[]; semesters: string[]; lessons: string[] }>(`/a5/meta?${params}`)
   },
-  generateVocabQuiz: (options: {
+  prepareVocabQuiz: (options: {
     mode: 'random' | 'curriculum' | 'custom'
     publisher?: string
     grade?: string
@@ -93,8 +93,13 @@ export const apiClient = {
     customChars?: string
     questionCount: number
   }) =>
-    request<A5QuizResponse>('/a5/quiz', {
+    request<{ ok: boolean; quizId: string; chars: string[]; total: number }>('/a5/prepare', {
       method: 'POST',
       body: JSON.stringify(options),
+    }),
+  fetchNextQuestion: (char: string, index: number) =>
+    request<A5QuizItem>('/a5/next', {
+      method: 'POST',
+      body: JSON.stringify({ char, index }),
     }),
 }

@@ -88,7 +88,7 @@ const server = createServer(async (request, response) => {
     return
   }
 
-  if (url === '/api/a5/quiz' && method === 'POST') {
+  if (url === '/api/a5/prepare' && method === 'POST') {
     const payload = JSON.parse((await readBody(request)) || '{}') as {
       mode?: 'random' | 'curriculum' | 'custom'
       publisher?: string
@@ -98,7 +98,7 @@ const server = createServer(async (request, response) => {
       customChars?: string
       questionCount?: number
     }
-    sendJson(response, 200, await vocabEngine.generate({
+    sendJson(response, 200, vocabEngine.prepare({
       mode: payload.mode ?? 'random',
       publisher: payload.publisher,
       grade: payload.grade,
@@ -107,6 +107,12 @@ const server = createServer(async (request, response) => {
       customChars: payload.customChars,
       questionCount: Number(payload.questionCount || 5),
     }))
+    return
+  }
+
+  if (url === '/api/a5/next' && method === 'POST') {
+    const payload = JSON.parse((await readBody(request)) || '{}') as { char: string; index: number }
+    sendJson(response, 200, await vocabEngine.generateOne(payload.char, payload.index ?? 0))
     return
   }
 
