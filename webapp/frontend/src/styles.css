@@ -178,8 +178,7 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a5-writing-pad { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 .a5-canvas-wrap { position: relative; width: min(360px, calc(100vw - 4rem)); height: min(520px, calc(100vh - 16rem)); }
 .a5-canvas { width: 100%; height: 100%; border-radius: 1rem; cursor: crosshair; touch-action: none; }
-.a5-hint-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; pointer-events: none; }
-.a5-hint-char { display: grid; place-items: center; font-size: 5rem; color: rgba(59,130,246,0.12); font-weight: 700; flex: 1; }
+.a5-hint-overlay { position: absolute; inset: 0; flex-direction: column; pointer-events: none; }
 
 /* Toolbar */
 .a5-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center; }
@@ -191,13 +190,16 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a5-thick-dot { background: #e5eefc; border-radius: 50%; display: block; }
 .a5-tool-btn { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.6rem; background: rgba(117,167,255,0.18); color: #9bc1ff; cursor: pointer; }
 .a5-tool-btn:hover { background: rgba(117,167,255,0.3); }
+.a5-tool-btn--active { background: #fbbf24; color: #1e293b; }
 .a5-tool-btn--submit { background: #3f82ff; color: #fff; }
+.a5-canvas--eraser { cursor: cell; }
 .a5-tool-btn--submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Actions (replay / hint) */
 .a5-actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 0.5rem; }
 .a5-action-btn { display: flex; align-items: center; gap: 0.3rem; padding: 0.5rem 0.9rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.8rem; background: transparent; color: #9bc1ff; cursor: pointer; font-size: 0.85rem; }
 .a5-action-btn:hover { background: rgba(117,167,255,0.12); }
+.a5-action-btn--active { background: rgba(251,191,36,0.2); border-color: rgba(251,191,36,0.4); color: #fbbf24; }
 
 /* Lesson checkboxes */
 .a5-lesson-grid { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 0.3rem; max-height: 14rem; overflow-y: auto; padding: 0.25rem 0; border: 1px solid rgba(139,170,255,0.12); border-radius: 0.75rem; background: rgba(7,12,24,0.4); }

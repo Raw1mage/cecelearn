@@ -1,19 +1,36 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 
+declare global {
+  interface Window {
+    HanziWriter?: {
+      create: (target: HTMLElement, character: string, options: Record<string, unknown>) => {
+        animateCharacter: () => void
+        hideCharacter: () => void
+        showOutline: () => void
+      }
+    }
+  }
+}
+
 type Props = {
   width?: number
   height?: number
-  onSubmit: () => void
+  onSubmit: (canvas: HTMLCanvasElement) => void
   answer?: string
   showHint: boolean
 }
 
 const COLORS = ['#1e293b', '#dc2626', '#2563eb', '#16a34a']
 const THICKNESSES = [3, 6, 10]
+type Tool = 'pen' | 'eraser'
 
 export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHint }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const gridRef = useRef<ImageData | null>(null)
+  const hintContainerRef = useRef<HTMLDivElement | null>(null)
+  const hintWriters = useRef<unknown[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
+  const [tool, setTool] = useState<Tool>('pen')
   const [color, setColor] = useState(COLORS[0])
   const [thickness, setThickness] = useState(THICKNESSES[1])
   const [hasStrokes, setHasStrokes] = useState(false)
@@ -23,25 +40,23 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
 
   const charCount = answer ? answer.length : 1
 
-  useEffect(() => {
+  /** Draw the grid (background + guide lines) and snapshot it */
+  const drawGrid = useCallback(() => {
     const ctx = getCtx()
     if (!ctx) return
     ctx.fillStyle = '#f8fafc'
     ctx.fillRect(0, 0, width, height)
-    // Draw grid: horizontal dividers for each character cell + cross guides
     ctx.strokeStyle = '#e2e8f0'
     ctx.lineWidth = 1
     const cellH = height / charCount
     for (let i = 0; i < charCount; i++) {
       const y = i * cellH
-      // Horizontal divider between cells
       if (i > 0) {
         ctx.setLineDash([])
         ctx.beginPath()
         ctx.moveTo(0, y); ctx.lineTo(width, y)
         ctx.stroke()
       }
-      // Cross guide lines (dashed)
       ctx.setLineDash([4, 4])
       ctx.beginPath()
       ctx.moveTo(width / 2, y); ctx.lineTo(width / 2, y + cellH)
@@ -49,8 +64,57 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
       ctx.stroke()
     }
     ctx.setLineDash([])
+    // Snapshot the clean grid for eraser restore
+    gridRef.current = ctx.getImageData(0, 0, width, height)
+  }, [getCtx, width, height, charCount])
+
+  useEffect(() => {
+    drawGrid()
     setHasStrokes(false)
-  }, [width, height, getCtx, answer, charCount])
+    setTool('pen')
+    hintWriters.current = []
+    if (hintContainerRef.current) hintContainerRef.current.innerHTML = ''
+  }, [drawGrid, answer])
+
+  // Show/hide HanziWriter outlines as hint
+  useEffect(() => {
+    const container = hintContainerRef.current
+    if (!container) return
+    container.innerHTML = ''
+    hintWriters.current = []
+
+    if (!showHint || !answer || !window.HanziWriter) return
+
+    const chars = answer.split('')
+    const cellH = 100 / chars.length
+
+    for (let i = 0; i < chars.length; i++) {
+      const cell = document.createElement('div')
+      cell.style.height = `${cellH}%`
+      cell.style.display = 'flex'
+      cell.style.alignItems = 'center'
+      cell.style.justifyContent = 'center'
+      container.appendChild(cell)
+
+      try {
+        const size = Math.min(width * 0.7, cellH / 100 * height * 0.8, 220)
+        const writer = window.HanziWriter.create(cell, chars[i], {
+          width: size,
+          height: size,
+          padding: 5,
+          showCharacter: false,
+          showOutline: true,
+          strokeColor: '#60a5fa',
+          outlineColor: 'rgba(96, 165, 250, 0.2)',
+          strokeAnimationSpeed: 1,
+          delayBetweenStrokes: 120,
+        })
+        // Animate with staggered delay per character
+        setTimeout(() => writer.animateCharacter(), i * 800)
+        hintWriters.current.push(writer)
+      } catch { /* char not in HanziWriter db */ }
+    }
+  }, [showHint, answer, width])
 
   function getPos(e: React.MouseEvent | React.TouchEvent): { x: number; y: number } {
     const canvas = canvasRef.current!
@@ -76,16 +140,34 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
     const ctx = getCtx()
     if (!ctx || !lastPoint.current) return
     const pos = getPos(e)
-    ctx.strokeStyle = color
-    ctx.lineWidth = thickness
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    ctx.beginPath()
-    ctx.moveTo(lastPoint.current.x, lastPoint.current.y)
-    ctx.lineTo(pos.x, pos.y)
-    ctx.stroke()
+    const size = tool === 'eraser' ? thickness * 3 : thickness
+
+    if (tool === 'eraser') {
+      // Erase by painting the grid background over the stroke area
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2)
+      ctx.clip()
+      if (gridRef.current) {
+        ctx.putImageData(gridRef.current, 0, 0)
+      } else {
+        ctx.fillStyle = '#f8fafc'
+        ctx.fillRect(pos.x - size, pos.y - size, size * 2, size * 2)
+      }
+      ctx.restore()
+    } else {
+      ctx.strokeStyle = color
+      ctx.lineWidth = size
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      ctx.moveTo(lastPoint.current.x, lastPoint.current.y)
+      ctx.lineTo(pos.x, pos.y)
+      ctx.stroke()
+      setHasStrokes(true)
+    }
+
     lastPoint.current = pos
-    setHasStrokes(true)
   }
 
   function endDraw() {
@@ -94,23 +176,17 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
   }
 
   function clearCanvas() {
-    const ctx = getCtx()
-    if (!ctx) return
-    ctx.fillStyle = '#f8fafc'
-    ctx.fillRect(0, 0, width, height)
-    ctx.strokeStyle = '#e2e8f0'
-    ctx.lineWidth = 1
-    ctx.setLineDash([4, 4])
-    ctx.beginPath()
-    ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height)
-    ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2)
-    ctx.stroke()
-    ctx.setLineDash([])
+    drawGrid()
     setHasStrokes(false)
   }
 
-  function handleSubmit() {
-    onSubmit()
+  function selectPen() {
+    setTool('pen')
+  }
+
+  function selectEraser() {
+    // Save current strokes to grid snapshot so eraser restores grid (not strokes)
+    setTool(t => t === 'eraser' ? 'pen' : 'eraser')
   }
 
   return (
@@ -120,7 +196,7 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
           ref={canvasRef}
           width={width}
           height={height}
-          className="a5-canvas"
+          className={`a5-canvas${tool === 'eraser' ? ' a5-canvas--eraser' : ''}`}
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={endDraw}
@@ -129,23 +205,17 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
           onTouchMove={draw}
           onTouchEnd={endDraw}
         />
-        {showHint && answer && (
-          <div className="a5-hint-overlay">
-            {answer.split('').map((ch, i) => (
-              <span key={i} className="a5-hint-char" style={{ height: `${100 / answer.length}%` }}>{ch}</span>
-            ))}
-          </div>
-        )}
+        <div className="a5-hint-overlay" ref={hintContainerRef} style={{ display: showHint ? 'flex' : 'none' }} />
       </div>
       <div className="a5-toolbar">
         <div className="a5-toolbar-group">
           {COLORS.map((c) => (
             <button
               key={c}
-              className={`a5-color-btn${color === c ? ' a5-color-btn--active' : ''}`}
+              className={`a5-color-btn${color === c && tool === 'pen' ? ' a5-color-btn--active' : ''}`}
               style={{ background: c }}
-              onClick={() => setColor(c)}
-              aria-label={`顏色 ${c}`}
+              onClick={() => { setColor(c); setTool('pen') }}
+              aria-label={`顏色`}
             />
           ))}
         </div>
@@ -155,17 +225,20 @@ export function WritingPad({ width = 360, height = 520, onSubmit, answer, showHi
               key={t}
               className={`a5-thick-btn${thickness === t ? ' a5-thick-btn--active' : ''}`}
               onClick={() => setThickness(t)}
-              aria-label={`筆畫粗細 ${t}`}
+              aria-label={`筆畫粗細`}
             >
               <span className="a5-thick-dot" style={{ width: t * 2, height: t * 2 }} />
             </button>
           ))}
         </div>
         <div className="a5-toolbar-group">
-          <button className="a5-tool-btn" onClick={clearCanvas} aria-label="擦除">
+          <button className={`a5-tool-btn${tool === 'eraser' ? ' a5-tool-btn--active' : ''}`} onClick={selectEraser} aria-label="橡皮擦">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+          </button>
+          <button className="a5-tool-btn" onClick={clearCanvas} aria-label="全部清除">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M5 6v14h14V6"/></svg>
           </button>
-          <button className="a5-tool-btn a5-tool-btn--submit" onClick={handleSubmit} disabled={!hasStrokes} aria-label="提交">
+          <button className="a5-tool-btn a5-tool-btn--submit" onClick={onSubmit} disabled={!hasStrokes} aria-label="提交">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         </div>

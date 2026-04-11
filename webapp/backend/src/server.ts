@@ -10,7 +10,7 @@ const env = loadEnv()
 const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
-const vocabEngine = new VocabQuizEngine()
+const vocabEngine = new VocabQuizEngine(env.geminiApiKeys)
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })

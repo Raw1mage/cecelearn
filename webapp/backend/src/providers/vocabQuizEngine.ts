@@ -47,28 +47,33 @@ function stripTags(html: string): string {
   return html.replace(/<[^>]+>/g, '').trim()
 }
 
-/** Fetch a definition/example sentence for a word from MOE dictionary */
-async function fetchSentence(word: string): Promise<string> {
-  try {
-    const url = `https://dict.concised.moe.edu.tw/search.jsp?md=1&word=${encodeURIComponent(word)}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
-    const html = await res.text()
-    // Look for example sentences in ［例］ patterns
-    const exMatch = html.match(/\[例\](.*?)(?:\n|<|。)/s)
-    if (exMatch) {
-      const sentence = stripTags(exMatch[1]).trim()
-      if (sentence.length > 3) return sentence.endsWith('。') ? sentence : sentence + '。'
-    }
-    // Fallback: extract first definition line
-    const defMatch = html.match(/<td[^>]*>([^<]*[\u4e00-\u9fff][^<]{5,})/s)
-    if (defMatch) {
-      const def = stripTags(defMatch[1]).trim().split('。')[0]
-      if (def.length > 4) return def + '。'
-    }
-    return ''
-  } catch {
-    return ''
+const GEMINI_SENTENCE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
+
+/** Generate an example sentence for a word using Gemini */
+async function geminiSentence(word: string, apiKeys: string[]): Promise<string> {
+  if (apiKeys.length === 0) return ''
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: `用「${word}」造一個適合國小學生的短句（15字以內），直接回覆句子，不要加引號。` }] }],
+  })
+  for (const key of apiKeys) {
+    try {
+      const res = await fetch(`${GEMINI_SENTENCE_URL}?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(4000),
+        body,
+      })
+      if (res.status === 429) continue
+      if (!res.ok) return ''
+      const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+      if (text && text.length > 3) {
+        return text.endsWith('。') ? text : text + '。'
+      }
+      return ''
+    } catch { continue }
   }
+  return ''
 }
 
 /** Fetch 2-char compound words from MOE dictionary for a character */
@@ -100,8 +105,11 @@ export class VocabQuizEngine {
   private allChars: string[]
   private idiomsByChar: Map<string, string[]>
   private idiomExamples: Map<string, string[]>
+  private allSentences: string[]
+  private apiKeys: string[]
 
-  constructor() {
+  constructor(apiKeys: string[] = []) {
+    this.apiKeys = apiKeys
     const db = loadJson<VocabDb>('../../data/vocabulary.json')
     this.db = db ?? { stats: { lessons: 0, totalChars: 0, uniqueChars: 0 }, lessons: [] }
     this.allChars = [...new Set(this.db.lessons.flatMap(l => l.characters))]
@@ -121,7 +129,16 @@ export class VocabQuizEngine {
         this.idiomExamples.set(entry.idiom, entry.examples)
       }
     }
-    console.log(`[VocabQuiz] indexed ${idioms.length} idioms`)
+    // Build flat sentence pool for word-level lookups
+    this.allSentences = []
+    for (const entry of idioms) {
+      if (entry.examples) {
+        for (const ex of entry.examples) {
+          this.allSentences.push(ex)
+        }
+      }
+    }
+    console.log(`[VocabQuiz] indexed ${idioms.length} idioms, ${this.allSentences.length} sentences`)
   }
 
   getPublishers(): string[] {
@@ -164,6 +181,13 @@ export class VocabQuizEngine {
     return this.allChars
   }
 
+  /** Find a sentence from the idiom examples pool that contains the given word */
+  private findSentenceContaining(word: string): string | null {
+    const matches = this.allSentences.filter(s => s.includes(word))
+    if (matches.length === 0) return null
+    return matches[Math.floor(Math.random() * matches.length)]
+  }
+
   /**
    * Build a word/idiom + example sentence for a character.
    */
@@ -183,9 +207,12 @@ export class VocabQuizEngine {
     const words = await fetchCompoundWords(char)
     if (words.length > 0) {
       const word = words[Math.floor(Math.random() * words.length)]
-      // Try to get an example sentence for this word
-      const sentence = await fetchSentence(word)
-      return { word, sentence: sentence || `請寫出「${word}」。` }
+      // Try local idiom examples that contain this word
+      const localSentence = this.findSentenceContaining(word)
+      if (localSentence) return { word, sentence: localSentence }
+      // Last resort: Gemini
+      const aiSentence = await geminiSentence(word, this.apiKeys)
+      return { word, sentence: aiSentence || `請寫出「${word}」。` }
     }
 
     // Fallback: try idiom

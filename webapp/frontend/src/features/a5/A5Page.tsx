@@ -43,7 +43,8 @@ export function A5Page() {
   const [semester, setSemester] = useState('')
   const [availableLessons, setAvailableLessons] = useState<string[]>([])
   const [selectedLessons, setSelectedLessons] = useState<string[]>([])
-  const [questionCount, setQuestionCount] = useState(Number(prefs.questionCount) || 5)
+  const [questionCount, setQuestionCount] = useState(prefs.questionCount === 'auto' ? 0 : (Number(prefs.questionCount) || 0))
+  // 0 = auto (all characters in range)
   const [customChars, setCustomChars] = useState('')
   const [error, setError] = useState('')
 
@@ -80,7 +81,7 @@ export function A5Page() {
 
   async function startQuiz() {
     setError('')
-    savePrefs({ rangeMode, publisher, grade, questionCount: String(questionCount) })
+    savePrefs({ rangeMode, publisher, grade, questionCount: questionCount === 0 ? 'auto' : String(questionCount) })
     setPhase('loading')
     try {
       const res = await apiClient.generateVocabQuiz({
@@ -90,7 +91,7 @@ export function A5Page() {
         semester: rangeMode === 'curriculum' ? semester : undefined,
         lessons: rangeMode === 'curriculum' && selectedLessons.length > 0 ? selectedLessons : undefined,
         customChars: rangeMode === 'custom' ? customChars : undefined,
-        questionCount,
+        questionCount: questionCount === 0 ? 9999 : questionCount,
       })
       if (!res.items || res.items.length === 0) {
         setError('出題失敗，範圍內沒有足夠的生字。')
@@ -123,13 +124,12 @@ export function A5Page() {
     setSpeaking(false)
   }
 
-  function hintDown() {
-    setShowHint(true)
-    setAnswers(prev => prev.map((a, i) => i === currentIdx ? { ...a, hinted: true } : a))
-  }
-
-  function hintUp() {
-    setShowHint(false)
+  function toggleHint() {
+    const next = !showHint
+    setShowHint(next)
+    if (next) {
+      setAnswers(prev => prev.map((a, i) => i === currentIdx ? { ...a, hinted: true } : a))
+    }
   }
 
   function handleSubmit() {
@@ -259,7 +259,13 @@ export function A5Page() {
           )}
           <label className="field-block">
             題數
-            <input type="number" min={1} max={20} value={questionCount} onChange={e => setQuestionCount(Number(e.target.value))} />
+            <select value={questionCount} onChange={e => setQuestionCount(Number(e.target.value))}>
+              <option value={0}>自動（全部）</option>
+              <option value={5}>5 題</option>
+              <option value={10}>10 題</option>
+              <option value={15}>15 題</option>
+              <option value={20}>20 題</option>
+            </select>
           </label>
           {error && <p className="error-text">{error}</p>}
           <div className="toolbar-row">
@@ -290,7 +296,7 @@ export function A5Page() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               <span>重聽</span>
             </button>
-            <button className="a5-action-btn" onMouseDown={hintDown} onMouseUp={hintUp} onMouseLeave={hintUp} onTouchStart={hintDown} onTouchEnd={hintUp} aria-label="提示">
+            <button className={`a5-action-btn${showHint ? ' a5-action-btn--active' : ''}`} onClick={toggleHint} aria-label="提示">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <span>提示</span>
             </button>
