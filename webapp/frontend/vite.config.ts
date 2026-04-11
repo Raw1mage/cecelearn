@@ -29,5 +29,11 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     allowedHosts: ['cms.thesmart.cc'],
+    proxy: {
+      [`${basePath}api`]: {
+        target: 'http://localhost:3014',
+        rewrite: (path) => path.replace(new RegExp(`^${basePath}`), '/'),
+      },
+    },
   },
 })
