@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiClient, type A5QuizItem } from '../../shared/api/client'
 import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
@@ -49,32 +49,21 @@ export function A5Page() {
   const [error, setError] = useState('')
 
   // Prefetch buffer: keep 3 items ahead of currentIdx
-  const prefetch = useCallback(async (pool: string[], startIdx: number, existing: A5QuizItem[]) => {
-    const BUFFER = 3
-    const needed: number[] = []
-    for (let i = startIdx; i < Math.min(startIdx + BUFFER, pool.length); i++) {
-      if (!existing.find(item => item.id === `q-${i + 1}`) && !fetchingRef.current.has(i)) {
-        needed.push(i)
-      }
-    }
-    for (const idx of needed) {
-      fetchingRef.current.add(idx)
-      apiClient.fetchNextQuestion(pool[idx], idx).then(item => {
-        setItemBuffer(prev => {
-          if (prev.find(p => p.id === item.id)) return prev
-          return [...prev, item].sort((a, b) => Number(a.id.split('-')[1]) - Number(b.id.split('-')[1]))
-        })
-        fetchingRef.current.delete(idx)
-      }).catch(() => fetchingRef.current.delete(idx))
-    }
-  }, [])
-
-  // Trigger prefetch when currentIdx or charPool changes
   useEffect(() => {
-    if (phase === 'quiz' && charPool.length > 0) {
-      prefetch(charPool, currentIdx, itemBuffer)
+    if (phase !== 'quiz' || charPool.length === 0) return
+    const BUFFER = 3
+    for (let i = currentIdx; i < Math.min(currentIdx + BUFFER, charPool.length); i++) {
+      if (fetchingRef.current.has(i)) continue
+      if (itemBuffer.find(item => item.id === `q-${i + 1}`)) continue
+      fetchingRef.current.add(i)
+      const idx = i
+      apiClient.fetchNextQuestion(charPool[idx], idx).then(item => {
+        setItemBuffer(prev => prev.find(p => p.id === item.id) ? prev : [...prev, item])
+      }).catch(() => {}).finally(() => fetchingRef.current.delete(idx))
     }
-  }, [phase, charPool, currentIdx, itemBuffer, prefetch])
+  // Only re-run when currentIdx changes or phase enters quiz — NOT when itemBuffer changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, currentIdx, charPool])
 
   const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
 
