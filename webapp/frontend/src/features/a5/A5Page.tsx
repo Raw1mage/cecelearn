@@ -4,7 +4,16 @@ import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
 import { useScore } from '../../shared/ScoreContext'
-import { speak, isTTSSupported, unlockTTS, newSpeechSession } from './tts'
+import { speak, isTTSSupported, unlockTTS, newSpeechSession, stopSpeaking } from './tts'
+
+const TTS_PREFS_KEY = 'cecelearn-tts-prefs'
+function loadTTSPrefs() {
+  try { const r = localStorage.getItem(TTS_PREFS_KEY); return r ? JSON.parse(r) as { rate: number; pitch: number } : { rate: 0.8, pitch: 1 } }
+  catch { return { rate: 0.8, pitch: 1 } }
+}
+function saveTTSPrefs(p: { rate: number; pitch: number }) {
+  try { localStorage.setItem(TTS_PREFS_KEY, JSON.stringify(p)) } catch { /* ignore */ }
+}
 import { gradeHandwriting } from './grader'
 import { WritingPad } from './WritingPad'
 
@@ -60,11 +69,14 @@ export function A5Page() {
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [speaking, setSpeaking] = useState(false)
+  const [ttsPrefs, setTtsPrefs] = useState(loadTTSPrefs)
+  const [showTtsSettings, setShowTtsSettings] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
   const [started, setStarted] = useState(false)
   const [gradeResult, setGradeResult] = useState<{ score: number; coverage: number; precision: number } | null>(null)
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null)
   const canvasElRef = useRef<HTMLCanvasElement | null>(null)
+  const [landscape, setLandscape] = useState(false)
   const totalCorrect = answers.filter(a => a.correct).length
   const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
   const isSubmitted = answers[currentIdx]?.submitted ?? false
@@ -145,13 +157,19 @@ export function A5Page() {
     }
   }
 
+  function handleStop() {
+    stopSpeaking()
+    newSpeechSession()
+    setSpeaking(false)
+  }
+
   async function playQuestion(item: A5QuizItem) {
     if (!isTTSSupported()) return
     const signal = newSpeechSession()
     setSpeaking(true)
     try {
-      await speak(item.sentence, 0.8, signal)
-      if (!signal.aborted) await speak(`${item.word}，怎麼寫？`, 0.7, signal)
+      await speak(item.sentence, ttsPrefs.rate, signal, ttsPrefs.pitch)
+      if (!signal.aborted) await speak(`${item.word}，怎麼寫？`, ttsPrefs.rate * 0.9, signal, ttsPrefs.pitch)
     } catch { /* ignore */ }
     if (!signal.aborted) setSpeaking(false)
   }
@@ -161,9 +179,16 @@ export function A5Page() {
     const signal = newSpeechSession()
     setSpeaking(true)
     try {
-      await speak(item.word, 0.7, signal)
+      await speak(item.word, ttsPrefs.rate * 0.9, signal, ttsPrefs.pitch)
     } catch { /* ignore */ }
     if (!signal.aborted) setSpeaking(false)
+  }
+
+  function updateTTSRate(rate: number) {
+    const p = { ...ttsPrefs, rate }; setTtsPrefs(p); saveTTSPrefs(p)
+  }
+  function updateTTSPitch(pitch: number) {
+    const p = { ...ttsPrefs, pitch }; setTtsPrefs(p); saveTTSPrefs(p)
   }
 
   function toggleHint() {
@@ -424,7 +449,7 @@ export function A5Page() {
       )}
 
       {phase === 'quiz' && currentItem && (
-        <div className="a5-quiz-layout">
+        <div className={`a5-quiz-layout${landscape ? ' a5-quiz-layout--landscape' : ''}`}>
           <WritingPad
             answer={currentItem.word}
             showHint={showHint}
@@ -433,6 +458,7 @@ export function A5Page() {
             comboText={combo >= 3 ? `${combo}連擊${combo >= 10 ? ' x2' : combo >= 5 ? ' x1.5' : ''}` : undefined}
             onStrokesChange={setHasStrokes}
             onHintQuizComplete={handleHintQuizComplete}
+            onLayoutChange={setLandscape}
             canvasElRef={canvasElRef}
           />
 
@@ -454,30 +480,59 @@ export function A5Page() {
             </div>
           )}
 
-          <div className="a5-bottom-bar">
+          {showTtsSettings && (
+            <div className="a5-tts-settings">
+              <label>
+                <span>語速 {ttsPrefs.rate.toFixed(1)}</span>
+                <input type="range" min="0.3" max="1.5" step="0.1" value={ttsPrefs.rate} onChange={e => updateTTSRate(Number(e.target.value))} />
+              </label>
+              <label>
+                <span>音調 {ttsPrefs.pitch.toFixed(1)}</span>
+                <input type="range" min="0.5" max="2.0" step="0.1" value={ttsPrefs.pitch} onChange={e => updateTTSPitch(Number(e.target.value))} />
+              </label>
+            </div>
+          )}
+          <div className={`a5-bottom-bar${landscape ? ' a5-bottom-bar--vertical' : ''}`}>
             {!isSubmitted ? (
               <>
-                <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={speaking || (!started && currentIdx === 0)} aria-label="重聽">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                  <span>重聽</span>
-                </button>
+                {speaking ? (
+                  <button className="a5-action-btn a5-action-btn--speaking" onClick={handleStop} aria-label="停止">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                    {!landscape && <span>停止</span>}
+                  </button>
+                ) : (
+                  <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={!started && currentIdx === 0} aria-label="重聽">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    {!landscape && <span>重聽</span>}
+                  </button>
+                )}
                 <button className={`a5-action-btn${showHint ? ' a5-action-btn--active' : ''}`} onClick={toggleHint} aria-label="提示">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span>提示</span>
+                  {!landscape && <span>提示</span>}
                 </button>
                 <button className="a5-action-btn a5-action-btn--submit" onClick={handleSubmit} disabled={!hasStrokes} aria-label="提交">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>提交</span>
+                  {!landscape && <span>提交</span>}
+                </button>
+                <button className="a5-action-btn" onClick={() => setShowTtsSettings(v => !v)} aria-label="語音設定">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
               </>
             ) : (
               <>
-                <button className="a5-action-btn" onClick={() => playAnswer(currentItem)} disabled={speaking} aria-label="再聽一次">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                  <span>重聽</span>
-                </button>
+                {speaking ? (
+                  <button className="a5-action-btn a5-action-btn--speaking" onClick={handleStop} aria-label="停止">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                    {!landscape && <span>停止</span>}
+                  </button>
+                ) : (
+                  <button className="a5-action-btn" onClick={() => playAnswer(currentItem)} aria-label="重聽">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    {!landscape && <span>重聽</span>}
+                  </button>
+                )}
                 <button className="a5-action-btn a5-action-btn--next" onClick={handleNext} aria-label="下一題">
-                  <span>{currentIdx < totalQuestions - 1 ? '下一題 →' : '完成 ✓'}</span>
+                  <span>{currentIdx < totalQuestions - 1 ? '→' : '✓'}</span>
                 </button>
               </>
             )}

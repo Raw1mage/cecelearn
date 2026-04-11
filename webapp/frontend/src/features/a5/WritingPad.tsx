@@ -10,6 +10,7 @@ type Props = {
   comboText?: string
   onStrokesChange?: (has: boolean) => void
   onHintQuizComplete?: (totalMistakes: number, totalStrokes: number) => void
+  onLayoutChange?: (landscape: boolean) => void
   canvasElRef?: React.MutableRefObject<HTMLCanvasElement | null>
 }
 
@@ -23,7 +24,7 @@ const THICKNESSES = [3, 6, 10]
 const THUMB_SIZE = 200
 type Tool = 'pen' | 'eraser'
 
-export function WritingPad({ width = 360, answer, showHint, submitted, progressText, comboText, onStrokesChange, onHintQuizComplete, canvasElRef }: Props) {
+export function WritingPad({ width = 360, answer, showHint, submitted, progressText, comboText, onStrokesChange, onHintQuizComplete, onLayoutChange, canvasElRef }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gridRef = useRef<ImageData | null>(null)
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -38,6 +39,7 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
   const [thickness, setThickness] = useState(THICKNESSES[1])
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [activeIdx, setActiveIdx] = useState(0)
+  const [isLandscape, setIsLandscape] = useState(false)
   const lastPoint = useRef<{ x: number; y: number } | null>(null)
 
   // Per-character state
@@ -166,7 +168,7 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawGrid, answer])
 
-  // Compute optimal square sizes: canvas fills available space, thumbs ≤ canvas/2
+  // Detect orientation + compute optimal square sizes
   useEffect(() => {
     const area = areaRef.current
     if (!area) return
@@ -175,16 +177,25 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
       const rect = area!.getBoundingClientRect()
       const availW = rect.width
       const availH = rect.height
+      const landscape = availW > availH * 1.2
+      setIsLandscape(landscape)
+      onLayoutChange?.(landscape)
       const n = charCount > 1 ? charCount : 0
       let S: number, T: number
+
       if (n === 0) {
         S = Math.min(availW, availH)
         T = 0
+      } else if (landscape) {
+        // Landscape: thumbs on left, canvas on right → horizontal layout
+        // S + GAP + T ≤ availW, T ≤ S/2, N*T + (N-1)*GAP ≤ availH
+        S = Math.min(availH, (availW - GAP) / 1.5)
+        T = Math.min(S / 2, (availH - (n - 1) * GAP) / n)
+        if (S + GAP + T > availW) S = availW - GAP - T
       } else {
-        // S + GAP + T ≤ availH, T ≤ S/2, N*T + (N-1)*GAP ≤ availW
+        // Portrait: thumbs below canvas → vertical layout
         S = Math.min(availW, (availH - GAP) / 1.5)
         T = Math.min(S / 2, (availW - (n - 1) * GAP) / n)
-        // Ensure vertical fit
         if (S + GAP + T > availH) S = availH - GAP - T
       }
       setSizes({ canvas: Math.floor(Math.max(S, 50)), thumb: Math.floor(Math.max(T, 20)) })
@@ -427,7 +438,7 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
   const chars = answer ? answer.split('') : ['']
 
   return (
-    <div ref={areaRef} className="a5-writing-area">
+    <div ref={areaRef} className={`a5-writing-area${isLandscape ? ' a5-writing-area--landscape' : ''}`}>
       <div ref={wrapRef} className="a5-canvas-wrap" style={sizes.canvas > 0 ? { width: sizes.canvas, height: sizes.canvas } : undefined}>
         <canvas
           ref={(el) => { canvasRef.current = el; if (canvasElRef) canvasElRef.current = el }}

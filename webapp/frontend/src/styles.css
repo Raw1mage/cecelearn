@@ -221,13 +221,22 @@ html.a5-active .a5-page {
   -webkit-touch-callout: none;
 }
 
-/* Writing area — canvas + thumbs, sizes computed by JS */
+/* Writing area — portrait: column (canvas top, thumbs bottom); landscape: row (thumbs left, canvas right) */
 .a5-writing-area {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.a5-writing-area--landscape {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.a5-writing-area--landscape .a5-thumb-bar {
+  flex-direction: column;
+  padding: 0 6px;
 }
 
 /* Side toolbar — overlaid inside canvas, bottom-left */
@@ -366,7 +375,7 @@ html.a5-active .a5-page {
   font-weight: 700;
 }
 
-/* Bottom action bar */
+/* Bottom action bar — portrait: horizontal footer; landscape: vertical beside thumbs */
 .a5-bottom-bar {
   display: flex;
   gap: 0.6rem;
@@ -375,11 +384,61 @@ html.a5-active .a5-page {
   padding: 6px 0;
   flex-shrink: 0;
 }
+.a5-bottom-bar--vertical {
+  flex-direction: column;
+  padding: 0 6px;
+}
+
+/* Landscape quiz layout: single row, no footer */
+.a5-quiz-layout--landscape {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+.a5-quiz-layout--landscape .a5-writing-area {
+  flex: 0 0 auto;
+}
 .a5-action-btn { display: flex; align-items: center; gap: 0.3rem; padding: 0.55rem 1rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.8rem; background: transparent; color: #9bc1ff; cursor: pointer; font-size: 0.9rem; touch-action: manipulation; }
 .a5-action-btn:hover { background: rgba(117,167,255,0.12); }
 .a5-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .a5-action-btn--active { background: rgba(251,191,36,0.2); border-color: rgba(251,191,36,0.4); color: #fbbf24; }
 .a5-action-btn--submit { background: #3f82ff; color: #fff; border-color: #3f82ff; }
+.a5-action-btn--speaking {
+  background: #dc2626; color: #fff; border-color: #dc2626;
+  animation: a5-pulse-speak 1s ease-in-out infinite;
+}
+@keyframes a5-pulse-speak {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+}
+
+/* TTS settings panel */
+.a5-tts-settings {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(7,12,24,0.7);
+  border-radius: 0.6rem;
+  border: 1px solid rgba(139,170,255,0.15);
+  flex-shrink: 0;
+}
+.a5-tts-settings label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #9bc1ff;
+  white-space: nowrap;
+}
+.a5-tts-settings input[type="range"] {
+  width: 80px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
 .a5-action-btn--submit:disabled { opacity: 0.35; cursor: not-allowed; }
 .a5-action-btn--next { background: #3f82ff; color: #fff; border-color: #3f82ff; font-weight: 600; }
 .a5-score-badge { color: #34d399; font-weight: 700; font-size: 0.95rem; }
