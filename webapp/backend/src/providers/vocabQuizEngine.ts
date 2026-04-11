@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { A5QuizItem, A5QuizOptions, A5QuizResponse } from '../contracts/providers.js'
+import { fetchWords as moeFetchWords, fetchIdioms as moeFetchIdioms } from './moeProvider.js'
 
 type Lesson = {
   year: string
@@ -18,8 +19,6 @@ type VocabDb = {
 }
 
 type IdiomEntry = { idiom: string; examples?: string[] }
-
-const DICT_URL = 'https://dict.concised.moe.edu.tw/search.jsp'
 
 function loadJson<T>(relativePath: string): T | null {
   try {
@@ -41,10 +40,6 @@ function shuffle<T>(arr: T[]): T[] {
 
 function pickRandom<T>(arr: T[], n: number): T[] {
   return shuffle([...arr]).slice(0, n)
-}
-
-function stripTags(html: string): string {
-  return html.replace(/<[^>]+>/g, '').trim()
 }
 
 const GEMINI_SENTENCE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
@@ -76,26 +71,22 @@ async function geminiSentence(word: string, apiKeys: string[]): Promise<string> 
   return ''
 }
 
-/** Fetch 2-char compound words from MOE dictionary for a character */
-async function fetchCompoundWords(character: string): Promise<string[]> {
+/** Fetch validated words + idioms from MOE dictionaries (cached) */
+async function fetchMoeTerms(char: string, cache: Map<string, string[]>): Promise<string[]> {
+  if (cache.has(char)) return cache.get(char)!
   try {
-    const url = `${DICT_URL}?md=2&word=${encodeURIComponent(character)}&col=1`
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
-    const html = await res.text()
-
-    const words: string[] = []
-    const rowRe = /<tr\s+data-link='dictView[^']*'[^>]*>([\s\S]*?)<\/tr>/g
-    let row: RegExpExecArray | null
-    while ((row = rowRe.exec(html)) !== null) {
-      const termMatch = row[1].match(/<a[^>]*>(.*?)<\/a>/)
-      if (!termMatch) continue
-      const term = stripTags(termMatch[1])
-      if (term.length >= 2 && term.length <= 4) {
-        words.push(term)
-      }
-    }
-    return words
+    const [dictResult, moeIdioms] = await Promise.all([
+      moeFetchWords(char, 10),
+      moeFetchIdioms(char, 10),
+    ])
+    const terms = [
+      ...moeIdioms.map(i => i.term),           // idioms first (higher dictation value)
+      ...dictResult.words.map(w => w.term),     // then compound words
+    ]
+    cache.set(char, terms)
+    return terms
   } catch {
+    cache.set(char, [])
     return []
   }
 }
@@ -183,83 +174,65 @@ export class VocabQuizEngine {
   }
 
   /**
-   * Extract a known word/idiom containing the target character from a sentence.
-   * Priority: known idiom > known compound word (from MOE) > 2-char extraction
+   * Word selection pipeline — all terms must be MOE-dictionary-validated.
+   *
+   * 1. Fetch validated words + idioms from MOE (reuses A1 module)
+   * 2. Also include local idiom DB entries
+   * 3. For each term, try to find an example sentence in our library
+   * 4. No example found → ask Gemini to generate a sentence
+   * 5. No terms at all → single character + Gemini sentence
    */
-  private async extractWordFromSentence(sentence: string, char: string): Promise<string | null> {
-    // 1. Check if any known idiom containing this char appears in the sentence
-    const idioms = this.idiomsByChar.get(char) ?? []
-    for (const idiom of idioms) {
-      if (sentence.includes(idiom)) return idiom
+  private async makeWordWithSentence(char: string, wordType: 'word' | 'idiom' | 'mixed' = 'mixed'): Promise<{ word: string; sentence: string }> {
+    // 1. Gather all validated terms from MOE + local idiom DB
+    const moeTerms = await fetchMoeTerms(char, this.wordCache)
+    const localIdioms = this.idiomsByChar.get(char) ?? []
+    const allIdioms = [...new Set([...localIdioms, ...moeTerms.filter(t => t.length === 4)])]
+    const allWords = moeTerms.filter(t => t.length < 4)
+
+    // Order by preference
+    let ordered: string[]
+    if (wordType === 'word') {
+      ordered = [...allWords, ...allIdioms]
+    } else if (wordType === 'idiom') {
+      ordered = [...allIdioms, ...allWords]
+    } else {
+      ordered = shuffle([...allIdioms, ...allWords])
+    }
+    // Deduplicate
+    const seen = new Set<string>()
+    const allTerms: string[] = []
+    for (const t of ordered) {
+      if (!seen.has(t)) { seen.add(t); allTerms.push(t) }
     }
 
-    // 2. Fetch compound words from MOE (cached) and check which ones appear in the sentence
-    if (!this.wordCache.has(char)) {
-      this.wordCache.set(char, await fetchCompoundWords(char))
-    }
-    const dictWords = this.wordCache.get(char)!
-    for (const word of dictWords) {
-      if (sentence.includes(word)) return word
-    }
-
-    // 3. Last resort: find the nearest 2-char CJK pair containing the char
-    const idx = sentence.indexOf(char)
-    if (idx >= 0) {
-      // Try char + next
-      if (idx + 1 < sentence.length && /[\u4e00-\u9fff]/.test(sentence[idx + 1])) {
-        return sentence.slice(idx, idx + 2)
+    // 2. Try to match each term against our example sentence library
+    for (const term of allTerms) {
+      // Direct idiom examples (guaranteed word+sentence pair)
+      const examples = this.idiomExamples.get(term)
+      if (examples && examples.length > 0) {
+        return { word: term, sentence: examples[Math.floor(Math.random() * examples.length)] }
       }
-      // Try prev + char
-      if (idx > 0 && /[\u4e00-\u9fff]/.test(sentence[idx - 1])) {
-        return sentence.slice(idx - 1, idx + 1)
-      }
-    }
-    return null
-  }
-
-  /**
-   * Sentence-first approach:
-   * 1. Find a sentence containing the target character
-   * 2. Extract the word/phrase from that sentence
-   * This guarantees sentence and word are always related.
-   */
-  private async makeWordWithSentence(char: string): Promise<{ word: string; sentence: string }> {
-    // Strategy 1: Find a sentence from 11258 idiom examples that contains this character
-    const matchingSentences = this.allSentences.filter(s => s.includes(char))
-    if (matchingSentences.length > 0) {
-      // Try several sentences to find one with a good extractable word
-      const candidates = pickRandom(matchingSentences, Math.min(5, matchingSentences.length))
-      for (const sentence of candidates) {
-        const word = await this.extractWordFromSentence(sentence, char)
-        if (word && word !== char) {
-          return { word, sentence }
+      // Only search sentence library for 4+ char terms (idioms).
+      // Short terms cause false substring matches (e.g. "豔照" in "光豔照人")
+      if (term.length >= 4) {
+        const matching = this.allSentences.filter(s => s.includes(term))
+        if (matching.length > 0) {
+          return { word: term, sentence: matching[Math.floor(Math.random() * matching.length)] }
         }
       }
-      // If extraction failed, use the sentence with the char itself as word
-      const sentence = candidates[0]
-      return { word: char, sentence }
     }
 
-    // Strategy 2: Use idiom with its own example
-    const idioms = this.idiomsByChar.get(char)
-    if (idioms && idioms.length > 0) {
-      const idiom = idioms[Math.floor(Math.random() * idioms.length)]
-      const examples = this.idiomExamples.get(idiom)
-      if (examples && examples.length > 0) {
-        return { word: idiom, sentence: examples[Math.floor(Math.random() * examples.length)] }
-      }
-      return { word: idiom, sentence: `請寫出「${idiom}」。` }
-    }
-
-    // Strategy 3: Fetch a compound word from MOE dictionary + Gemini sentence
-    const words = await fetchCompoundWords(char)
-    if (words.length > 0) {
-      const word = words[Math.floor(Math.random() * words.length)]
+    // 3. No example sentence found — pick best term and ask Gemini
+    if (allTerms.length > 0) {
+      const word = allTerms[Math.floor(Math.random() * Math.min(3, allTerms.length))]
       const aiSentence = await geminiSentence(word, this.apiKeys)
       if (aiSentence) return { word, sentence: aiSentence }
       return { word, sentence: `請寫出「${word}」。` }
     }
 
+    // 4. No terms at all — single character + Gemini sentence
+    const aiSentence = await geminiSentence(char, this.apiKeys)
+    if (aiSentence) return { word: char, sentence: aiSentence }
     return { word: char, sentence: `請寫出「${char}」。` }
   }
 
@@ -275,8 +248,8 @@ export class VocabQuizEngine {
   }
 
   /** Generate a single question for one character (called per-question) */
-  async generateOne(char: string, index: number): Promise<A5QuizItem> {
-    const result = await this.makeWordWithSentence(char)
+  async generateOne(char: string, index: number, wordType: 'word' | 'idiom' | 'mixed' = 'mixed'): Promise<A5QuizItem> {
+    const result = await this.makeWordWithSentence(char, wordType)
     return {
       id: `q-${index + 1}`,
       word: result.word,

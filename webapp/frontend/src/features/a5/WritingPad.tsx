@@ -4,9 +4,10 @@ declare global {
   interface Window {
     HanziWriter?: {
       create: (target: HTMLElement, character: string, options: Record<string, unknown>) => {
-        animateCharacter: () => void
+        animateCharacter: (options?: { onComplete?: () => void }) => void
         hideCharacter: () => void
         showOutline: () => void
+        quiz: (options?: { onComplete?: () => void; onMistake?: () => void; onCorrectStroke?: () => void }) => void
       }
     }
   }
@@ -14,13 +15,13 @@ declare global {
 
 type Props = {
   width?: number
-  height?: number
   answer?: string
   showHint: boolean
   submitted?: boolean
   progressText?: string
   comboText?: string
   onStrokesChange?: (has: boolean) => void
+  onHintQuizComplete?: (totalMistakes: number, totalStrokes: number) => void
   canvasElRef?: React.MutableRefObject<HTMLCanvasElement | null>
 }
 
@@ -31,81 +32,121 @@ const PALETTE = [
   '#7f1d1d', '#78350f', '#1e3a5f', '#f8fafc',
 ]
 const THICKNESSES = [3, 6, 10]
+const THUMB_SIZE = 48
 type Tool = 'pen' | 'eraser'
 
-export function WritingPad({ width = 360, height = 520, answer, showHint, submitted, progressText, comboText, onStrokesChange, canvasElRef }: Props) {
+export function WritingPad({ width = 360, answer, showHint, submitted, progressText, comboText, onStrokesChange, onHintQuizComplete, canvasElRef }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gridRef = useRef<ImageData | null>(null)
-  const gridCanvasRef = useRef<HTMLCanvasElement | null>(null)  // offscreen grid for eraser
+  const gridCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const wrapRef = useRef<HTMLDivElement | null>(null)
   const hintContainerRef = useRef<HTMLDivElement | null>(null)
   const hintWriters = useRef<unknown[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [tool, setTool] = useState<Tool>('pen')
   const [color, setColor] = useState(PALETTE[0])
   const [thickness, setThickness] = useState(THICKNESSES[1])
-  const [hasStrokes, setHasStrokes] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [activeIdx, setActiveIdx] = useState(0)
   const lastPoint = useRef<{ x: number; y: number } | null>(null)
+
+  // Per-character state
+  const charCount = answer ? answer.length : 1
+  const canvasDataRef = useRef<(ImageData | null)[]>([])
+  const strokeFlagsRef = useRef<boolean[]>([])
+  const thumbRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
   const getCtx = useCallback(() => canvasRef.current?.getContext('2d') ?? null, [])
 
-  const charCount = answer ? answer.length : 1
-
-  function updateHasStrokes(v: boolean) {
-    setHasStrokes(v)
-    onStrokesChange?.(v)
-  }
-
-  /** Draw the grid (background + guide lines) and snapshot it */
+  /** Draw single-character grid (square with cross guides) */
   const drawGrid = useCallback(() => {
     const ctx = getCtx()
     if (!ctx) return
     ctx.fillStyle = '#f8fafc'
-    ctx.fillRect(0, 0, width, height)
-    ctx.strokeStyle = '#e2e8f0'
+    ctx.fillRect(0, 0, width, width)
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)'
     ctx.lineWidth = 1
-    const cellH = height / charCount
-    for (let i = 0; i < charCount; i++) {
-      const y = i * cellH
-      if (i > 0) {
-        ctx.setLineDash([])
-        ctx.beginPath()
-        ctx.moveTo(0, y); ctx.lineTo(width, y)
-        ctx.stroke()
-      }
-      ctx.setLineDash([4, 4])
-      ctx.beginPath()
-      ctx.moveTo(width / 2, y); ctx.lineTo(width / 2, y + cellH)
-      ctx.moveTo(0, y + cellH / 2); ctx.lineTo(width, y + cellH / 2)
-      ctx.stroke()
-    }
+    ctx.setLineDash([6, 4])
+    ctx.beginPath()
+    ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, width)
+    ctx.moveTo(0, width / 2); ctx.lineTo(width, width / 2)
+    ctx.stroke()
     ctx.setLineDash([])
-    // Snapshot the clean grid for eraser restore
-    gridRef.current = ctx.getImageData(0, 0, width, height)
-    // Offscreen canvas copy — drawImage respects clip (putImageData does NOT)
+    gridRef.current = ctx.getImageData(0, 0, width, width)
     const off = document.createElement('canvas')
-    off.width = width; off.height = height
+    off.width = width; off.height = width
     off.getContext('2d')!.putImageData(gridRef.current, 0, 0)
     gridCanvasRef.current = off
-  }, [getCtx, width, height, charCount])
+  }, [getCtx, width])
 
+  /** Save active canvas to per-char data store */
+  function saveActive() {
+    const ctx = getCtx()
+    if (ctx) canvasDataRef.current[activeIdx] = ctx.getImageData(0, 0, width, width)
+  }
+
+  /** Restore a character's canvas data (or fresh grid) */
+  function restoreChar(idx: number) {
+    const ctx = getCtx()
+    if (!ctx) return
+    const data = canvasDataRef.current[idx]
+    if (data) {
+      ctx.putImageData(data, 0, 0)
+    } else {
+      drawGrid()
+    }
+  }
+
+  /** Update thumbnail for a character */
+  function updateThumb(idx: number) {
+    const main = canvasRef.current
+    const thumb = thumbRefs.current[idx]
+    if (!main || !thumb) return
+    const tCtx = thumb.getContext('2d')
+    if (!tCtx) return
+    tCtx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
+    tCtx.drawImage(main, 0, 0, THUMB_SIZE, THUMB_SIZE)
+  }
+
+  /** Switch to a different character */
+  function switchChar(idx: number) {
+    if (idx === activeIdx || submitted || showHint) return
+    saveActive()
+    updateThumb(activeIdx)
+    setActiveIdx(idx)
+  }
+
+  // When activeIdx changes, restore that character's canvas
   useEffect(() => {
+    restoreChar(activeIdx)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIdx])
+
+  // Reset everything when answer changes
+  useEffect(() => {
+    canvasDataRef.current = new Array(charCount).fill(null)
+    strokeFlagsRef.current = new Array(charCount).fill(false)
+    setActiveIdx(0)
     drawGrid()
-    updateHasStrokes(false)
     setTool('pen')
     hintWriters.current = []
     if (hintContainerRef.current) hintContainerRef.current.innerHTML = ''
+    // Clear thumbnails
+    for (let i = 0; i < thumbRefs.current.length; i++) {
+      const t = thumbRefs.current[i]
+      if (t) t.getContext('2d')?.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
+    }
+    onStrokesChange?.(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawGrid, answer])
 
-  // Block ALL native gestures on canvas: context menu, text selection, callout
+  // Block native gestures on canvas
   useEffect(() => {
     const el = canvasRef.current
     if (!el) return
     const prevent = (e: Event) => e.preventDefault()
     el.addEventListener('contextmenu', prevent)
     el.addEventListener('selectstart', prevent)
-    // Non-passive touch listeners — ensures preventDefault() actually works on iOS
     el.addEventListener('touchstart', prevent, { passive: false })
     el.addEventListener('touchmove', prevent, { passive: false })
     return () => {
@@ -116,24 +157,41 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
     }
   }, [])
 
-  // Draw correct answer overlay when submitted
+  // Answer display — show ALL characters stacked in one view via HanziWriter
   useEffect(() => {
-    if (!submitted || !answer) return
-    const ctx = getCtx()
-    if (!ctx) return
-    const chars = answer.split('')
-    const cellH = height / chars.length
-    ctx.fillStyle = 'rgba(220, 38, 38, 0.38)'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const fontSize = Math.min(width * 0.6, cellH * 0.7)
-    ctx.font = `bold ${fontSize}px "Noto Sans TC", "Microsoft JhengHei", sans-serif`
-    for (let i = 0; i < chars.length; i++) {
-      ctx.fillText(chars[i], width / 2, i * cellH + cellH / 2)
-    }
-  }, [submitted, answer, width, height, getCtx])
+    if (!submitted || !answer || !window.HanziWriter) return
+    const container = hintContainerRef.current
+    if (!container) return
+    container.innerHTML = ''
 
-  // Show/hide HanziWriter outlines as hint
+    const chars = answer.split('')
+    const cellH = 100 / chars.length
+
+    for (const char of chars) {
+      const cell = document.createElement('div')
+      cell.style.height = `${cellH}%`
+      cell.style.display = 'flex'
+      cell.style.alignItems = 'center'
+      cell.style.justifyContent = 'center'
+      container.appendChild(cell)
+
+      try {
+        const rect = container.getBoundingClientRect()
+        const cellPx = rect.height * cellH / 100
+        const size = Math.min(rect.width * 0.85, cellPx * 0.85, 280)
+        window.HanziWriter!.create(cell, char, {
+          width: size,
+          height: size,
+          padding: 2,
+          showCharacter: true,
+          showOutline: false,
+          strokeColor: 'rgba(220, 38, 38, 0.5)',
+        })
+      } catch { /* char not in HanziWriter db */ }
+    }
+  }, [submitted, answer])
+
+  // Hint flow: per-character animate → quiz
   useEffect(() => {
     const container = hintContainerRef.current
     if (!container) return
@@ -143,40 +201,78 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
     if (!showHint || !answer || !window.HanziWriter) return
 
     const chars = answer.split('')
-    const cellH = 100 / chars.length
+    let totalMistakes = 0
+    let totalStrokes = 0
+    let cancelled = false
 
-    for (let i = 0; i < chars.length; i++) {
-      const cell = document.createElement('div')
-      cell.style.height = `${cellH}%`
-      cell.style.display = 'flex'
-      cell.style.alignItems = 'center'
-      cell.style.justifyContent = 'center'
-      container.appendChild(cell)
+    async function runHintSequence() {
+      for (let i = 0; i < chars.length; i++) {
+        if (cancelled) return
+        setActiveIdx(i)
+        container.innerHTML = ''
 
-      try {
-        const size = Math.min(width * 0.7, cellH / 100 * height * 0.8, 220)
-        const writer = window.HanziWriter.create(cell, chars[i], {
-          width: size,
-          height: size,
-          padding: 5,
-          showCharacter: false,
-          showOutline: true,
-          strokeColor: '#60a5fa',
-          outlineColor: 'rgba(96, 165, 250, 0.2)',
-          strokeAnimationSpeed: 1,
-          delayBetweenStrokes: 120,
+        const cell = document.createElement('div')
+        cell.style.width = '100%'
+        cell.style.height = '100%'
+        cell.style.display = 'flex'
+        cell.style.alignItems = 'center'
+        cell.style.justifyContent = 'center'
+        container.appendChild(cell)
+
+        const rect = container.getBoundingClientRect()
+        const size = Math.min(rect.width, rect.height) * 0.85
+        let writer: ReturnType<NonNullable<typeof window.HanziWriter>['create']>
+        try {
+          writer = window.HanziWriter!.create(cell, chars[i], {
+            width: size,
+            height: size,
+            padding: 2,
+            showCharacter: false,
+            showOutline: true,
+            strokeColor: color,
+            outlineColor: 'rgba(96, 165, 250, 0.25)',
+            drawingColor: color,
+            highlightColor: '#60a5fa',
+            drawingWidth: thickness * 4,
+            strokeAnimationSpeed: 1,
+            delayBetweenStrokes: 120,
+            showHintAfterMisses: 2,
+          })
+          hintWriters.current.push(writer)
+        } catch { continue }
+
+        // Animate
+        await new Promise<void>(resolve => {
+          writer.animateCharacter({ onComplete: () => resolve() })
         })
-        setTimeout(() => writer.animateCharacter(), i * 800)
-        hintWriters.current.push(writer)
-      } catch { /* char not in HanziWriter db */ }
+        if (cancelled) return
+
+        // Quiz
+        await new Promise<void>(resolve => {
+          writer.quiz({
+            onCorrectStroke: () => { totalStrokes++ },
+            onMistake: () => { totalMistakes++ },
+            onComplete: () => resolve(),
+          })
+        })
+        if (cancelled) return
+      }
+
+      if (!cancelled) {
+        onHintQuizComplete?.(totalMistakes, totalStrokes)
+      }
     }
+
+    runHintSequence()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHint, answer, width])
 
   function getPos(e: React.MouseEvent | React.TouchEvent): { x: number; y: number } {
     const canvas = canvasRef.current!
     const rect = canvas.getBoundingClientRect()
     const scaleX = width / rect.width
-    const scaleY = height / rect.height
+    const scaleY = width / rect.height
     if ('touches' in e) {
       const touch = e.touches[0] || e.changedTouches[0]
       return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY }
@@ -185,14 +281,14 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
   }
 
   function startDraw(e: React.MouseEvent | React.TouchEvent) {
-    if (submitted) return
+    if (submitted || showHint) return
     e.preventDefault()
     setIsDrawing(true)
     lastPoint.current = getPos(e)
   }
 
   function draw(e: React.MouseEvent | React.TouchEvent) {
-    if (!isDrawing || submitted) return
+    if (!isDrawing || submitted || showHint) return
     e.preventDefault()
     const ctx = getCtx()
     if (!ctx || !lastPoint.current) return
@@ -205,7 +301,7 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
       ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2)
       ctx.clip()
       if (gridCanvasRef.current) {
-        ctx.drawImage(gridCanvasRef.current, 0, 0)  // drawImage respects clip region
+        ctx.drawImage(gridCanvasRef.current, 0, 0)
       } else {
         ctx.fillStyle = '#f8fafc'
         ctx.fillRect(pos.x - size, pos.y - size, size * 2, size * 2)
@@ -220,7 +316,10 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
       ctx.moveTo(lastPoint.current.x, lastPoint.current.y)
       ctx.lineTo(pos.x, pos.y)
       ctx.stroke()
-      if (!hasStrokes) updateHasStrokes(true)
+      if (!strokeFlagsRef.current[activeIdx]) {
+        strokeFlagsRef.current[activeIdx] = true
+        onStrokesChange?.(true)
+      }
     }
 
     lastPoint.current = pos
@@ -229,11 +328,14 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
   function endDraw() {
     setIsDrawing(false)
     lastPoint.current = null
+    updateThumb(activeIdx)
   }
 
   function clearCanvas() {
     drawGrid()
-    updateHasStrokes(false)
+    strokeFlagsRef.current[activeIdx] = false
+    onStrokesChange?.(strokeFlagsRef.current.some(Boolean))
+    updateThumb(activeIdx)
   }
 
   function selectEraser() {
@@ -241,14 +343,15 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
   }
 
   const toolsDisabled = !!submitted
+  const chars = answer ? answer.split('') : ['']
 
   return (
     <div className="a5-writing-area">
-      <div className="a5-canvas-wrap">
+      <div ref={wrapRef} className="a5-canvas-wrap">
         <canvas
           ref={(el) => { canvasRef.current = el; if (canvasElRef) canvasElRef.current = el }}
           width={width}
-          height={height}
+          height={width}
           className={`a5-canvas${tool === 'eraser' ? ' a5-canvas--eraser' : ''}`}
           onMouseDown={startDraw}
           onMouseMove={draw}
@@ -258,7 +361,7 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
           onTouchMove={draw}
           onTouchEnd={endDraw}
         />
-        <div className="a5-hint-overlay" ref={hintContainerRef} style={{ display: showHint ? 'flex' : 'none' }} />
+        <div className="a5-hint-overlay" ref={hintContainerRef} style={{ display: (showHint || submitted) ? 'flex' : 'none' }} />
         {progressText && (
           <div className="a5-progress-overlay">
             <span>{progressText}</span>
@@ -312,6 +415,27 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
           </div>
         </div>
       </div>
+
+      {/* Thumbnail navigation bar */}
+      {charCount > 1 && (
+        <div className="a5-thumb-bar">
+          {chars.map((_, i) => (
+            <button
+              key={i}
+              className={`a5-thumb${i === activeIdx ? ' a5-thumb--active' : ''}${strokeFlagsRef.current[i] ? ' a5-thumb--written' : ''}`}
+              onClick={() => switchChar(i)}
+            >
+              <canvas
+                ref={el => { thumbRefs.current[i] = el }}
+                width={THUMB_SIZE}
+                height={THUMB_SIZE}
+                className="a5-thumb-canvas"
+              />
+              <span className="a5-thumb-idx">{i + 1}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

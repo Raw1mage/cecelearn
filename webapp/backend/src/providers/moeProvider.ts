@@ -201,7 +201,7 @@ function getVariant(char: string): string | null {
   return VARIANTS[char] ?? null
 }
 
-async function fetchWords(character: string, maxResults = 6): Promise<{ bopomofo: string; words: A1LookupWord[] }> {
+export async function fetchWords(character: string, maxResults = 6): Promise<{ bopomofo: string; words: A1LookupWord[] }> {
   const url = `${DICT_URL}?md=2&word=${encodeURIComponent(character)}&col=1`
   const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
   const html = await res.text()
@@ -232,7 +232,7 @@ async function fetchWords(character: string, maxResults = 6): Promise<{ bopomofo
   return { bopomofo: charBopomofo, words }
 }
 
-async function fetchIdioms(character: string, maxResults = 6): Promise<A1LookupWord[]> {
+export async function fetchIdioms(character: string, maxResults = 6): Promise<A1LookupWord[]> {
   const url = `${IDIOM_URL}?idiom=${encodeURIComponent(character)}`
   const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
   const html = await res.text()

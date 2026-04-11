@@ -97,9 +97,9 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(options),
     }),
-  fetchNextQuestion: (char: string, index: number) =>
+  fetchNextQuestion: (char: string, index: number, wordType?: string) =>
     request<A5QuizItem>('/a5/next', {
       method: 'POST',
-      body: JSON.stringify({ char, index }),
+      body: JSON.stringify({ char, index, wordType }),
     }),
 }

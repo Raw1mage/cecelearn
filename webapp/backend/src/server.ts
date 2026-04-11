@@ -111,8 +111,8 @@ const server = createServer(async (request, response) => {
   }
 
   if (url === '/api/a5/next' && method === 'POST') {
-    const payload = JSON.parse((await readBody(request)) || '{}') as { char: string; index: number }
-    sendJson(response, 200, await vocabEngine.generateOne(payload.char, payload.index ?? 0))
+    const payload = JSON.parse((await readBody(request)) || '{}') as { char: string; index: number; wordType?: 'word' | 'idiom' | 'mixed' }
+    sendJson(response, 200, await vocabEngine.generateOne(payload.char, payload.index ?? 0, payload.wordType ?? 'mixed'))
     return
   }
 

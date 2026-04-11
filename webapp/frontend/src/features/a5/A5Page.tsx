@@ -4,7 +4,7 @@ import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
 import { useScore } from '../../shared/ScoreContext'
-import { speak, isTTSSupported, unlockTTS } from './tts'
+import { speak, isTTSSupported, unlockTTS, newSpeechSession } from './tts'
 import { gradeHandwriting } from './grader'
 import { WritingPad } from './WritingPad'
 
@@ -44,6 +44,7 @@ export function A5Page() {
   const [availableLessons, setAvailableLessons] = useState<string[]>([])
   const [selectedLessons, setSelectedLessons] = useState<string[]>([])
   const [questionCount, setQuestionCount] = useState(() => { const p = loadPrefs(); return p.questionCount === 'auto' ? 0 : (Number(p.questionCount) || 0) })
+  const [wordType, setWordType] = useState<'word' | 'idiom'>(() => (loadPrefs().wordType as 'word' | 'idiom') || 'word')
   // 0 = auto (all characters in range)
   const [customChars, setCustomChars] = useState('')
   const [error, setError] = useState('')
@@ -62,6 +63,7 @@ export function A5Page() {
   const [hasStrokes, setHasStrokes] = useState(false)
   const [started, setStarted] = useState(false)
   const [gradeResult, setGradeResult] = useState<{ score: number; coverage: number; precision: number } | null>(null)
+  const [earnedPoints, setEarnedPoints] = useState<number | null>(null)
   const canvasElRef = useRef<HTMLCanvasElement | null>(null)
   const totalCorrect = answers.filter(a => a.correct).length
   const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
@@ -76,7 +78,7 @@ export function A5Page() {
       if (itemBuffer.find(item => item.id === `q-${i + 1}`)) continue
       fetchingRef.current.add(i)
       const idx = i
-      apiClient.fetchNextQuestion(charPool[idx], idx).then(item => {
+      apiClient.fetchNextQuestion(charPool[idx], idx, wordType).then(item => {
         setItemBuffer(prev => prev.find(p => p.id === item.id) ? prev : [...prev, item])
       }).catch(() => {}).finally(() => fetchingRef.current.delete(idx))
     }
@@ -107,7 +109,7 @@ export function A5Page() {
   async function startQuiz() {
     unlockTTS() // Must be called in user-gesture context for mobile
     setError('')
-    savePrefs({ rangeMode, publisher, grade, questionCount: questionCount === 0 ? 'auto' : String(questionCount) })
+    savePrefs({ rangeMode, publisher, grade, questionCount: questionCount === 0 ? 'auto' : String(questionCount), wordType })
     setPhase('loading')
     try {
       const res = await apiClient.prepareVocabQuiz({
@@ -145,21 +147,23 @@ export function A5Page() {
 
   async function playQuestion(item: A5QuizItem) {
     if (!isTTSSupported()) return
+    const signal = newSpeechSession()
     setSpeaking(true)
     try {
-      await speak(item.sentence, 0.8)
-      await speak(`${item.word}，怎麼寫？`, 0.7)
+      await speak(item.sentence, 0.8, signal)
+      if (!signal.aborted) await speak(`${item.word}，怎麼寫？`, 0.7, signal)
     } catch { /* ignore */ }
-    setSpeaking(false)
+    if (!signal.aborted) setSpeaking(false)
   }
 
   async function playAnswer(item: A5QuizItem) {
     if (!isTTSSupported()) return
+    const signal = newSpeechSession()
     setSpeaking(true)
     try {
-      await speak(item.word, 0.7)
+      await speak(item.word, 0.7, signal)
     } catch { /* ignore */ }
-    setSpeaking(false)
+    if (!signal.aborted) setSpeaking(false)
   }
 
   function toggleHint() {
@@ -174,25 +178,58 @@ export function A5Page() {
     }
   }
 
+  function handleHintQuizComplete(totalMistakes: number, totalStrokes: number) {
+    if (!currentItem) return
+    // Score = 5 × correct rate (correct strokes / total attempts)
+    const totalAttempts = totalStrokes + totalMistakes
+    const correctRate = totalAttempts > 0 ? totalStrokes / totalAttempts : 0
+    const points = Math.round(5 * correctRate)
+    setGradeResult(null)
+
+    // Submit without clearing showHint — keep HanziWriter strokes as answer display
+    const newCombo = combo + 1
+    setCombo(newCombo)
+    if (newCombo > maxCombo) setMaxCombo(newCombo)
+    const multiplier = newCombo >= 10 ? 2 : newCombo >= 5 ? 1.5 : 1
+    const finalPoints = Math.round(points * multiplier)
+    addScore(finalPoints)
+    setEarnedPoints(finalPoints)
+    if (finalPoints > 0) celebrate()
+    setAnswers(prev => {
+      const updated = [...prev]
+      updated[currentIdx] = { word: currentItem.word, submitted: true, correct: true, hinted: true }
+      return updated
+    })
+    playAnswer(currentItem)
+  }
+
   function handleSubmit() {
     if (!currentItem) return
     const answer = answers[currentIdx]
     const hinted = answer?.hinted ?? false
-    const points = hinted ? 1 : 3
+
+    // Grade handwriting → 0~10 points based on score percentage
+    let grade = { score: 0, coverage: 0, precision: 0 }
+    if (canvasElRef.current) {
+      grade = gradeHandwriting(canvasElRef.current, currentItem.word)
+    }
+    setGradeResult(grade)
+    const points = Math.round(grade.score * 10)  // 0~10
+    submitWithPoints(points, hinted)
+  }
+
+  function submitWithPoints(points: number, hinted: boolean) {
+    if (!currentItem) return
 
     const newCombo = combo + 1
     setCombo(newCombo)
     if (newCombo > maxCombo) setMaxCombo(newCombo)
 
     const multiplier = newCombo >= 10 ? 2 : newCombo >= 5 ? 1.5 : 1
-    addScore(Math.round(points * multiplier))
-
-    // Grade handwriting
-    let grade = { score: 0, coverage: 0, precision: 0 }
-    if (canvasElRef.current) {
-      grade = gradeHandwriting(canvasElRef.current, currentItem.word)
-    }
-    setGradeResult(grade)
+    const finalPoints = Math.round(points * multiplier)
+    addScore(finalPoints)
+    setEarnedPoints(finalPoints)
+    if (finalPoints > 0) celebrate()
 
     setAnswers(prev => {
       const updated = [...prev]
@@ -201,7 +238,6 @@ export function A5Page() {
     })
     setShowHint(false)
 
-    // Read the correct answer aloud
     playAnswer(currentItem)
   }
 
@@ -211,6 +247,7 @@ export function A5Page() {
       setShowHint(false)
       setHasStrokes(false)
       setGradeResult(null)
+      setEarnedPoints(null)
     } else {
       setPhase('result')
       celebrate()
@@ -307,6 +344,13 @@ export function A5Page() {
                 <option value={20}>20 題</option>
               </select>
             </label>
+            <label className="a5-field-inline">
+              <span className="a5-field-label">出題</span>
+              <select value={wordType} onChange={e => setWordType(e.target.value as 'word' | 'idiom')}>
+                <option value="word">字詞優先</option>
+                <option value="idiom">成語優先</option>
+              </select>
+            </label>
             {rangeMode === 'curriculum' && (
               <>
                 <label className="a5-field-inline">
@@ -388,8 +432,17 @@ export function A5Page() {
             progressText={`第${currentIdx + 1}/${totalQuestions}題`}
             comboText={combo >= 3 ? `${combo}連擊${combo >= 10 ? ' x2' : combo >= 5 ? ' x1.5' : ''}` : undefined}
             onStrokesChange={setHasStrokes}
+            onHintQuizComplete={handleHintQuizComplete}
             canvasElRef={canvasElRef}
           />
+
+          {/* Score popup — shown on submit */}
+          {isSubmitted && earnedPoints !== null && (
+            <div className="a5-score-popup" key={`score-${currentIdx}`}>
+              <span className="a5-score-popup__points">+{earnedPoints}</span>
+              <span className="a5-score-popup__label">分</span>
+            </div>
+          )}
 
           {/* Start overlay — first question only */}
           {currentIdx === 0 && !started && (
@@ -423,14 +476,6 @@ export function A5Page() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                   <span>重聽</span>
                 </button>
-                <span className="a5-score-badge">
-                  {answers[currentIdx]?.hinted ? '+1' : '+3'} 分
-                </span>
-                {gradeResult && (
-                  <span className="a5-grade-badge">
-                    {Math.round(gradeResult.score * 100)}%
-                  </span>
-                )}
                 <button className="a5-action-btn a5-action-btn--next" onClick={handleNext} aria-label="下一題">
                   <span>{currentIdx < totalQuestions - 1 ? '下一題 →' : '完成 ✓'}</span>
                 </button>
