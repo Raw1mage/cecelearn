@@ -181,11 +181,21 @@ export class VocabQuizEngine {
     return this.allChars
   }
 
-  /** Find a sentence from the idiom examples pool that contains the given word */
+  /** Find a sentence from the idiom examples pool that contains the word, or any of its characters */
   private findSentenceContaining(word: string): string | null {
-    const matches = this.allSentences.filter(s => s.includes(word))
-    if (matches.length === 0) return null
-    return matches[Math.floor(Math.random() * matches.length)]
+    // First try: exact word match
+    let matches = this.allSentences.filter(s => s.includes(word))
+    if (matches.length > 0) {
+      return matches[Math.floor(Math.random() * matches.length)]
+    }
+    // Second try: match any character in the word
+    for (const char of word.split('')) {
+      matches = this.allSentences.filter(s => s.includes(char))
+      if (matches.length > 0) {
+        return matches[Math.floor(Math.random() * matches.length)]
+      }
+    }
+    return null
   }
 
   /**
