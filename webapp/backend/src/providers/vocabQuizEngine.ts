@@ -71,23 +71,26 @@ async function geminiSentence(word: string, apiKeys: string[]): Promise<string> 
   return ''
 }
 
+type MoeTerms = { idioms: string[]; words: string[] }
+
 /** Fetch validated words + idioms from MOE dictionaries (cached) */
-async function fetchMoeTerms(char: string, cache: Map<string, string[]>): Promise<string[]> {
+async function fetchMoeTerms(char: string, cache: Map<string, MoeTerms>): Promise<MoeTerms> {
   if (cache.has(char)) return cache.get(char)!
   try {
     const [dictResult, moeIdioms] = await Promise.all([
       moeFetchWords(char, 10),
       moeFetchIdioms(char, 10),
     ])
-    const terms = [
-      ...moeIdioms.map(i => i.term),           // idioms first (higher dictation value)
-      ...dictResult.words.map(w => w.term),     // then compound words
-    ]
-    cache.set(char, terms)
-    return terms
+    const result: MoeTerms = {
+      idioms: moeIdioms.map(i => i.term),
+      words: dictResult.words.map(w => w.term),
+    }
+    cache.set(char, result)
+    return result
   } catch {
-    cache.set(char, [])
-    return []
+    const empty: MoeTerms = { idioms: [], words: [] }
+    cache.set(char, empty)
+    return empty
   }
 }
 
@@ -98,7 +101,7 @@ export class VocabQuizEngine {
   private idiomExamples: Map<string, string[]>
   private allSentences: string[]
   private apiKeys: string[]
-  private wordCache = new Map<string, string[]>()
+  private wordCache = new Map<string, MoeTerms>()
 
   constructor(apiKeys: string[] = []) {
     this.apiKeys = apiKeys
@@ -183,20 +186,18 @@ export class VocabQuizEngine {
    * 5. No terms at all → single character + Gemini sentence
    */
   private async makeWordWithSentence(char: string, wordType: 'word' | 'idiom' | 'mixed' = 'mixed'): Promise<{ word: string; sentence: string }> {
-    // 1. Gather all validated terms from MOE + local idiom DB
-    const moeTerms = await fetchMoeTerms(char, this.wordCache)
+    // 1. Gather validated terms — separate idioms from compound words
+    const moe = await fetchMoeTerms(char, this.wordCache)
     const localIdioms = this.idiomsByChar.get(char) ?? []
-    const allIdioms = [...new Set([...localIdioms, ...moeTerms.filter(t => t.length === 4)])]
-    const allWords = moeTerms.filter(t => t.length < 4)
+    const idioms = [...new Set([...localIdioms, ...moe.idioms])]
+    const words = [...moe.words]  // compound words from MOE dictionary (2~3 chars)
 
-    // Order by preference
+    // 2. Order by user preference
     let ordered: string[]
     if (wordType === 'word') {
-      ordered = [...allWords, ...allIdioms]
-    } else if (wordType === 'idiom') {
-      ordered = [...allIdioms, ...allWords]
+      ordered = [...words, ...idioms]
     } else {
-      ordered = shuffle([...allIdioms, ...allWords])
+      ordered = [...idioms, ...words]
     }
     // Deduplicate
     const seen = new Set<string>()
@@ -205,32 +206,42 @@ export class VocabQuizEngine {
       if (!seen.has(t)) { seen.add(t); allTerms.push(t) }
     }
 
-    // 2. Try to match each term against our example sentence library
+    // 3. Try to find a term with an example sentence
     for (const term of allTerms) {
-      // Direct idiom examples (guaranteed word+sentence pair)
+      // Direct idiom examples from our DB (guaranteed match)
       const examples = this.idiomExamples.get(term)
       if (examples && examples.length > 0) {
+        console.log(`[A5出題] ${char} → ${term}（成語例句）`)
         return { word: term, sentence: examples[Math.floor(Math.random() * examples.length)] }
       }
-      // Only search sentence library for 4+ char terms (idioms).
-      // Short terms cause false substring matches (e.g. "豔照" in "光豔照人")
-      if (term.length >= 4) {
-        const matching = this.allSentences.filter(s => s.includes(term))
-        if (matching.length > 0) {
-          return { word: term, sentence: matching[Math.floor(Math.random() * matching.length)] }
-        }
+      // Search all sentences — with word boundary check for short terms
+      const matching = this.allSentences.filter(s => {
+        const idx = s.indexOf(term)
+        if (idx < 0) return false
+        if (term.length >= 4) return true  // idiom-length: safe
+        // Short term: check surrounding chars aren't CJK (prevent "豔照" in "光豔照人")
+        const before = idx > 0 ? s[idx - 1] : ''
+        const after = idx + term.length < s.length ? s[idx + term.length] : ''
+        const cjk = /[\u4e00-\u9fff]/
+        return !cjk.test(before) && !cjk.test(after)
+      })
+      if (matching.length > 0) {
+        console.log(`[A5出題] ${char} → ${term}（例句搜尋）`)
+        return { word: term, sentence: matching[Math.floor(Math.random() * matching.length)] }
       }
     }
 
-    // 3. No example sentence found — pick best term and ask Gemini
+    // 4. No example sentence — pick first available term + Gemini sentence
     if (allTerms.length > 0) {
-      const word = allTerms[Math.floor(Math.random() * Math.min(3, allTerms.length))]
+      const word = allTerms[0]
+      console.log(`[A5出題] ${char} → ${word}（Gemini造句）`)
       const aiSentence = await geminiSentence(word, this.apiKeys)
       if (aiSentence) return { word, sentence: aiSentence }
       return { word, sentence: `請寫出「${word}」。` }
     }
 
-    // 4. No terms at all — single character + Gemini sentence
+    // 5. No terms at all — single character + Gemini sentence
+    console.log(`[A5出題] ${char} → ${char}（單字）`)
     const aiSentence = await geminiSentence(char, this.apiKeys)
     if (aiSentence) return { word: char, sentence: aiSentence }
     return { word: char, sentence: `請寫出「${char}」。` }
