@@ -5,6 +5,7 @@ import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
 import { useScore } from '../../shared/ScoreContext'
 import { speak, isTTSSupported, unlockTTS } from './tts'
+import { gradeHandwriting } from './grader'
 import { WritingPad } from './WritingPad'
 
 type Phase = 'setup' | 'loading' | 'quiz' | 'result'
@@ -59,6 +60,9 @@ export function A5Page() {
   const [maxCombo, setMaxCombo] = useState(0)
   const [speaking, setSpeaking] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
+  const [started, setStarted] = useState(false)
+  const [gradeResult, setGradeResult] = useState<{ score: number; coverage: number; precision: number } | null>(null)
+  const canvasElRef = useRef<HTMLCanvasElement | null>(null)
   const totalCorrect = answers.filter(a => a.correct).length
   const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
   const isSubmitted = answers[currentIdx]?.submitted ?? false
@@ -129,6 +133,8 @@ export function A5Page() {
       setMaxCombo(0)
       setShowHint(false)
       setHasStrokes(false)
+      setStarted(false)
+      setGradeResult(null)
       fetchingRef.current.clear()
       setPhase('quiz')
     } catch (e) {
@@ -181,6 +187,13 @@ export function A5Page() {
     const multiplier = newCombo >= 10 ? 2 : newCombo >= 5 ? 1.5 : 1
     addScore(Math.round(points * multiplier))
 
+    // Grade handwriting
+    let grade = { score: 0, coverage: 0, precision: 0 }
+    if (canvasElRef.current) {
+      grade = gradeHandwriting(canvasElRef.current, currentItem.word)
+    }
+    setGradeResult(grade)
+
     setAnswers(prev => {
       const updated = [...prev]
       updated[currentIdx] = { word: currentItem.word, submitted: true, correct: true, hinted }
@@ -197,6 +210,7 @@ export function A5Page() {
       setCurrentIdx(prev => prev + 1)
       setShowHint(false)
       setHasStrokes(false)
+      setGradeResult(null)
     } else {
       setPhase('result')
       celebrate()
@@ -231,13 +245,13 @@ export function A5Page() {
     if (phase === 'quiz') window.scrollTo(0, 0)
   }, [phase])
 
-  // Auto-play TTS when currentItem loads
+  // Auto-play TTS when currentItem loads (skip first question until started)
   useEffect(() => {
-    if (phase === 'quiz' && currentItem) {
+    if (phase === 'quiz' && currentItem && (currentIdx > 0 || started)) {
       playQuestion(currentItem)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem?.id])
+  }, [currentItem?.id, started])
 
   function resetQuiz() {
     setPhase('setup')
@@ -250,6 +264,8 @@ export function A5Page() {
     setMaxCombo(0)
     setShowHint(false)
     setHasStrokes(false)
+    setStarted(false)
+    setGradeResult(null)
     fetchingRef.current.clear()
   }
 
@@ -261,6 +277,8 @@ export function A5Page() {
     setMaxCombo(0)
     setShowHint(false)
     setHasStrokes(false)
+    setStarted(false)
+    setGradeResult(null)
     fetchingRef.current.clear()
     setPhase('quiz')
   }
@@ -370,12 +388,23 @@ export function A5Page() {
             progressText={`第${currentIdx + 1}/${totalQuestions}題`}
             comboText={combo >= 3 ? `${combo}連擊${combo >= 10 ? ' x2' : combo >= 5 ? ' x1.5' : ''}` : undefined}
             onStrokesChange={setHasStrokes}
+            canvasElRef={canvasElRef}
           />
+
+          {/* Start overlay — first question only */}
+          {currentIdx === 0 && !started && (
+            <div className="a5-start-overlay" onClick={() => setStarted(true)}>
+              <button className="a5-start-btn" onClick={() => setStarted(true)}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>開始聽寫</span>
+              </button>
+            </div>
+          )}
 
           <div className="a5-bottom-bar">
             {!isSubmitted ? (
               <>
-                <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={speaking} aria-label="重聽">
+                <button className="a5-action-btn" onClick={() => playQuestion(currentItem)} disabled={speaking || (!started && currentIdx === 0)} aria-label="重聽">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                   <span>重聽</span>
                 </button>
@@ -397,6 +426,11 @@ export function A5Page() {
                 <span className="a5-score-badge">
                   {answers[currentIdx]?.hinted ? '+1' : '+3'} 分
                 </span>
+                {gradeResult && (
+                  <span className="a5-grade-badge">
+                    {Math.round(gradeResult.score * 100)}%
+                  </span>
+                )}
                 <button className="a5-action-btn a5-action-btn--next" onClick={handleNext} aria-label="下一題">
                   <span>{currentIdx < totalQuestions - 1 ? '下一題 →' : '完成 ✓'}</span>
                 </button>

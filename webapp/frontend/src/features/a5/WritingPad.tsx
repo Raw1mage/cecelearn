@@ -21,22 +21,30 @@ type Props = {
   progressText?: string
   comboText?: string
   onStrokesChange?: (has: boolean) => void
+  canvasElRef?: React.MutableRefObject<HTMLCanvasElement | null>
 }
 
-const COLORS = ['#1e293b', '#dc2626', '#2563eb', '#16a34a']
+const PALETTE = [
+  '#000000', '#434343', '#666666', '#999999',
+  '#dc2626', '#ea580c', '#ca8a04', '#16a34a',
+  '#0d9488', '#2563eb', '#7c3aed', '#db2777',
+  '#7f1d1d', '#78350f', '#1e3a5f', '#f8fafc',
+]
 const THICKNESSES = [3, 6, 10]
 type Tool = 'pen' | 'eraser'
 
-export function WritingPad({ width = 360, height = 520, answer, showHint, submitted, progressText, comboText, onStrokesChange }: Props) {
+export function WritingPad({ width = 360, height = 520, answer, showHint, submitted, progressText, comboText, onStrokesChange, canvasElRef }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gridRef = useRef<ImageData | null>(null)
+  const gridCanvasRef = useRef<HTMLCanvasElement | null>(null)  // offscreen grid for eraser
   const hintContainerRef = useRef<HTMLDivElement | null>(null)
   const hintWriters = useRef<unknown[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [tool, setTool] = useState<Tool>('pen')
-  const [color, setColor] = useState(COLORS[0])
+  const [color, setColor] = useState(PALETTE[0])
   const [thickness, setThickness] = useState(THICKNESSES[1])
   const [hasStrokes, setHasStrokes] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const lastPoint = useRef<{ x: number; y: number } | null>(null)
 
   const getCtx = useCallback(() => canvasRef.current?.getContext('2d') ?? null, [])
@@ -74,6 +82,11 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
     ctx.setLineDash([])
     // Snapshot the clean grid for eraser restore
     gridRef.current = ctx.getImageData(0, 0, width, height)
+    // Offscreen canvas copy — drawImage respects clip (putImageData does NOT)
+    const off = document.createElement('canvas')
+    off.width = width; off.height = height
+    off.getContext('2d')!.putImageData(gridRef.current, 0, 0)
+    gridCanvasRef.current = off
   }, [getCtx, width, height, charCount])
 
   useEffect(() => {
@@ -84,6 +97,24 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
     if (hintContainerRef.current) hintContainerRef.current.innerHTML = ''
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawGrid, answer])
+
+  // Block ALL native gestures on canvas: context menu, text selection, callout
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el) return
+    const prevent = (e: Event) => e.preventDefault()
+    el.addEventListener('contextmenu', prevent)
+    el.addEventListener('selectstart', prevent)
+    // Non-passive touch listeners — ensures preventDefault() actually works on iOS
+    el.addEventListener('touchstart', prevent, { passive: false })
+    el.addEventListener('touchmove', prevent, { passive: false })
+    return () => {
+      el.removeEventListener('contextmenu', prevent)
+      el.removeEventListener('selectstart', prevent)
+      el.removeEventListener('touchstart', prevent)
+      el.removeEventListener('touchmove', prevent)
+    }
+  }, [])
 
   // Draw correct answer overlay when submitted
   useEffect(() => {
@@ -173,8 +204,8 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
       ctx.beginPath()
       ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2)
       ctx.clip()
-      if (gridRef.current) {
-        ctx.putImageData(gridRef.current, 0, 0)
+      if (gridCanvasRef.current) {
+        ctx.drawImage(gridCanvasRef.current, 0, 0)  // drawImage respects clip region
       } else {
         ctx.fillStyle = '#f8fafc'
         ctx.fillRect(pos.x - size, pos.y - size, size * 2, size * 2)
@@ -213,47 +244,9 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
 
   return (
     <div className="a5-writing-area">
-      {/* Side toolbar - vertical, bottom-aligned */}
-      <div className="a5-side-toolbar">
-        <div className="a5-side-group">
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              className={`a5-color-btn${color === c && tool === 'pen' ? ' a5-color-btn--active' : ''}`}
-              style={{ background: c }}
-              onClick={() => { setColor(c); setTool('pen') }}
-              disabled={toolsDisabled}
-              aria-label="顏色"
-            />
-          ))}
-        </div>
-        <div className="a5-side-group">
-          {THICKNESSES.map((t) => (
-            <button
-              key={t}
-              className={`a5-thick-btn${thickness === t ? ' a5-thick-btn--active' : ''}`}
-              onClick={() => setThickness(t)}
-              disabled={toolsDisabled}
-              aria-label="筆畫粗細"
-            >
-              <span className="a5-thick-dot" style={{ width: t * 2, height: t * 2 }} />
-            </button>
-          ))}
-        </div>
-        <div className="a5-side-group">
-          <button className={`a5-tool-btn${tool === 'eraser' ? ' a5-tool-btn--active' : ''}`} onClick={selectEraser} disabled={toolsDisabled} aria-label="橡皮擦">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
-          </button>
-          <button className="a5-tool-btn" onClick={clearCanvas} disabled={toolsDisabled} aria-label="全部清除">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M5 6v14h14V6"/></svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Canvas area with overlays */}
       <div className="a5-canvas-wrap">
         <canvas
-          ref={canvasRef}
+          ref={(el) => { canvasRef.current = el; if (canvasElRef) canvasElRef.current = el }}
           width={width}
           height={height}
           className={`a5-canvas${tool === 'eraser' ? ' a5-canvas--eraser' : ''}`}
@@ -272,6 +265,52 @@ export function WritingPad({ width = 360, height = 520, answer, showHint, submit
             {comboText && <span className="a5-combo-overlay">{comboText}</span>}
           </div>
         )}
+        {/* Toolbar overlaid inside canvas, bottom-left */}
+        <div className="a5-side-toolbar">
+          <div className="a5-side-group a5-palette-wrap">
+            <button
+              className="a5-color-btn a5-color-btn--trigger"
+              style={{ background: color }}
+              onClick={() => !toolsDisabled && setPaletteOpen(v => !v)}
+              disabled={toolsDisabled}
+              aria-label="選顏色"
+            />
+            {paletteOpen && (
+              <div className="a5-palette">
+                {PALETTE.map((c) => (
+                  <button
+                    key={c}
+                    className={`a5-palette-swatch${c === color ? ' a5-palette-swatch--active' : ''}`}
+                    style={{ background: c }}
+                    onClick={() => { setColor(c); setTool('pen'); setPaletteOpen(false) }}
+                    aria-label="顏色"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="a5-side-group">
+            {THICKNESSES.map((t) => (
+              <button
+                key={t}
+                className={`a5-thick-btn${thickness === t ? ' a5-thick-btn--active' : ''}`}
+                onClick={() => setThickness(t)}
+                disabled={toolsDisabled}
+                aria-label="筆畫粗細"
+              >
+                <span className="a5-thick-dot" style={{ width: t * 2, height: t * 2 }} />
+              </button>
+            ))}
+          </div>
+          <div className="a5-side-group">
+            <button className={`a5-tool-btn${tool === 'eraser' ? ' a5-tool-btn--active' : ''}`} onClick={selectEraser} disabled={toolsDisabled} aria-label="橡皮擦">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+            </button>
+            <button className="a5-tool-btn" onClick={clearCanvas} disabled={toolsDisabled} aria-label="全部清除">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M5 6v14h14V6"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
