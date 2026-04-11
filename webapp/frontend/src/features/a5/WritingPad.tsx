@@ -140,7 +140,7 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     setActiveIdx(idx)
   }
 
-  // When activeIdx changes, restore that character's canvas
+  // When activeIdx changes, restore canvas
   useEffect(() => {
     restoreChar(activeIdx)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -174,12 +174,16 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     if (!area) return
     const GAP = 6
     function measure() {
+      // Use viewport dimensions for orientation (container dims are circular when layout changes)
+      const vw = window.visualViewport?.width ?? window.innerWidth
+      const vh = window.visualViewport?.height ?? window.innerHeight
+      const landscape = vw > vh * 1.2
+      setIsLandscape(landscape)
+      onLayoutChange?.(landscape)
+
       const rect = area!.getBoundingClientRect()
       const availW = rect.width
       const availH = rect.height
-      const landscape = availW > availH * 1.2
-      setIsLandscape(landscape)
-      onLayoutChange?.(landscape)
       const n = charCount > 1 ? charCount : 0
       let S: number, T: number
 
@@ -187,15 +191,14 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
         S = Math.min(availW, availH)
         T = 0
       } else if (landscape) {
-        // Landscape: thumbs on left, canvas on right → horizontal layout
-        // S + GAP + T ≤ availW, T ≤ S/2, N*T + (N-1)*GAP ≤ availH
+        // Landscape: canvas by height, thumbs scroll vertically if needed
         S = Math.min(availH, (availW - GAP) / 1.5)
-        T = Math.min(S / 2, (availH - (n - 1) * GAP) / n)
+        T = S / 2
         if (S + GAP + T > availW) S = availW - GAP - T
       } else {
-        // Portrait: thumbs below canvas → vertical layout
+        // Portrait: thumbs below canvas, scroll horizontally if needed
         S = Math.min(availW, (availH - GAP) / 1.5)
-        T = Math.min(S / 2, (availW - (n - 1) * GAP) / n)
+        T = S / 2
         if (S + GAP + T > availH) S = availH - GAP - T
       }
       setSizes({ canvas: Math.floor(Math.max(S, 50)), thumb: Math.floor(Math.max(T, 20)) })
@@ -203,7 +206,13 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(area)
-    return () => observer.disconnect()
+    window.addEventListener('resize', measure)
+    window.visualViewport?.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('resize', measure)
+    }
   }, [charCount])
 
   // Block native gestures on canvas
@@ -510,24 +519,26 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
 
       {/* Thumbnail navigation bar */}
       {charCount > 1 && (
-        <div className="a5-thumb-bar">
-          {chars.map((_, i) => (
-            <button
-              key={i}
-              className={`a5-thumb${i === activeIdx ? ' a5-thumb--active' : ''}${strokeFlagsRef.current[i] ? ' a5-thumb--written' : ''}`}
-              onClick={() => switchChar(i)}
-              style={sizes.thumb > 0 ? { width: sizes.thumb, height: sizes.thumb } : undefined}
-            >
-              <canvas
-                ref={el => { thumbRefs.current[i] = el }}
-                width={THUMB_SIZE}
-                height={THUMB_SIZE}
-                className="a5-thumb-canvas"
-              />
-              <span className="a5-thumb-idx">{i + 1}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="a5-thumb-bar" style={isLandscape && sizes.canvas > 0 ? { maxHeight: sizes.canvas } : undefined}>
+            {chars.map((_, i) => (
+              <button
+                key={i}
+                className={`a5-thumb${i === activeIdx ? ' a5-thumb--active' : ''}${strokeFlagsRef.current[i] ? ' a5-thumb--written' : ''}`}
+                onClick={() => switchChar(i)}
+                style={sizes.thumb > 0 ? { width: sizes.thumb, height: sizes.thumb } : undefined}
+              >
+                <canvas
+                  ref={el => { thumbRefs.current[i] = el }}
+                  width={THUMB_SIZE}
+                  height={THUMB_SIZE}
+                  className="a5-thumb-canvas"
+                />
+                <span className="a5-thumb-idx">{i + 1}</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

@@ -90,13 +90,6 @@ export async function speak(text: string, rate = 0.7, signal?: AbortSignal, pitc
 
   if (signal?.aborted) return
 
-  if (text.length > 1) {
-    await speakOnce(text, rate * 0.6, pitch)
-    if (signal?.aborted) { window.speechSynthesis.cancel(); return }
-    await pause(600)
-    if (signal?.aborted) return
-  }
-
   await speakOnce(text, rate, pitch)
 }
 

@@ -480,19 +480,19 @@ export function A5Page() {
             </div>
           )}
 
-          {showTtsSettings && (
-            <div className="a5-tts-settings">
-              <label>
-                <span>語速 {ttsPrefs.rate.toFixed(1)}</span>
-                <input type="range" min="0.3" max="1.5" step="0.1" value={ttsPrefs.rate} onChange={e => updateTTSRate(Number(e.target.value))} />
-              </label>
-              <label>
-                <span>音調 {ttsPrefs.pitch.toFixed(1)}</span>
-                <input type="range" min="0.5" max="2.0" step="0.1" value={ttsPrefs.pitch} onChange={e => updateTTSPitch(Number(e.target.value))} />
-              </label>
-            </div>
-          )}
           <div className={`a5-bottom-bar${landscape ? ' a5-bottom-bar--vertical' : ''}`}>
+            {showTtsSettings && (
+              <div className="a5-tts-settings">
+                <label>
+                  <span>語速 {ttsPrefs.rate.toFixed(1)}</span>
+                  <input type="range" min="0.3" max="1.5" step="0.1" value={ttsPrefs.rate} onChange={e => updateTTSRate(Number(e.target.value))} />
+                </label>
+                <label>
+                  <span>音調 {ttsPrefs.pitch.toFixed(1)}</span>
+                  <input type="range" min="0.5" max="2.0" step="0.1" value={ttsPrefs.pitch} onChange={e => updateTTSPitch(Number(e.target.value))} />
+                </label>
+              </div>
+            )}
             {!isSubmitted ? (
               <>
                 {speaking ? (

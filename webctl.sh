@@ -7,11 +7,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$SCRIPT_DIR/webapp/frontend"
 BACKEND_DIR="$SCRIPT_DIR/webapp/backend"
-LOG_DIR="/tmp"
-FRONTEND_LOG="$LOG_DIR/cecelearn-frontend.log"
-BACKEND_LOG="$LOG_DIR/cecelearn-backend.log"
-FRONTEND_PID_FILE="$LOG_DIR/cecelearn-frontend.pid"
-BACKEND_PID_FILE="$LOG_DIR/cecelearn-backend.pid"
+STATE_DIR="$HOME/.local/state/cecelearn"
+LOG_DIR="$STATE_DIR/logs"
+PID_DIR="$STATE_DIR"
+mkdir -p "$LOG_DIR" "$PID_DIR"
+FRONTEND_LOG="$LOG_DIR/frontend.log"
+BACKEND_LOG="$LOG_DIR/backend.log"
+ACCESS_LOG="$LOG_DIR/access.log"
+FRONTEND_PID_FILE="$PID_DIR/frontend.pid"
+BACKEND_PID_FILE="$PID_DIR/backend.pid"
 
 # Load env from BUILD/env if present
 load_env() {
@@ -156,21 +160,30 @@ do_status() {
       echo "[frontend] STOPPED"
     fi
   fi
+
+  local acount
+  acount=$(wc -l < "$ACCESS_LOG" 2>/dev/null || echo "0")
+  echo "[access]   $acount lines  → $ACCESS_LOG"
 }
 
 do_logs() {
   local component="${1:-all}"
-  if [[ "$component" == "all" ]]; then
-    echo "=== backend log ==="
-    tail -20 "$BACKEND_LOG" 2>/dev/null || echo "(no log)"
-    echo ""
-    echo "=== frontend log ==="
-    tail -20 "$FRONTEND_LOG" 2>/dev/null || echo "(no log)"
-  elif [[ "$component" == "backend" ]]; then
-    tail -50 "$BACKEND_LOG" 2>/dev/null || echo "(no log)"
-  elif [[ "$component" == "frontend" ]]; then
-    tail -50 "$FRONTEND_LOG" 2>/dev/null || echo "(no log)"
-  fi
+  case "$component" in
+    all)
+      echo "=== backend log ==="
+      tail -20 "$BACKEND_LOG" 2>/dev/null || echo "(no log)"
+      echo ""
+      echo "=== frontend log ==="
+      tail -20 "$FRONTEND_LOG" 2>/dev/null || echo "(no log)"
+      echo ""
+      echo "=== access log (last 10) ==="
+      tail -10 "$ACCESS_LOG" 2>/dev/null || echo "(no log)"
+      ;;
+    backend)  tail -50 "$BACKEND_LOG" 2>/dev/null || echo "(no log)" ;;
+    frontend) tail -50 "$FRONTEND_LOG" 2>/dev/null || echo "(no log)" ;;
+    access)   tail -f "$ACCESS_LOG" 2>/dev/null || echo "(no log)" ;;
+    *)        echo "Usage: webctl.sh logs [all|backend|frontend|access]"; exit 1 ;;
+  esac
 }
 
 # --- main ---
@@ -184,7 +197,7 @@ Commands:
   stop    [all|frontend|backend]   Stop services (default: all)
   restart [all|frontend|backend]   Restart services (default: all)
   status                           Show running status
-  logs    [all|frontend|backend]   Show recent logs (default: all)
+  logs    [all|frontend|backend|access]  Show logs (access = tail -f)
 
 Environment:
   PUBLIC_BASE_PATH   Base path prefix (default from BUILD/env/*.env)
