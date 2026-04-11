@@ -55,6 +55,7 @@ export type A5QuizOptions = {
   mode: 'random' | 'curriculum' | 'custom'
   publisher?: string
   grade?: string
+  semester?: string
   lessons?: string[]
   customChars?: string
   questionCount: number

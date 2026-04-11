@@ -93,6 +93,7 @@ const server = createServer(async (request, response) => {
       mode?: 'random' | 'curriculum' | 'custom'
       publisher?: string
       grade?: string
+      semester?: string
       lessons?: string[]
       customChars?: string
       questionCount?: number
@@ -101,6 +102,7 @@ const server = createServer(async (request, response) => {
       mode: payload.mode ?? 'random',
       publisher: payload.publisher,
       grade: payload.grade,
+      semester: payload.semester,
       lessons: payload.lessons,
       customChars: payload.customChars,
       questionCount: Number(payload.questionCount || 5),
@@ -112,10 +114,12 @@ const server = createServer(async (request, response) => {
     const params = new URL(url, 'http://localhost').searchParams
     const pub = params.get('publisher')
     const gr = params.get('grade')
+    const sem = params.get('semester')
     sendJson(response, 200, {
       publishers: vocabEngine.getPublishers(),
       grades: pub ? vocabEngine.getGrades(pub) : [],
-      lessons: pub && gr ? vocabEngine.getLessons(pub, gr) : [],
+      semesters: pub && gr ? vocabEngine.getSemesters(pub, gr) : [],
+      lessons: pub && gr ? vocabEngine.getLessons(pub, gr, sem ?? undefined) : [],
     })
     return
   }

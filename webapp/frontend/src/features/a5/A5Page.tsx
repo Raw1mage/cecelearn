@@ -10,6 +10,19 @@ import { WritingPad } from './WritingPad'
 type Phase = 'setup' | 'loading' | 'quiz' | 'result'
 type RangeMode = 'random' | 'curriculum' | 'custom'
 
+const PREFS_KEY = 'cecelearn-a5-prefs'
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY)
+    return raw ? JSON.parse(raw) as Record<string, string> : {}
+  } catch { return {} }
+}
+
+function savePrefs(prefs: Record<string, string>) {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)) } catch { /* ignore */ }
+}
+
 type AnswerRecord = {
   word: string
   submitted: boolean
@@ -20,25 +33,38 @@ type AnswerRecord = {
 export function A5Page() {
   const { addScore } = useScore()
 
-  // Setup state
+  // Setup state (restore from localStorage)
+  const prefs = loadPrefs()
   const [phase, setPhase] = useState<Phase>('setup')
-  const [rangeMode, setRangeMode] = useState<RangeMode>('random')
-  const [publisher, setPublisher] = useState('康軒版')
-  const [grade, setGrade] = useState('1年級')
+  const [rangeMode, setRangeMode] = useState<RangeMode>((prefs.rangeMode as RangeMode) || 'random')
+  const [publisher, setPublisher] = useState(prefs.publisher || '康軒版')
+  const [grade, setGrade] = useState(prefs.grade || '1年級')
+  const [availableSemesters, setAvailableSemesters] = useState<string[]>([])
+  const [semester, setSemester] = useState('')
   const [availableLessons, setAvailableLessons] = useState<string[]>([])
   const [selectedLessons, setSelectedLessons] = useState<string[]>([])
-  const [questionCount, setQuestionCount] = useState(5)
+  const [questionCount, setQuestionCount] = useState(Number(prefs.questionCount) || 5)
   const [customChars, setCustomChars] = useState('')
   const [error, setError] = useState('')
 
-  // Fetch available lessons when publisher/grade changes
+  // Fetch semesters when publisher/grade changes
   useEffect(() => {
     if (rangeMode !== 'curriculum') return
     apiClient.getVocabMeta(publisher, grade).then(meta => {
-      setAvailableLessons(meta.lessons)
-      setSelectedLessons([]) // reset selection
-    }).catch(() => setAvailableLessons([]))
+      setAvailableSemesters(meta.semesters)
+      setSemester(meta.semesters[0] ?? '')
+      setSelectedLessons([])
+    }).catch(() => setAvailableSemesters([]))
   }, [publisher, grade, rangeMode])
+
+  // Fetch lessons when semester changes
+  useEffect(() => {
+    if (rangeMode !== 'curriculum' || !semester) return
+    apiClient.getVocabMeta(publisher, grade, semester).then(meta => {
+      setAvailableLessons(meta.lessons)
+      setSelectedLessons([])
+    }).catch(() => setAvailableLessons([]))
+  }, [publisher, grade, semester, rangeMode])
 
   // Quiz state
   const [items, setItems] = useState<A5QuizItem[]>([])
@@ -54,12 +80,14 @@ export function A5Page() {
 
   async function startQuiz() {
     setError('')
+    savePrefs({ rangeMode, publisher, grade, questionCount: String(questionCount) })
     setPhase('loading')
     try {
       const res = await apiClient.generateVocabQuiz({
         mode: rangeMode,
         publisher: rangeMode === 'curriculum' ? publisher : undefined,
         grade: rangeMode === 'curriculum' ? grade : undefined,
+        semester: rangeMode === 'curriculum' ? semester : undefined,
         lessons: rangeMode === 'curriculum' && selectedLessons.length > 0 ? selectedLessons : undefined,
         customChars: rangeMode === 'custom' ? customChars : undefined,
         questionCount,
@@ -191,6 +219,16 @@ export function A5Page() {
                   ))}
                 </select>
               </label>
+              {availableSemesters.length > 0 && (
+                <label className="field-block">
+                  學期
+                  <select value={semester} onChange={e => setSemester(e.target.value)}>
+                    {availableSemesters.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
               {availableLessons.length > 0 && (
                 <div className="field-block">
                   <span>課次（不選 = 全部）</span>

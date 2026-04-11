@@ -77,16 +77,18 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ mode, idioms, questionCount }),
     }),
-  getVocabMeta: (publisher?: string, grade?: string) => {
+  getVocabMeta: (publisher?: string, grade?: string, semester?: string) => {
     const params = new URLSearchParams()
     if (publisher) params.set('publisher', publisher)
     if (grade) params.set('grade', grade)
-    return request<{ publishers: string[]; grades: string[]; lessons: string[] }>(`/a5/meta?${params}`)
+    if (semester) params.set('semester', semester)
+    return request<{ publishers: string[]; grades: string[]; semesters: string[]; lessons: string[] }>(`/a5/meta?${params}`)
   },
   generateVocabQuiz: (options: {
     mode: 'random' | 'curriculum' | 'custom'
     publisher?: string
     grade?: string
+    semester?: string
     lessons?: string[]
     customChars?: string
     questionCount: number

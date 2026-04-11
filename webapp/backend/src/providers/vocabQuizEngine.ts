@@ -132,9 +132,16 @@ export class VocabQuizEngine {
     return [...new Set(this.db.lessons.filter(l => l.version === publisher).map(l => l.grade))].sort()
   }
 
-  getLessons(publisher: string, grade: string): string[] {
-    return this.db.lessons
+  getSemesters(publisher: string, grade: string): string[] {
+    const years = this.db.lessons
       .filter(l => l.version === publisher && l.grade === grade)
+      .map(l => l.year)
+    return [...new Set(years)].sort().reverse()
+  }
+
+  getLessons(publisher: string, grade: string, semester?: string): string[] {
+    return this.db.lessons
+      .filter(l => l.version === publisher && l.grade === grade && (!semester || l.year === semester))
       .map(l => l.lesson)
   }
 
@@ -147,6 +154,7 @@ export class VocabQuizEngine {
       const lessons = this.db.lessons.filter(l =>
         l.version === options.publisher &&
         l.grade === options.grade &&
+        (!options.semester || l.year.includes(options.semester)) &&
         (!options.lessons || options.lessons.length === 0 || options.lessons.includes(l.lesson))
       )
       const chars = [...new Set(lessons.flatMap(l => l.characters))]
