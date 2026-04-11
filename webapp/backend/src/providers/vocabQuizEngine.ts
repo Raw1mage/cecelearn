@@ -17,32 +17,17 @@ type VocabDb = {
   lessons: Lesson[]
 }
 
-/** Common 2-char words per character (fallback when no dict available) */
-const COMMON_WORDS: Record<string, string> = {}
+type IdiomEntry = { idiom: string }
 
-function loadVocabDb(): VocabDb {
+const DICT_URL = 'https://dict.concised.moe.edu.tw/search.jsp'
+
+function loadJson<T>(relativePath: string): T | null {
   try {
     const dir = dirname(fileURLToPath(import.meta.url))
-    const path = resolve(dir, '../../data/vocabulary.json')
-    const raw = readFileSync(path, 'utf-8')
-    const db = JSON.parse(raw) as VocabDb
-    console.log(`[VocabQuiz] loaded ${db.stats.uniqueChars} unique chars from ${db.stats.lessons} lessons`)
-    return db
-  } catch (error) {
-    console.warn('[VocabQuiz] failed to load vocabulary.json:', error instanceof Error ? error.message : error)
-    return { stats: { lessons: 0, totalChars: 0, uniqueChars: 0 }, lessons: [] }
-  }
-}
-
-function loadIdiomList(): string[] {
-  try {
-    const dir = dirname(fileURLToPath(import.meta.url))
-    const path = resolve(dir, '../../data/idioms.json')
-    const raw = readFileSync(path, 'utf-8')
-    const db = JSON.parse(raw) as { idiom: string }[]
-    return db.map(e => e.idiom)
+    const path = resolve(dir, relativePath)
+    return JSON.parse(readFileSync(path, 'utf-8')) as T
   } catch {
-    return []
+    return null
   }
 }
 
@@ -58,38 +43,72 @@ function pickRandom<T>(arr: T[], n: number): T[] {
   return shuffle([...arr]).slice(0, n)
 }
 
+function stripTags(html: string): string {
+  return html.replace(/<[^>]+>/g, '').trim()
+}
+
+/** Fetch 2-char compound words from MOE dictionary for a character */
+async function fetchCompoundWords(character: string): Promise<string[]> {
+  try {
+    const url = `${DICT_URL}?md=2&word=${encodeURIComponent(character)}&col=1`
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
+    const html = await res.text()
+
+    const words: string[] = []
+    const rowRe = /<tr\s+data-link='dictView[^']*'[^>]*>([\s\S]*?)<\/tr>/g
+    let row: RegExpExecArray | null
+    while ((row = rowRe.exec(html)) !== null) {
+      const termMatch = row[1].match(/<a[^>]*>(.*?)<\/a>/)
+      if (!termMatch) continue
+      const term = stripTags(termMatch[1])
+      if (term.length >= 2 && term.length <= 4) {
+        words.push(term)
+      }
+    }
+    return words
+  } catch {
+    return []
+  }
+}
+
 export class VocabQuizEngine {
   private db: VocabDb
   private allChars: string[]
-  private idiomList: string[]
+  private idiomsByChar: Map<string, string[]>
 
   constructor() {
-    this.db = loadVocabDb()
+    const db = loadJson<VocabDb>('../../data/vocabulary.json')
+    this.db = db ?? { stats: { lessons: 0, totalChars: 0, uniqueChars: 0 }, lessons: [] }
     this.allChars = [...new Set(this.db.lessons.flatMap(l => l.characters))]
-    this.idiomList = loadIdiomList()
-    if (this.idiomList.length > 0) {
-      console.log(`[VocabQuiz] loaded ${this.idiomList.length} idioms for word generation`)
+    console.log(`[VocabQuiz] loaded ${this.allChars.length} unique chars from ${this.db.stats.lessons} lessons`)
+
+    // Build idiom index by character
+    this.idiomsByChar = new Map()
+    const idioms = loadJson<IdiomEntry[]>('../../data/idioms.json') ?? []
+    for (const { idiom } of idioms) {
+      for (const char of new Set(idiom.split(''))) {
+        const list = this.idiomsByChar.get(char) ?? []
+        list.push(idiom)
+        this.idiomsByChar.set(char, list)
+      }
     }
+    console.log(`[VocabQuiz] indexed ${idioms.length} idioms`)
   }
 
-  /** Get available publishers */
   getPublishers(): string[] {
     return [...new Set(this.db.lessons.map(l => l.version))].sort()
   }
 
-  /** Get grades for a publisher */
   getGrades(publisher: string): string[] {
     return [...new Set(this.db.lessons.filter(l => l.version === publisher).map(l => l.grade))].sort()
   }
 
-  /** Get lessons for publisher + grade */
   getLessons(publisher: string, grade: string): string[] {
     return this.db.lessons
       .filter(l => l.version === publisher && l.grade === grade)
       .map(l => l.lesson)
   }
 
-  /** Filter characters based on options */
   private filterChars(options: A5QuizOptions): string[] {
     if (options.mode === 'custom' && options.customChars) {
       return options.customChars.replace(/[\s,，、]/g, '').split('').filter(c => /[\u4e00-\u9fff]/.test(c))
@@ -108,35 +127,49 @@ export class VocabQuizEngine {
     return this.allChars
   }
 
-  /** Build a word (2-char compound or idiom) containing the target character */
-  private makeWord(char: string): { word: string; chars: string[] } {
-    // Try to find an idiom containing this character
-    const matchingIdioms = this.idiomList.filter(i => i.includes(char))
-    if (matchingIdioms.length > 0 && Math.random() < 0.3) {
-      const idiom = matchingIdioms[Math.floor(Math.random() * matchingIdioms.length)]
-      return { word: idiom, chars: idiom.split('') }
+  /**
+   * Build a word/idiom for a character.
+   * Priority: idiom (30%) > MOE dictionary compound word > fallback repeat-char
+   */
+  private async makeWord(char: string): Promise<string> {
+    // 30% chance: pick an idiom containing this character
+    const idioms = this.idiomsByChar.get(char)
+    if (idioms && idioms.length > 0 && Math.random() < 0.3) {
+      return idioms[Math.floor(Math.random() * idioms.length)]
     }
 
-    // Default: just the single character (TTS will read it)
-    return { word: char, chars: [char] }
+    // 70% chance: fetch a 2-char compound word from MOE dictionary
+    const words = await fetchCompoundWords(char)
+    if (words.length > 0) {
+      return words[Math.floor(Math.random() * words.length)]
+    }
+
+    // Fallback: try idiom even if random didn't pick it
+    if (idioms && idioms.length > 0) {
+      return idioms[Math.floor(Math.random() * idioms.length)]
+    }
+
+    // Last resort: just the character (should rarely happen)
+    return char
   }
 
-  generate(options: A5QuizOptions): A5QuizResponse {
+  async generate(options: A5QuizOptions): Promise<A5QuizResponse> {
     const pool = this.filterChars(options)
     if (pool.length === 0) {
       return { ok: false, quizId: '', items: [] } as A5QuizResponse & { ok: false }
     }
 
     const selected = pickRandom(pool, Math.min(options.questionCount, pool.length))
-    const items: A5QuizItem[] = selected.map((char, i) => {
-      const { word, chars } = this.makeWord(char)
-      return {
-        id: `q-${i + 1}`,
-        word,
-        bopomofo: '', // Will be filled by frontend TTS or looked up
-        characters: chars,
-      }
-    })
+
+    // Fetch words in parallel (batched to avoid overwhelming MOE)
+    const words = await Promise.all(selected.map(char => this.makeWord(char)))
+
+    const items: A5QuizItem[] = selected.map((char, i) => ({
+      id: `q-${i + 1}`,
+      word: words[i],
+      bopomofo: '',
+      characters: words[i].split(''),
+    }))
 
     return {
       ok: true,

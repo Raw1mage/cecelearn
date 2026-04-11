@@ -97,7 +97,7 @@ const server = createServer(async (request, response) => {
       customChars?: string
       questionCount?: number
     }
-    sendJson(response, 200, vocabEngine.generate({
+    sendJson(response, 200, await vocabEngine.generate({
       mode: payload.mode ?? 'random',
       publisher: payload.publisher,
       grade: payload.grade,
