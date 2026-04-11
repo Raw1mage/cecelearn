@@ -170,31 +170,32 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 /* A5 — Dictation practice */
 .a5-page .ui-panel { width: 100%; }
 
-/* ── A5 viewport-fit: mobile only — lock to visual viewport ── */
-@media (max-width: 768px) {
-  html.a5-active,
-  html.a5-active body {
-    height: var(--app-vh, 100dvh);
-    min-height: 0;
-    overflow: hidden;
-  }
-  html.a5-active #root { height: 100%; min-height: 0; }
-  html.a5-active .app-frame {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding-bottom: 0;
-  }
-  html.a5-active .page-shell {
-    flex: 1; min-height: 0;
-    display: flex; flex-direction: column;
-  }
-  html.a5-active .a5-page {
-    flex: 1; min-height: 0;
-    display: flex; flex-direction: column;
-    gap: 0; padding: 0;
-  }
+/* ── A5 viewport-fit: lock to visual viewport ── */
+html.a5-active,
+html.a5-active body {
+  height: var(--app-vh, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}
+html.a5-active #root { height: 100%; min-height: 0; }
+html.a5-active .app-frame {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 8px;
+  margin: 0;
+}
+html.a5-active .app-header h1 { font-size: 1.5rem; }
+html.a5-active .page-shell {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+}
+html.a5-active .a5-page {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  gap: 0; padding: 0;
 }
 
 /* Setup panel — fill remaining height, push button to bottom */
@@ -210,7 +211,7 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 0.5rem;
+  padding: 4px;
   overflow: hidden;
   background: rgba(12, 21, 39, 0.88);
   touch-action: manipulation;
@@ -220,12 +221,13 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
   -webkit-touch-callout: none;
 }
 
-/* Writing area — full width canvas, stretch to fill */
+/* Writing area — column layout, canvas + thumbs */
 .a5-writing-area {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
 }
 
 /* Side toolbar — overlaid inside canvas, bottom-left */
@@ -286,33 +288,45 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a5-tool-btn--active { background: #fbbf24; color: #1e293b; }
 .a5-tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* Canvas — square, centered */
+/* Canvas — fixed 440px square, shrinks on narrow screens */
 .a5-canvas-wrap {
-  flex: 1; position: relative; min-height: 0; min-width: 0;
-  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1;
+  align-self: center;
+  flex-shrink: 0;
 }
 .a5-canvas {
-  width: 100%; aspect-ratio: 1; border-radius: 1rem; cursor: crosshair;
+  width: 100%; height: 100%;
+  border-radius: 1rem; cursor: crosshair;
   touch-action: none;
   -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none;
-  max-height: 100%;
 }
 
-/* Thumbnail navigation bar */
+/* Thumbnail bar — narrow: horizontal below canvas; wide: vertical right of canvas */
 .a5-thumb-bar {
   display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  padding: 0.4rem 0;
-  flex-shrink: 0;
+  gap: 6px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
 }
 .a5-thumb {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.2rem; height: 3.2rem;
+  height: 100%;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  scroll-snap-align: center;
   border: 2px solid rgba(139,170,255,0.2);
   border-radius: 0.5rem;
   background: rgba(7,12,24,0.5);
@@ -366,7 +380,7 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
   gap: 0.6rem;
   justify-content: center;
   align-items: center;
-  padding: 0.5rem 0 0.25rem;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 .a5-action-btn { display: flex; align-items: center; gap: 0.3rem; padding: 0.55rem 1rem; border: 1px solid rgba(139,170,255,0.16); border-radius: 0.8rem; background: transparent; color: #9bc1ff; cursor: pointer; font-size: 0.9rem; touch-action: manipulation; }

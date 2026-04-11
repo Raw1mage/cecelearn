@@ -32,7 +32,7 @@ const PALETTE = [
   '#7f1d1d', '#78350f', '#1e3a5f', '#f8fafc',
 ]
 const THICKNESSES = [3, 6, 10]
-const THUMB_SIZE = 48
+const THUMB_SIZE = 200
 type Tool = 'pen' | 'eraser'
 
 export function WritingPad({ width = 360, answer, showHint, submitted, progressText, comboText, onStrokesChange, onHintQuizComplete, canvasElRef }: Props) {
@@ -97,7 +97,7 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     }
   }
 
-  /** Update thumbnail for a character */
+  /** Update thumbnail from main canvas (user handwriting) */
   function updateThumb(idx: number) {
     const main = canvasRef.current
     const thumb = thumbRefs.current[idx]
@@ -106,6 +106,20 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     if (!tCtx) return
     tCtx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
     tCtx.drawImage(main, 0, 0, THUMB_SIZE, THUMB_SIZE)
+  }
+
+  /** Draw a character on thumbnail (for hint/answer preview) */
+  function drawCharOnThumb(idx: number, char: string, fillColor = 'rgba(96, 165, 250, 0.7)') {
+    const thumb = thumbRefs.current[idx]
+    if (!thumb) return
+    const tCtx = thumb.getContext('2d')
+    if (!tCtx) return
+    tCtx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
+    tCtx.fillStyle = fillColor
+    tCtx.textAlign = 'center'
+    tCtx.textBaseline = 'middle'
+    tCtx.font = `bold ${THUMB_SIZE * 0.65}px "Noto Sans TC", sans-serif`
+    tCtx.fillText(char, THUMB_SIZE / 2, THUMB_SIZE / 2)
   }
 
   /** Switch to a different character */
@@ -165,20 +179,42 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     container.innerHTML = ''
 
     const chars = answer.split('')
-    const cellH = 100 / chars.length
+    // 1~2 chars: single column; 3~4 chars: 2×2 grid
+    const cols = chars.length >= 3 ? 2 : 1
+    const rows = Math.ceil(chars.length / cols)
 
+    // Save user handwriting to thumbnails before clearing
+    saveActive()
+    updateThumb(activeIdx)
+
+    // Clear the main canvas for answer display
+    const ctx = getCtx()
+    if (ctx) {
+      ctx.fillStyle = '#f8fafc'
+      ctx.fillRect(0, 0, width, width)
+    }
+
+    // Use CSS grid for layout
+    const grid = document.createElement('div')
+    grid.style.display = 'grid'
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`
+    grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`
+    grid.style.width = '100%'
+    grid.style.height = '100%'
+    container.appendChild(grid)
+
+    const rect = container.getBoundingClientRect()
     for (const char of chars) {
       const cell = document.createElement('div')
-      cell.style.height = `${cellH}%`
       cell.style.display = 'flex'
       cell.style.alignItems = 'center'
       cell.style.justifyContent = 'center'
-      container.appendChild(cell)
+      grid.appendChild(cell)
 
       try {
-        const rect = container.getBoundingClientRect()
-        const cellPx = rect.height * cellH / 100
-        const size = Math.min(rect.width * 0.85, cellPx * 0.85, 280)
+        const cellW = rect.width / cols
+        const cellHPx = rect.height / rows
+        const size = Math.min(cellW * 0.85, cellHPx * 0.85, 280)
         window.HanziWriter!.create(cell, char, {
           width: size,
           height: size,
@@ -256,6 +292,8 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
           })
         })
         if (cancelled) return
+        // Update thumbnail with completed character
+        drawCharOnThumb(i, chars[i])
       }
 
       if (!cancelled) {
