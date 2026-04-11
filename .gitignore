@@ -1,4 +1,20 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+*.tsbuildinfo
+
+# Environment / secrets
 *.env
+!*.env.example
 BUILD/env/
+
+# Logs / state
+*.log
+*.pid
+
+# Editor / OS
+.DS_Store
+.vscode/
+*.swp
