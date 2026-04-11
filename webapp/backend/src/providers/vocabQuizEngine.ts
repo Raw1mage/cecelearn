@@ -181,21 +181,11 @@ export class VocabQuizEngine {
     return this.allChars
   }
 
-  /** Find a sentence from the idiom examples pool that contains the word, or any of its characters */
+  /** Find a sentence that contains the exact word (no char-level fallback to avoid mismatch) */
   private findSentenceContaining(word: string): string | null {
-    // First try: exact word match
-    let matches = this.allSentences.filter(s => s.includes(word))
-    if (matches.length > 0) {
-      return matches[Math.floor(Math.random() * matches.length)]
-    }
-    // Second try: match any character in the word
-    for (const char of word.split('')) {
-      matches = this.allSentences.filter(s => s.includes(char))
-      if (matches.length > 0) {
-        return matches[Math.floor(Math.random() * matches.length)]
-      }
-    }
-    return null
+    const matches = this.allSentences.filter(s => s.includes(word))
+    if (matches.length === 0) return null
+    return matches[Math.floor(Math.random() * matches.length)]
   }
 
   /**
@@ -217,12 +207,14 @@ export class VocabQuizEngine {
     const words = await fetchCompoundWords(char)
     if (words.length > 0) {
       const word = words[Math.floor(Math.random() * words.length)]
-      // Try local idiom examples that contain this word
+      // Try local idiom examples that contain this exact word
       const localSentence = this.findSentenceContaining(word)
       if (localSentence) return { word, sentence: localSentence }
-      // Last resort: Gemini
+      // Gemini fallback
       const aiSentence = await geminiSentence(word, this.apiKeys)
-      return { word, sentence: aiSentence || `請寫出「${word}」。` }
+      if (aiSentence) return { word, sentence: aiSentence }
+      // Simple template (always relates to the word)
+      return { word, sentence: `請寫出「${word}」這個詞。` }
     }
 
     // Fallback: try idiom
