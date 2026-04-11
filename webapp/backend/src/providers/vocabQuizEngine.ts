@@ -214,17 +214,8 @@ export class VocabQuizEngine {
         console.log(`[A5出題] ${char} → ${term}（成語例句）`)
         return { word: term, sentence: examples[Math.floor(Math.random() * examples.length)] }
       }
-      // Search all sentences — with word boundary check for short terms
-      const matching = this.allSentences.filter(s => {
-        const idx = s.indexOf(term)
-        if (idx < 0) return false
-        if (term.length >= 4) return true  // idiom-length: safe
-        // Short term: check surrounding chars aren't CJK (prevent "豔照" in "光豔照人")
-        const before = idx > 0 ? s[idx - 1] : ''
-        const after = idx + term.length < s.length ? s[idx + term.length] : ''
-        const cjk = /[\u4e00-\u9fff]/
-        return !cjk.test(before) && !cjk.test(after)
-      })
+      // Search all sentences for this term
+      const matching = this.allSentences.filter(s => s.includes(term))
       if (matching.length > 0) {
         console.log(`[A5出題] ${char} → ${term}（例句搜尋）`)
         return { word: term, sentence: matching[Math.floor(Math.random() * matching.length)] }

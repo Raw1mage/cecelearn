@@ -108,18 +108,36 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
     tCtx.drawImage(main, 0, 0, THUMB_SIZE, THUMB_SIZE)
   }
 
-  /** Draw a character on thumbnail (for hint/answer preview) */
-  function drawCharOnThumb(idx: number, char: string, fillColor = 'rgba(96, 165, 250, 0.7)') {
-    const thumb = thumbRefs.current[idx]
-    if (!thumb) return
-    const tCtx = thumb.getContext('2d')
-    if (!tCtx) return
-    tCtx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
-    tCtx.fillStyle = fillColor
-    tCtx.textAlign = 'center'
-    tCtx.textBaseline = 'middle'
-    tCtx.font = `bold ${THUMB_SIZE * 0.65}px "Noto Sans TC", sans-serif`
-    tCtx.fillText(char, THUMB_SIZE / 2, THUMB_SIZE / 2)
+  /** Render a HanziWriter character into a thumbnail's parent container */
+  function renderThumbChar(idx: number, char: string, strokeColor = 'rgba(96, 165, 250, 0.7)') {
+    const thumbCanvas = thumbRefs.current[idx]
+    if (!thumbCanvas) return
+    const parent = thumbCanvas.parentElement
+    if (!parent || !window.HanziWriter) return
+    // Hide the canvas, show HanziWriter SVG instead
+    thumbCanvas.style.display = 'none'
+    // Remove any previous HanziWriter wrapper
+    const prev = parent.querySelector('.a5-thumb-hw')
+    if (prev) prev.remove()
+    const wrapper = document.createElement('div')
+    wrapper.className = 'a5-thumb-hw'
+    wrapper.style.width = '100%'
+    wrapper.style.height = '100%'
+    wrapper.style.display = 'flex'
+    wrapper.style.alignItems = 'center'
+    wrapper.style.justifyContent = 'center'
+    parent.appendChild(wrapper)
+    const size = Math.min(parent.clientWidth, parent.clientHeight) * 0.85
+    try {
+      window.HanziWriter.create(wrapper, char, {
+        width: size,
+        height: size,
+        padding: 1,
+        showCharacter: true,
+        showOutline: false,
+        strokeColor,
+      })
+    } catch { /* char not in db */ }
   }
 
   /** Switch to a different character */
@@ -292,8 +310,8 @@ export function WritingPad({ width = 360, answer, showHint, submitted, progressT
           })
         })
         if (cancelled) return
-        // Update thumbnail with completed character
-        drawCharOnThumb(i, chars[i])
+        // Update thumbnail with HanziWriter character (consistent font)
+        renderThumbChar(i, chars[i])
       }
 
       if (!cancelled) {
