@@ -33,20 +33,33 @@ type AnswerRecord = {
 export function A5Page() {
   const { addScore } = useScore()
 
-  // Setup state (restore from localStorage)
-  const prefs = loadPrefs()
+  // Setup state (restore from localStorage — lazy init)
   const [phase, setPhase] = useState<Phase>('setup')
-  const [rangeMode, setRangeMode] = useState<RangeMode>((prefs.rangeMode as RangeMode) || 'random')
-  const [publisher, setPublisher] = useState(prefs.publisher || '康軒版')
-  const [grade, setGrade] = useState(prefs.grade || '1年級')
+  const [rangeMode, setRangeMode] = useState<RangeMode>(() => (loadPrefs().rangeMode as RangeMode) || 'random')
+  const [publisher, setPublisher] = useState(() => loadPrefs().publisher || '康軒版')
+  const [grade, setGrade] = useState(() => loadPrefs().grade || '1年級')
   const [availableSemesters, setAvailableSemesters] = useState<string[]>([])
   const [semester, setSemester] = useState('')
   const [availableLessons, setAvailableLessons] = useState<string[]>([])
   const [selectedLessons, setSelectedLessons] = useState<string[]>([])
-  const [questionCount, setQuestionCount] = useState(prefs.questionCount === 'auto' ? 0 : (Number(prefs.questionCount) || 0))
+  const [questionCount, setQuestionCount] = useState(() => { const p = loadPrefs(); return p.questionCount === 'auto' ? 0 : (Number(p.questionCount) || 0) })
   // 0 = auto (all characters in range)
   const [customChars, setCustomChars] = useState('')
   const [error, setError] = useState('')
+
+  // Quiz state (must be before prefetch effect)
+  const [charPool, setCharPool] = useState<string[]>([])
+  const [itemBuffer, setItemBuffer] = useState<A5QuizItem[]>([])
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState(0)
+  const [answers, setAnswers] = useState<AnswerRecord[]>([])
+  const fetchingRef = useRef(new Set<number>())
+  const [showHint, setShowHint] = useState(false)
+  const [combo, setCombo] = useState(0)
+  const [maxCombo, setMaxCombo] = useState(0)
+  const [speaking, setSpeaking] = useState(false)
+  const totalCorrect = answers.filter(a => a.correct).length
+  const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
 
   // Prefetch buffer: keep 3 items ahead of currentIdx
   useEffect(() => {
@@ -64,8 +77,6 @@ export function A5Page() {
   // Only re-run when currentIdx changes or phase enters quiz — NOT when itemBuffer changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentIdx, charPool])
-
-  const currentItem = itemBuffer.find(item => item.id === `q-${currentIdx + 1}`) ?? null
 
   // Fetch semesters when publisher/grade changes
   useEffect(() => {
@@ -86,19 +97,6 @@ export function A5Page() {
     }).catch(() => setAvailableLessons([]))
   }, [publisher, grade, semester, rangeMode])
 
-  // Quiz state
-  const [charPool, setCharPool] = useState<string[]>([])
-  const [itemBuffer, setItemBuffer] = useState<A5QuizItem[]>([]) // prefetched items
-  const [currentIdx, setCurrentIdx] = useState(0)
-  const [totalQuestions, setTotalQuestions] = useState(0)
-  const [answers, setAnswers] = useState<AnswerRecord[]>([])
-  const fetchingRef = useRef(new Set<number>()) // track in-flight fetches
-  const [showHint, setShowHint] = useState(false)
-  const [combo, setCombo] = useState(0)
-  const [maxCombo, setMaxCombo] = useState(0)
-  const [speaking, setSpeaking] = useState(false)
-
-  const totalCorrect = answers.filter(a => a.correct).length
 
   async function startQuiz() {
     setError('')
