@@ -4,7 +4,7 @@ import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
 import { useScore } from '../../shared/ScoreContext'
-import { speak, isTTSSupported } from './tts'
+import { speak, isTTSSupported, unlockTTS } from './tts'
 import { WritingPad } from './WritingPad'
 
 type Phase = 'setup' | 'loading' | 'quiz' | 'result'
@@ -99,6 +99,7 @@ export function A5Page() {
 
 
   async function startQuiz() {
+    unlockTTS() // Must be called in user-gesture context for mobile
     setError('')
     savePrefs({ rangeMode, publisher, grade, questionCount: questionCount === 0 ? 'auto' : String(questionCount) })
     setPhase('loading')

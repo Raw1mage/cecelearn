@@ -1,4 +1,21 @@
-/** Text-to-Speech utility for dictation */
+/**
+ * Text-to-Speech utility for dictation.
+ *
+ * Mobile browsers require speechSynthesis.speak() to be called
+ * within a user-gesture call stack. We "unlock" the audio on the
+ * first user tap, then subsequent calls work freely.
+ */
+
+let unlocked = false
+
+/** Call this once from a click/touch handler to unlock mobile TTS */
+export function unlockTTS() {
+  if (unlocked || !window.speechSynthesis) return
+  const u = new SpeechSynthesisUtterance('')
+  u.volume = 0
+  window.speechSynthesis.speak(u)
+  unlocked = true
+}
 
 function speakOnce(text: string, rate: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -7,7 +24,7 @@ function speakOnce(text: string, rate: number): Promise<void> {
     utterance.rate = rate
     utterance.pitch = 1
     utterance.onend = () => resolve()
-    utterance.onerror = (e) => reject(e)
+    utterance.onerror = () => resolve() // don't block on error
     window.speechSynthesis.speak(utterance)
   })
 }
@@ -16,22 +33,16 @@ function pause(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms))
 }
 
-/**
- * Speak a word for dictation: slow first, pause, then normal speed.
- * e.g., "學校" → (slow) "學...校" → pause → (normal) "學校"
- */
 export async function speak(text: string, rate = 0.7): Promise<void> {
   if (!window.speechSynthesis) return
 
   window.speechSynthesis.cancel()
 
-  // First pass: slow, character by character for multi-char words
   if (text.length > 1) {
     await speakOnce(text, 0.5)
     await pause(600)
   }
 
-  // Second pass: normal speed
   await speakOnce(text, rate)
 }
 
