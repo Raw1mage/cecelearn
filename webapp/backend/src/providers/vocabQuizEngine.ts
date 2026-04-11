@@ -107,6 +107,7 @@ export class VocabQuizEngine {
   private idiomExamples: Map<string, string[]>
   private allSentences: string[]
   private apiKeys: string[]
+  private wordCache = new Map<string, string[]>()
 
   constructor(apiKeys: string[] = []) {
     this.apiKeys = apiKeys
@@ -181,50 +182,82 @@ export class VocabQuizEngine {
     return this.allChars
   }
 
-  /** Find a sentence that contains the exact word (no char-level fallback to avoid mismatch) */
-  private findSentenceContaining(word: string): string | null {
-    const matches = this.allSentences.filter(s => s.includes(word))
-    if (matches.length === 0) return null
-    return matches[Math.floor(Math.random() * matches.length)]
+  /**
+   * Extract a known word/idiom containing the target character from a sentence.
+   * Priority: known idiom > known compound word (from MOE) > 2-char extraction
+   */
+  private async extractWordFromSentence(sentence: string, char: string): Promise<string | null> {
+    // 1. Check if any known idiom containing this char appears in the sentence
+    const idioms = this.idiomsByChar.get(char) ?? []
+    for (const idiom of idioms) {
+      if (sentence.includes(idiom)) return idiom
+    }
+
+    // 2. Fetch compound words from MOE (cached) and check which ones appear in the sentence
+    if (!this.wordCache.has(char)) {
+      this.wordCache.set(char, await fetchCompoundWords(char))
+    }
+    const dictWords = this.wordCache.get(char)!
+    for (const word of dictWords) {
+      if (sentence.includes(word)) return word
+    }
+
+    // 3. Last resort: find the nearest 2-char CJK pair containing the char
+    const idx = sentence.indexOf(char)
+    if (idx >= 0) {
+      // Try char + next
+      if (idx + 1 < sentence.length && /[\u4e00-\u9fff]/.test(sentence[idx + 1])) {
+        return sentence.slice(idx, idx + 2)
+      }
+      // Try prev + char
+      if (idx > 0 && /[\u4e00-\u9fff]/.test(sentence[idx - 1])) {
+        return sentence.slice(idx - 1, idx + 1)
+      }
+    }
+    return null
   }
 
   /**
-   * Build a word/idiom + example sentence for a character.
+   * Sentence-first approach:
+   * 1. Find a sentence containing the target character
+   * 2. Extract the word/phrase from that sentence
+   * This guarantees sentence and word are always related.
    */
   private async makeWordWithSentence(char: string): Promise<{ word: string; sentence: string }> {
-    // 30% chance: pick an idiom containing this character
+    // Strategy 1: Find a sentence from 11258 idiom examples that contains this character
+    const matchingSentences = this.allSentences.filter(s => s.includes(char))
+    if (matchingSentences.length > 0) {
+      // Try several sentences to find one with a good extractable word
+      const candidates = pickRandom(matchingSentences, Math.min(5, matchingSentences.length))
+      for (const sentence of candidates) {
+        const word = await this.extractWordFromSentence(sentence, char)
+        if (word && word !== char) {
+          return { word, sentence }
+        }
+      }
+      // If extraction failed, use the sentence with the char itself as word
+      const sentence = candidates[0]
+      return { word: char, sentence }
+    }
+
+    // Strategy 2: Use idiom with its own example
     const idioms = this.idiomsByChar.get(char)
-    if (idioms && idioms.length > 0 && Math.random() < 0.3) {
-      const idiom = idioms[Math.floor(Math.random() * idioms.length)]
-      const examples = this.idiomExamples.get(idiom)
-      const sentence = examples && examples.length > 0
-        ? examples[Math.floor(Math.random() * examples.length)]
-        : `請寫出「${idiom}」。`
-      return { word: idiom, sentence }
-    }
-
-    // 70% chance: fetch a 2-char compound word from MOE dictionary
-    const words = await fetchCompoundWords(char)
-    if (words.length > 0) {
-      const word = words[Math.floor(Math.random() * words.length)]
-      // Try local idiom examples that contain this exact word
-      const localSentence = this.findSentenceContaining(word)
-      if (localSentence) return { word, sentence: localSentence }
-      // Gemini fallback
-      const aiSentence = await geminiSentence(word, this.apiKeys)
-      if (aiSentence) return { word, sentence: aiSentence }
-      // Simple template (always relates to the word)
-      return { word, sentence: `請寫出「${word}」這個詞。` }
-    }
-
-    // Fallback: try idiom
     if (idioms && idioms.length > 0) {
       const idiom = idioms[Math.floor(Math.random() * idioms.length)]
       const examples = this.idiomExamples.get(idiom)
-      const sentence = examples && examples.length > 0
-        ? examples[Math.floor(Math.random() * examples.length)]
-        : `請寫出「${idiom}」。`
-      return { word: idiom, sentence }
+      if (examples && examples.length > 0) {
+        return { word: idiom, sentence: examples[Math.floor(Math.random() * examples.length)] }
+      }
+      return { word: idiom, sentence: `請寫出「${idiom}」。` }
+    }
+
+    // Strategy 3: Fetch a compound word from MOE dictionary + Gemini sentence
+    const words = await fetchCompoundWords(char)
+    if (words.length > 0) {
+      const word = words[Math.floor(Math.random() * words.length)]
+      const aiSentence = await geminiSentence(word, this.apiKeys)
+      if (aiSentence) return { word, sentence: aiSentence }
+      return { word, sentence: `請寫出「${word}」。` }
     }
 
     return { word: char, sentence: `請寫出「${char}」。` }
