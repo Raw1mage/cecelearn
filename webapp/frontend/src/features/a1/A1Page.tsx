@@ -252,67 +252,69 @@ export function A1Page() {
 
   return (
     <div className="feature-page">
-      <Panel className={wakeHit ? 'a1-panel--wake' : undefined}>
-        <div className="a1-input-wrap">
-          <input
-            className="a1-query-input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="輸入想查的字，例如：字、學、勇、百"
-          />
-          <button
-            className={`a1-mic-btn${listening ? ' a1-mic-btn--active' : ''}`}
-            onClick={toggleListening}
-            disabled={!speechReady}
-            aria-label={listening ? '停止聆聽' : '語音輸入'}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-          </button>
-          <button className="a1-search-btn" onClick={() => void lookup()} aria-label="查詢">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-        </div>
-        {status ? <p className="muted" style={{ marginTop: '0.5rem' }}>{status}</p> : null}
-      </Panel>
+      <div className="a1-main-layout">
+        <div className="a1-left-col">
+          <Panel className={wakeHit ? 'a1-panel--wake' : undefined}>
+            <div className="a1-input-wrap">
+              <input
+                className="a1-query-input"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="輸入想查的字，例如：字、學、勇、百"
+              />
+              <button
+                className={`a1-mic-btn${listening ? ' a1-mic-btn--active' : ''}`}
+                onClick={toggleListening}
+                disabled={!speechReady}
+                aria-label={listening ? '停止聆聽' : '語音輸入'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </button>
+              <button className="a1-search-btn" onClick={() => void lookup()} aria-label="查詢">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </button>
+            </div>
+            {status ? <p className="muted" style={{ marginTop: '0.5rem' }}>{status}</p> : null}
+          </Panel>
 
-      <div className="a1-stroke-container">
-        <div className={`a1-stroke-box${practicing ? ' a1-stroke-box--practice' : ''}`} ref={writerTargetRef} />
-        <div className="a1-stroke-actions">
-          <button className="a1-action-btn" onClick={replay} aria-label="重播筆順" title="重播">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-          </button>
-          <button className={`a1-action-btn${practicing ? ' a1-action-btn--active' : ''}`} onClick={startPractice} aria-label="練習寫字" title="練習">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-          </button>
-        </div>
-      </div>
-
-      <Panel>
-        <button className="a1-collapse-header" onClick={() => setWordsOpen(o => !o)}>
-          <span className={`a1-collapse-arrow${wordsOpen ? ' a1-collapse-arrow--open' : ''}`}>▶</span>
-          <h3>造詞</h3>
-        </button>
-        {wordsOpen && (
-          <div className="word-chip-list a1-chip-grid">
-            {result.words.map((word) => (
-              <article key={`${word.term}-${word.bopomofo}`} className="word-chip">
-                <RubyWord {...word} />
-              </article>
-            ))}
+          <div className="a1-stroke-container">
+            <div className={`a1-stroke-box${practicing ? ' a1-stroke-box--practice' : ''}`} ref={writerTargetRef} />
+            <div className="a1-stroke-actions">
+              <button className="a1-action-btn" onClick={replay} aria-label="重播筆順" title="重播">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </button>
+              <button className={`a1-action-btn${practicing ? ' a1-action-btn--active' : ''}`} onClick={startPractice} aria-label="練習寫字" title="練習">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+              </button>
+            </div>
           </div>
-        )}
-      </Panel>
+        </div>
 
-      {result.idioms && result.idioms.length > 0 && (
+        <Panel>
+          <button className="a1-collapse-header" onClick={() => setWordsOpen(o => !o)}>
+            <span className={`a1-collapse-arrow${wordsOpen ? ' a1-collapse-arrow--open' : ''}`}>▶</span>
+            <h3>造詞</h3>
+          </button>
+          {wordsOpen && (
+            <div className="word-chip-list a1-chip-grid">
+              {result.words.map((word) => (
+                <article key={`${word.term}-${word.bopomofo}`} className="word-chip">
+                  <RubyWord {...word} />
+                </article>
+              ))}
+            </div>
+          )}
+        </Panel>
+
         <Panel>
           <button className="a1-collapse-header" onClick={() => setIdiomsOpen(o => !o)}>
             <span className={`a1-collapse-arrow${idiomsOpen ? ' a1-collapse-arrow--open' : ''}`}>▶</span>
@@ -320,7 +322,7 @@ export function A1Page() {
           </button>
           {idiomsOpen && (
             <div className="word-chip-list a1-chip-grid">
-              {result.idioms.map((idiom) => (
+              {(result.idioms ?? []).map((idiom) => (
                 <article key={`${idiom.term}-${idiom.bopomofo}`} className="word-chip">
                   <RubyWord {...idiom} />
                 </article>
@@ -328,18 +330,18 @@ export function A1Page() {
             </div>
           )}
         </Panel>
-      )}
 
-      <Panel>
-        <h3>最近查詢</h3>
-        <div className="history-list">
-          {history.map((item, idx) => (
-            <button key={`${item.query}-${idx}`} className="history-item" onClick={() => { setQuery(item.query); void lookup(item.query) }}>
-              {item.character}（{item.bopomofo}）
-            </button>
-          ))}
-        </div>
-      </Panel>
+        <Panel className="a1-history-panel">
+          <h3>最近查詢</h3>
+          <div className="history-list">
+            {history.map((item, idx) => (
+              <button key={`${item.query}-${idx}`} className="history-item" onClick={() => { setQuery(item.query); void lookup(item.query) }}>
+                {item.character}（{item.bopomofo}）
+              </button>
+            ))}
+          </div>
+        </Panel>
+      </div>
     </div>
   )
 }

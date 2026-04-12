@@ -2,25 +2,30 @@ import type { A1LookupResponse, A1LookupWord, WordLookupProvider } from '../cont
 
 const DICT_URL = 'https://dict.concised.moe.edu.tw/search.jsp'
 const IDIOM_URL = 'https://dict.idioms.moe.edu.tw/idiomList.jsp'
+const GEMINI_CORRECT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
 
 /* ------------------------------------------------------------------ */
 /*  Gemini AI — speech correction                                     */
 /* ------------------------------------------------------------------ */
 
-const GEMINI_PROMPT = `你是小學國語字典的語音校正助理。小朋友用語音說出想查的字，你要判斷他想查哪個字。
+const GEMINI_PROMPT = `你是小學國語字典助理。小朋友用語音告訴你他想查哪個字，你要判斷他真正想查的是哪一個字。
 
-核心規則：如果是「A的B」結構，目標字一定在A裡面。B只是小朋友發的音，可能被語音辨識聽錯。你必須在A的字裡面，找讀音最接近B的那個字。
+語音輸入可能不精確，你要理解小朋友的意圖，而非只做字面校正。
 
-範例：
-- 老師的詩 → 師（詩不在老師中，師在老師中且讀音最近）
-- 老師的溼 → 師（溼不在老師中，師在老師中且讀音最近）
-- 愚公移山的贏 → 移（贏不在愚公移山中，移讀音最近）
-- 學校的笑 → 校（笑不在學校中，校讀音最近）
-- 學校的學 → 學（學在學校中，直接採用）
-- 微笑 → 笑（非「A的B」結構，取最後一個字）
+常見問法與判斷：
+- 「老師的詩」→ 師（小朋友想問「老師」裡的某個字，「詩」是語音誤聽，讀音最近的是「師」）
+- 「老師的溼」→ 師（同上，「溼」是誤聽）
+- 「愚公移山的贏」→ 移（想問「愚公移山」裡的字，「贏」讀音最近「移」）
+- 「學校的笑」→ 校（想問「學校」裡的字，「笑」讀音最近「校」）
+- 「漂亮的漂怎麼寫」→ 漂（直接說出目標字）
+- 「微笑」→ 笑（沒有「的」結構，取最後一個字）
+- 「師怎麼寫」→ 師（直接問字）
 
-重要：目標字必須是A裡面的字。絕不可以回傳A以外的字。
+判斷原則：
+1. 理解小朋友想查什麼字，不是機械地做文字替換
+2. 「A的B」結構中，小朋友通常是想問 A 裡面的某個字，B 是他對那個字的發音（可能被語音辨識聽錯）
+3. 回傳的字必須是一個繁體中文字
 
 現在處理：{QUERY}`
 
@@ -44,6 +49,7 @@ async function geminiCorrect(query: string, apiKeys: string[]): Promise<string |
         properties: { character: { type: 'STRING' } },
         required: ['character'],
       },
+      thinkingConfig: { thinkingBudget: 0 },
     },
   })
 
@@ -52,7 +58,7 @@ async function geminiCorrect(query: string, apiKeys: string[]): Promise<string |
     const key = apiKeys[idx]
 
     try {
-      const res = await fetch(`${GEMINI_URL}?key=${key}`, {
+      const res = await fetch(`${GEMINI_CORRECT_URL}?key=${key}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(4000),
@@ -267,20 +273,35 @@ export class MoeWordLookupProvider implements WordLookupProvider {
   }
 
   async lookup(query: string): Promise<A1LookupResponse> {
-    let aiChar = await geminiCorrect(query, this.apiKeys)
-
-    // Validate: for "A的B" pattern, AI result must be in A
+    // Fast path: for "A的B" pattern, if B is already a character in A, use it directly
     const clean = query.replace(/\s+/g, '')
     const deIdx = clean.lastIndexOf('的')
-    if (aiChar && deIdx >= 0) {
+    let character: string | null = null
+    if (deIdx >= 0) {
       const contextA = clean.slice(0, deIdx)
-      if (!contextA.includes(aiChar)) {
-        console.warn(`[MoeProvider] AI returned "${aiChar}" but it's not in "${contextA}", rejecting`)
-        aiChar = null
+      const after = clean.slice(deIdx + 1)
+      const bChar = after.match(/[\u4e00-\u9fff]/)?.[0]
+      if (bChar && contextA.includes(bChar)) {
+        character = bChar
+        console.log(`[MoeProvider] fast path: "${query}" → ${character} (B already in A)`)
       }
     }
 
-    const character = aiChar ?? pickCharacter(query)
+    // Otherwise, ask Gemini for correction
+    if (!character) {
+      let aiChar = await geminiCorrect(query, this.apiKeys)
+
+      // Validate: AI result must be in A
+      if (aiChar && deIdx >= 0) {
+        const contextA = clean.slice(0, deIdx)
+        if (!contextA.includes(aiChar)) {
+          console.warn(`[MoeProvider] AI returned "${aiChar}" but it's not in "${contextA}", rejecting`)
+          aiChar = null
+        }
+      }
+
+      character = aiChar ?? pickCharacter(query)
+    }
 
     // Step 2: Fetch dictionary data (retry with variant if no results)
     try {
