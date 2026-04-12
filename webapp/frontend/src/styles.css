@@ -578,7 +578,7 @@ html.a5-active .a5-page {
     grid-template-rows: auto 1fr;
     gap: 1rem;
     align-items: start;
-    height: calc(100vh - 6rem);
+    height: calc(100dvh - 6rem);
     overflow: hidden;
   }
   .a1-left-col {
@@ -587,10 +587,15 @@ html.a5-active .a5-page {
     gap: 1rem;
     grid-row: 1 / -1;
   }
+  /* Left col height budget: 100dvh - header(4rem) - layout gap(1rem) - input panel(~5.5rem incl status+padding) - col gap(1rem) - safety(0.5rem) */
   .a1-left-col .a1-stroke-container {
-    width: min(320px, calc(100vh - 12rem));
-    height: min(320px, calc(100vh - 12rem));
+    --a1-canvas: calc(100dvh - 12rem);
+    width: var(--a1-canvas);
+    height: var(--a1-canvas);
+    max-width: 380px;
+    max-height: 380px;
     margin: 0;
+    flex: 0 0 auto;
   }
   .a1-main-layout > .ui-panel {
     min-width: 0;

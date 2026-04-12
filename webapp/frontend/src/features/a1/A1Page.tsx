@@ -58,6 +58,7 @@ export function A1Page() {
   const [wakeHit, setWakeHit] = useState(false)
   const [wordsOpen, setWordsOpen] = useState(true)
   const [idiomsOpen, setIdiomsOpen] = useState(true)
+  const [historyOpen, setHistoryOpen] = useState(true)
   const writerTargetRef = useRef<HTMLDivElement | null>(null)
   const writerRef = useRef<HanziWriterInstance | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
@@ -110,11 +111,20 @@ export function A1Page() {
       const transcript = latest[0].transcript.trim()
       if (transcript.length > 50) return
 
-      // Interim: detect wake word for instant visual feedback
+      // Interim: detect wake word + keep wake window alive while speaking
       if (!latest.isFinal) {
         if (transcript.includes('小雞')) {
           setWakeHit(true)
           setStatus('聽到了！請說要查的字...')
+        }
+        // Any speech activity during wake window → reset timeout
+        if (wakeWindowRef.current && wakeTimerRef.current) {
+          clearTimeout(wakeTimerRef.current)
+          wakeTimerRef.current = setTimeout(() => {
+            wakeWindowRef.current = false
+            setWakeHit(false)
+            setStatus('正在聆聽... 請說「小雞小雞，○○的×怎麼寫」')
+          }, 4000)
         }
         return
       }
@@ -332,14 +342,19 @@ export function A1Page() {
         </Panel>
 
         <Panel className="a1-history-panel">
-          <h3>最近查詢</h3>
-          <div className="history-list">
-            {history.map((item, idx) => (
-              <button key={`${item.query}-${idx}`} className="history-item" onClick={() => { setQuery(item.query); void lookup(item.query) }}>
-                {item.character}（{item.bopomofo}）
-              </button>
-            ))}
-          </div>
+          <button className="a1-collapse-header" onClick={() => setHistoryOpen(o => !o)}>
+            <span className={`a1-collapse-arrow${historyOpen ? ' a1-collapse-arrow--open' : ''}`}>▶</span>
+            <h3>最近查詢</h3>
+          </button>
+          {historyOpen && (
+            <div className="history-list">
+              {history.map((item, idx) => (
+                <button key={`${item.query}-${idx}`} className="history-item" onClick={() => { setQuery(item.query); void lookup(item.query) }}>
+                  {item.character}（{item.bopomofo}）
+                </button>
+              ))}
+            </div>
+          )}
         </Panel>
       </div>
     </div>

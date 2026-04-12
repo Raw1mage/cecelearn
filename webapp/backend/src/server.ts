@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { resolve } from 'node:path'
 import { loadEnv } from './config/env.js'
 import { initAccessLog, logAccess } from './logging/accessLog.js'
+import { initRequestLog, logRequest, createRequestId, logUpstream } from './logging/requestLog.js'
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
@@ -10,6 +11,7 @@ import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
 
 const env = loadEnv()
 initAccessLog(resolve(process.env.HOME || '/tmp', '.local/state/cecelearn/logs/access.log'))
+initRequestLog(resolve(process.env.HOME || '/tmp', '.local/state/cecelearn/logs/request.log'))
 const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
@@ -33,12 +35,21 @@ function readBody(request: import('node:http').IncomingMessage) {
 
 const server = createServer(async (request, response) => {
   const startTime = Date.now()
+  const reqId = createRequestId()
   response.on('finish', () => logAccess(request, response, startTime))
   const { method = 'GET' } = request
   // Strip PUBLIC_BASE_PATH prefix so route matching stays path-agnostic
   let url = request.url || '/'
   if (env.basePath && url.startsWith(env.basePath)) {
     url = url.slice(env.basePath.length) || '/'
+  }
+
+  const send = (statusCode: number, body: unknown, reqBody?: string) => {
+    const resBody = JSON.stringify(body)
+    response.writeHead(statusCode, { 'Content-Type': 'application/json' })
+    response.end(resBody)
+    logRequest(reqId, method, url, statusCode, Date.now() - startTime,
+      request.headers['content-type'], reqBody, resBody)
   }
 
   response.setHeader('Access-Control-Allow-Origin', '*')
@@ -52,49 +63,52 @@ const server = createServer(async (request, response) => {
   }
 
   if (url === '/api/health' && method === 'GET') {
-    sendJson(response, 200, { ok: true, service: '希希小家教-backend', port: env.port })
+    send(200, { ok: true, service: '希希小家教-backend', port: env.port })
     return
   }
 
   if (url === '/api/a1' && method === 'GET') {
-    sendJson(response, 501, { ok: false, status: 'not_implemented', path: url })
+    send(501, { ok: false, status: 'not_implemented', path: url })
     return
   }
 
   if (url === '/api/a2' && method === 'GET') {
-    sendJson(response, 501, { ok: false, status: 'not_implemented', path: url })
+    send(501, { ok: false, status: 'not_implemented', path: url })
     return
   }
 
   if (url === '/api/a3' && method === 'GET') {
-    sendJson(response, 501, { ok: false, status: 'not_implemented', path: url })
+    send(501, { ok: false, status: 'not_implemented', path: url })
     return
   }
 
   if (url === '/api/a1/lookup' && method === 'POST') {
-    const payload = JSON.parse((await readBody(request)) || '{}') as { query?: string }
-    sendJson(response, 200, await a1.lookup(payload.query?.trim() || '字'))
+    const raw = await readBody(request)
+    const payload = JSON.parse(raw || '{}') as { query?: string }
+    send(200, await a1.lookup(payload.query?.trim() || '字'), raw)
     return
   }
 
   if (url === '/api/a2/quiz' && method === 'POST') {
-    const payload = JSON.parse((await readBody(request)) || '{}') as {
+    const raw = await readBody(request)
+    const payload = JSON.parse(raw || '{}') as {
       mode?: 'random' | 'custom'
       idioms?: string[]
       questionCount?: number
     }
     const questionCount = Number(payload.questionCount || 5)
     if (payload.mode === 'random') {
-      sendJson(response, 200, idiomEngine.generateRandom(questionCount))
+      send(200, idiomEngine.generateRandom(questionCount), raw)
     } else {
       const idioms = Array.isArray(payload.idioms) ? payload.idioms : []
-      sendJson(response, 200, idiomEngine.generate(idioms, questionCount))
+      send(200, idiomEngine.generate(idioms, questionCount), raw)
     }
     return
   }
 
   if (url === '/api/a5/prepare' && method === 'POST') {
-    const payload = JSON.parse((await readBody(request)) || '{}') as {
+    const raw = await readBody(request)
+    const payload = JSON.parse(raw || '{}') as {
       mode?: 'random' | 'curriculum' | 'custom'
       publisher?: string
       grade?: string
@@ -103,7 +117,7 @@ const server = createServer(async (request, response) => {
       customChars?: string
       questionCount?: number
     }
-    sendJson(response, 200, vocabEngine.prepare({
+    send(200, vocabEngine.prepare({
       mode: payload.mode ?? 'random',
       publisher: payload.publisher,
       grade: payload.grade,
@@ -111,13 +125,14 @@ const server = createServer(async (request, response) => {
       lessons: payload.lessons,
       customChars: payload.customChars,
       questionCount: Number(payload.questionCount || 5),
-    }))
+    }), raw)
     return
   }
 
   if (url === '/api/a5/next' && method === 'POST') {
-    const payload = JSON.parse((await readBody(request)) || '{}') as { char: string; index: number; wordType?: 'word' | 'idiom' | 'mixed' }
-    sendJson(response, 200, await vocabEngine.generateOne(payload.char, payload.index ?? 0, payload.wordType ?? 'mixed'))
+    const raw = await readBody(request)
+    const payload = JSON.parse(raw || '{}') as { char: string; index: number; wordType?: 'word' | 'idiom' | 'mixed' }
+    send(200, await vocabEngine.generateOne(payload.char, payload.index ?? 0, payload.wordType ?? 'mixed'), raw)
     return
   }
 
@@ -126,7 +141,7 @@ const server = createServer(async (request, response) => {
     const pub = params.get('publisher')
     const gr = params.get('grade')
     const sem = params.get('semester')
-    sendJson(response, 200, {
+    send(200, {
       publishers: vocabEngine.getPublishers(),
       grades: pub ? vocabEngine.getGrades(pub) : [],
       semesters: pub && gr ? vocabEngine.getSemesters(pub, gr) : [],
@@ -135,7 +150,7 @@ const server = createServer(async (request, response) => {
     return
   }
 
-  sendJson(response, 404, { ok: false, error: 'Not Found' })
+  send(404, { ok: false, error: 'Not Found' })
 })
 
 server.listen(env.port, '0.0.0.0', () => {
