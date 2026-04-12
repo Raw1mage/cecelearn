@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 declare interface SpeechRecognitionEventLike {
-  results: ArrayLike<ArrayLike<{ transcript: string }>>
+  results: ArrayLike<{ isFinal: boolean } & ArrayLike<{ transcript: string }>>
   error?: string
 }
 

@@ -55,12 +55,17 @@ export function A1Page() {
   const [speechReady, setSpeechReady] = useState(false)
   const [listening, setListening] = useState(false)
   const [practicing, setPracticing] = useState(false)
+  const [wakeHit, setWakeHit] = useState(false)
   const [wordsOpen, setWordsOpen] = useState(true)
   const [idiomsOpen, setIdiomsOpen] = useState(true)
   const writerTargetRef = useRef<HTMLDivElement | null>(null)
   const writerRef = useRef<HanziWriterInstance | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const wantListeningRef = useRef(false)
+  const triggeredRef = useRef(false)
+  const wakeWindowRef = useRef(false)
+  const wakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lookupRef = useRef<(value: string) => Promise<void>>(null!)
 
   useEffect(() => {
     const Recognition = getSpeechRecognitionConstructor()
@@ -71,11 +76,11 @@ export function A1Page() {
 
     const recognition = new Recognition()
     recognition.lang = 'cmn-Hant-TW'
-    recognition.interimResults = false
+    recognition.interimResults = true
     recognition.maxAlternatives = 1
     recognition.onstart = () => {
       setListening(true)
-      setStatus('正在聆聽...')
+      setStatus('正在聆聽... 請說「小雞小雞，○○的×怎麼寫」')
     }
     recognition.onend = () => {
       if (wantListeningRef.current) {
@@ -91,18 +96,70 @@ export function A1Page() {
       setStatus('')
     }
     recognition.onerror = (event: { error: string }) => {
+      // no-speech / aborted are normal in always-on mode — don't kill the mic
+      if (event.error === 'no-speech' || event.error === 'aborted') return
       wantListeningRef.current = false
       setListening(false)
       setStatus(`語音辨識失敗：${event.error}`)
     }
     recognition.onresult = (event: SpeechRecognitionEventLike) => {
-      const transcript = event.results[0][0].transcript.trim()
+      // Already processing a query — ignore everything until done
+      if (triggeredRef.current) return
+
+      const latest = event.results[event.results.length - 1]
+      const transcript = latest[0].transcript.trim()
+      if (transcript.length > 50) return
+
+      // Interim: detect wake word for instant visual feedback
+      if (!latest.isFinal) {
+        if (transcript.includes('小雞')) {
+          setWakeHit(true)
+          setStatus('聽到了！請說要查的字...')
+        }
+        return
+      }
+
+      // Final result: two-phase wake word handling
+      // Phase 1: check if this utterance contains wake word + command together
       const wakeMatch = transcript.match(/^小雞小雞[，,、\s]*(.+)/)
-      if (!wakeMatch) return
-      const command = wakeMatch[1].trim()
-      if (!command) return
-      setQuery(command)
-      void lookup(command)
+      if (wakeMatch) {
+        const command = wakeMatch[1].trim()
+        if (command) {
+          triggeredRef.current = true
+          if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current)
+          wakeWindowRef.current = false
+          setQuery(command)
+          void lookupRef.current(command)
+          return
+        }
+      }
+
+      // Phase 2a: wake word alone (e.g. just "小雞小雞") — open 4-second window
+      if (transcript.includes('小雞')) {
+        setWakeHit(true)
+        wakeWindowRef.current = true
+        setStatus('聽到了！請說要查的字...')
+        if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current)
+        wakeTimerRef.current = setTimeout(() => {
+          wakeWindowRef.current = false
+          setWakeHit(false)
+          setStatus('正在聆聽... 請說「小雞小雞，○○的×怎麼寫」')
+        }, 4000)
+        return
+      }
+
+      // Phase 2b: inside wake window — treat any speech as the command
+      if (wakeWindowRef.current) {
+        if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current)
+        wakeWindowRef.current = false
+        triggeredRef.current = true
+        setQuery(transcript)
+        void lookupRef.current(transcript)
+        return
+      }
+
+      // No wake word, no window — discard
+      setWakeHit(false)
     }
 
     recognitionRef.current = recognition
@@ -127,6 +184,7 @@ export function A1Page() {
     }
   }, [result.character])
 
+  lookupRef.current = lookup
   async function lookup(value = query) {
     const normalized = value.trim()
     if (!normalized) {
@@ -138,11 +196,20 @@ export function A1Page() {
     try {
       const response = await apiClient.lookupWord(normalized)
       setResult(response)
-      setQuery(response.character)
+      // Show corrected full phrase (e.g. "老師的溼" → "老師的師")
+      const deIdx = normalized.lastIndexOf('的')
+      if (deIdx >= 0 && response.character !== normalized) {
+        setQuery(normalized.slice(0, deIdx + 1) + response.character)
+      } else {
+        setQuery(response.character)
+      }
       setHistory((current) => [response, ...current].slice(0, 8))
       setStatus(response.note ?? '')
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '查詢失敗。')
+    } finally {
+      triggeredRef.current = false
+      setWakeHit(false)
     }
   }
 
@@ -185,7 +252,7 @@ export function A1Page() {
 
   return (
     <div className="feature-page">
-      <Panel>
+      <Panel className={wakeHit ? 'a1-panel--wake' : undefined}>
         <div className="a1-input-wrap">
           <input
             className="a1-query-input"
