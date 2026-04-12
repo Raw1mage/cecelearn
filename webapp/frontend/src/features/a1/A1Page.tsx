@@ -60,6 +60,7 @@ export function A1Page() {
   const writerTargetRef = useRef<HTMLDivElement | null>(null)
   const writerRef = useRef<HanziWriterInstance | null>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const wantListeningRef = useRef(false)
 
   useEffect(() => {
     const Recognition = getSpeechRecognitionConstructor()
@@ -77,21 +78,39 @@ export function A1Page() {
       setStatus('正在聆聽...')
     }
     recognition.onend = () => {
+      if (wantListeningRef.current) {
+        try {
+          recognition.start()
+          return
+        } catch {
+          // browser rejected restart — fall through to stop
+        }
+      }
+      wantListeningRef.current = false
       setListening(false)
       setStatus('')
     }
     recognition.onerror = (event: { error: string }) => {
+      wantListeningRef.current = false
       setListening(false)
       setStatus(`語音辨識失敗：${event.error}`)
     }
     recognition.onresult = (event: SpeechRecognitionEventLike) => {
       const transcript = event.results[0][0].transcript.trim()
-      setQuery(transcript)
-      void lookup(transcript)
+      const wakeMatch = transcript.match(/^小雞小雞[，,、\s]*(.+)/)
+      if (!wakeMatch) return
+      const command = wakeMatch[1].trim()
+      if (!command) return
+      setQuery(command)
+      void lookup(command)
     }
 
     recognitionRef.current = recognition
     setSpeechReady(true)
+
+    // Auto-start listening on page load
+    wantListeningRef.current = true
+    recognition.start()
   }, [])
 
   useEffect(() => {
@@ -151,8 +170,13 @@ export function A1Page() {
 
   function toggleListening() {
     if (!recognitionRef.current) return
-    if (listening) recognitionRef.current.stop()
-    else recognitionRef.current.start()
+    if (listening) {
+      wantListeningRef.current = false
+      recognitionRef.current.stop()
+    } else {
+      wantListeningRef.current = true
+      recognitionRef.current.start()
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
