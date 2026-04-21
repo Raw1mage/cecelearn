@@ -108,7 +108,6 @@ export function A3Page() {
   const [carryPullTargetRow, setCarryPullTargetRow] = useState<number>(0)
   const [dropCell, setDropCell] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
-  const [currentNote, setCurrentNote] = useState('')
   const [noteLog, setNoteLog] = useState<string[]>([])
   const noteLogRef = useRef<HTMLDivElement | null>(null)
   const [error, setError] = useState('')
@@ -128,7 +127,6 @@ export function A3Page() {
     if (stepIndex >= allSteps.length) {
       // Delay before showing answer so the last step is visible
       const endTimer = window.setTimeout(() => {
-        setCurrentNote('')
         setIsRunning(false)
         setAnswer(answerRef.current)
         setHighlightSet(new Set())
@@ -173,7 +171,6 @@ export function A3Page() {
         setDropCell(null)
       }
       if (step.note) {
-        setCurrentNote(step.note)
         setNoteLog((prev) => [...prev, step.note])
       }
       setStepIndex((i) => i + 1)
@@ -217,7 +214,6 @@ export function A3Page() {
     setDisplayOverrides({})
     setCarryPulling(null)
     setDropCell(null)
-    setCurrentNote('')
     setNoteLog([])
     setAnswer('')
     setIsPaused(false)
@@ -237,7 +233,6 @@ export function A3Page() {
     setDisplayOverrides({})
     setCarryPulling(null)
     setDropCell(null)
-    setCurrentNote('')
     setNoteLog([])
     setAnswer('')
     answerRef.current = ''
@@ -270,7 +265,6 @@ export function A3Page() {
     setDisplayOverrides({})
     setCarryPulling(null)
     setDropCell(null)
-    setCurrentNote('')
     setNoteLog([])
     setAnswer('')
     setIsPaused(false)

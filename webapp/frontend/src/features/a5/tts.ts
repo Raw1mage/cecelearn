@@ -7,13 +7,12 @@
  */
 
 let unlocked = false
-let cachedLang = ''
 
 // Eagerly trigger voice loading on module init (Samsung Chrome needs this)
 if (typeof window !== 'undefined' && window.speechSynthesis) {
   window.speechSynthesis.getVoices()
   window.speechSynthesis.addEventListener('voiceschanged', () => {
-    cachedLang = '' // reset cache so next call picks up loaded voices
+    cachedVoice = null
   })
 }
 
@@ -26,7 +25,7 @@ function getChineseVoice(): SpeechSynthesisVoice | null {
     const voices = window.speechSynthesis.getVoices()
     for (const prefix of ['zh-TW', 'zh-CN', 'zh', 'cmn']) {
       const v = voices.find(v => v.lang.startsWith(prefix))
-      if (v) { cachedVoice = v; cachedLang = v.lang; return v }
+      if (v) { cachedVoice = v; return v }
     }
   } catch { /* ignore */ }
   return null

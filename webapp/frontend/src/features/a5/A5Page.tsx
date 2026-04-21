@@ -73,7 +73,6 @@ export function A5Page() {
   const [showTtsSettings, setShowTtsSettings] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
   const [started, setStarted] = useState(false)
-  const [gradeResult, setGradeResult] = useState<{ score: number; coverage: number; precision: number } | null>(null)
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null)
   const canvasElRef = useRef<HTMLCanvasElement | null>(null)
   const [landscape, setLandscape] = useState(false)
@@ -148,7 +147,6 @@ export function A5Page() {
       setShowHint(false)
       setHasStrokes(false)
       setStarted(false)
-      setGradeResult(null)
       fetchingRef.current.clear()
       setPhase('quiz')
     } catch (e) {
@@ -209,8 +207,6 @@ export function A5Page() {
     const totalAttempts = totalStrokes + totalMistakes
     const correctRate = totalAttempts > 0 ? totalStrokes / totalAttempts : 0
     const points = Math.round(5 * correctRate)
-    setGradeResult(null)
-
     // Submit without clearing showHint — keep HanziWriter strokes as answer display
     const newCombo = combo + 1
     setCombo(newCombo)
@@ -238,7 +234,6 @@ export function A5Page() {
     if (canvasElRef.current) {
       grade = gradeHandwriting(canvasElRef.current, currentItem.word)
     }
-    setGradeResult(grade)
     const points = Math.round(grade.score * 10)  // 0~10
     submitWithPoints(points, hinted)
   }
@@ -271,7 +266,6 @@ export function A5Page() {
       setCurrentIdx(prev => prev + 1)
       setShowHint(false)
       setHasStrokes(false)
-      setGradeResult(null)
       setEarnedPoints(null)
     } else {
       setPhase('result')
@@ -327,7 +321,6 @@ export function A5Page() {
     setShowHint(false)
     setHasStrokes(false)
     setStarted(false)
-    setGradeResult(null)
     fetchingRef.current.clear()
   }
 
@@ -340,7 +333,6 @@ export function A5Page() {
     setShowHint(false)
     setHasStrokes(false)
     setStarted(false)
-    setGradeResult(null)
     fetchingRef.current.clear()
     setPhase('quiz')
   }

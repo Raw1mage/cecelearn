@@ -7,12 +7,16 @@ declare interface SpeechRecognitionEventLike {
 
 declare interface SpeechRecognitionLike {
   lang: string
+  continuous: boolean
   interimResults: boolean
   maxAlternatives: number
   start: () => void
   stop: () => void
+  abort: () => void
   onstart: null | (() => void)
   onend: null | (() => void)
   onerror: null | ((event: { error: string }) => void)
   onresult: null | ((event: SpeechRecognitionEventLike) => void)
+  onaudiostart: null | (() => void)
+  onaudioend: null | (() => void)
 }

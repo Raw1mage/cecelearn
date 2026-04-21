@@ -587,7 +587,6 @@ html.a5-active .a5-page {
     gap: 1rem;
     grid-row: 1 / -1;
   }
-  /* Left col height budget: 100dvh - header(4rem) - layout gap(1rem) - input panel(~5.5rem incl status+padding) - col gap(1rem) - safety(0.5rem) */
   .a1-left-col .a1-stroke-container {
     --a1-canvas: calc(100dvh - 12rem);
     width: var(--a1-canvas);
@@ -606,6 +605,7 @@ html.a5-active .a5-page {
   .a1-history-panel {
     grid-column: 2 / -1;
     align-self: stretch;
+    height: var(--a1-history-panel-height, auto);
     overflow-y: auto;
     min-height: 0;
   }

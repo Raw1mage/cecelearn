@@ -8,12 +8,13 @@ declare global {
 export function celebrate() {
   const confetti = window.confetti
   if (!confetti) return
+  const fire = confetti
 
   const duration = 1500
   const end = Date.now() + duration
 
   function frame() {
-    confetti({
+    fire({
       particleCount: 3,
       angle: 60 + Math.random() * 60,
       spread: 55,
@@ -21,7 +22,7 @@ export function celebrate() {
       origin: { x: Math.random() * 0.3, y: Math.random() * 0.3 + 0.5 },
       colors: ['#60a5fa', '#fbbf24', '#f87171', '#34d399', '#a78bfa'],
     })
-    confetti({
+    fire({
       particleCount: 3,
       angle: 60 + Math.random() * 60,
       spread: 55,
