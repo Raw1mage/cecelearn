@@ -2,6 +2,7 @@
 
 ## 需求
 - 修正 A1 麥克風流程中「先靠 VAD/VOD 類判斷再啟動 WebMedia / SpeechRecognition，效果不好；喚醒了也不會接聽」的問題。
+- 針對三星手機/平板改成不同麥克風邏輯：不常開、純手動開啟、開啟後不需喚醒詞，直接辨識語音內容。
 
 ## 範圍
 ### IN
@@ -29,6 +30,9 @@
 - 保持既有模型：仍使用 `getUserMedia + AudioContext + SpeechRecognition + VAD wait`，只修正狀態轉移缺口。
 - 將 wake window 開啟邏輯抽成單一 helper，避免 interim/final 分支行為不一致。
 - 重新開啟麥克風時走同一個 resume listening flow，而不是只切 UI state。
+- 新增三星裝置分流：`SamsungBrowser|SM-|Galaxy|SAMSUNG` 命中時，停用常開/VAD/wake word 流程，改為手動單次收聽模式。
+- 三星模式下 `SpeechRecognition` 改成 `continuous=false`、`interimResults=false`，按下麥克風後直接收最終辨識結果並查詢。
+- 由於 Samsung/Android 新版 Chromium 可能縮減 UA，進一步把偵測放寬為 `Android + maxTouchPoints > 0` 也走同樣手動模式，確保三星手機/平板一定命中。
 
 ## Verification
 - 第一輪 `bun run build` 於 `webapp/frontend` 執行失敗，但失敗點為既有非 A1 問題：
@@ -40,6 +44,8 @@
 - 局部 A1 型別檢查通過，代表本次變更未新增 `A1Page.tsx` 型別錯誤。
 - 第二輪已修正上述 build blockers，`bun run build` 成功。
 - Vite 仍輸出非阻塞警告：`/index.html` 中 `vendor/hanzi-writer.min.js` 缺少 `type="module"`，但不影響本次 build 成功。
+- 第三輪加入三星裝置專用手動收聽分流後，再次執行 `bun run build` 成功。
+- 第四輪將判斷條件放寬到 Android 觸控裝置後，`bun run build` 成功，並已重啟 frontend/backend 服務。
 
 ## Additional fixes for full build
 - `webapp/frontend/src/features/a3/A3Page.tsx`：移除未使用的 `currentNote` state 與對應 setter。

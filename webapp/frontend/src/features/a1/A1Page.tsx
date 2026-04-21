@@ -57,6 +57,7 @@ const initialResult: A1LookupResponse = {
 };
 
 export function A1Page() {
+  const samsungManualPrompt = "點一下麥克風後直接說出要查的字詞。";
   const { addScore } = useScore();
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<A1LookupResponse>(initialResult);
@@ -74,6 +75,7 @@ export function A1Page() {
   const writerRef = useRef<HanziWriterInstance | null>(null);
   const historyPanelRef = useRef<HTMLElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const samsungManualModeRef = useRef(false);
   const wantListeningRef = useRef(false);
   const triggeredRef = useRef(false);
   const wakeWindowRef = useRef(false);
@@ -84,16 +86,6 @@ export function A1Page() {
   const startListeningFlowRef = useRef<() => void>(() => {});
   const stopVadRef = useRef<() => void>(() => {});
 
-  // ── Speech recognition with VAD-assisted restart ──
-  //
-  // Strategy to avoid Samsung tablet beep-loop:
-  // 1. getUserMedia opens mic silently (no system beep, stays open forever)
-  // 2. Start SpeechRecognition once on load (one beep, acceptable)
-  // 3. continuous=true keeps the session alive as long as possible
-  // 4. When browser force-kills the session (onend):
-  //    - If VAD detects voice right now → restart immediately (beep OK, user is speaking)
-  //    - If silent → DON'T restart, enter VAD-wait loop until voice detected
-  //    This way: no beeping during silence, recognition always on during speech.
   useEffect(() => {
     const Recognition = getSpeechRecognitionConstructor();
     if (!Recognition) {
@@ -108,9 +100,13 @@ export function A1Page() {
     const VAD_THRESHOLD = 0.015;
 
     const recognition = new Recognition();
+    const isSamsungManualMode =
+      /SamsungBrowser|SM-|Galaxy|SAMSUNG/i.test(navigator.userAgent) ||
+      (/Android/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
+    samsungManualModeRef.current = isSamsungManualMode;
     recognition.lang = "cmn-Hant-TW";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.continuous = !isSamsungManualMode;
+    recognition.interimResults = !isSamsungManualMode;
     recognition.maxAlternatives = 1;
 
     /** Read current RMS from the analyser (0 if unavailable) */
@@ -171,17 +167,43 @@ export function A1Page() {
       if (!recRunningRef.current) startVadWait();
     }
 
-    startListeningFlowRef.current = resumeListening;
+    function startSamsungRecognition() {
+      if (recRunningRef.current) return;
+      triggeredRef.current = false;
+      wakeWindowRef.current = false;
+      setWakeHit(false);
+      wantListeningRef.current = true;
+      setStatus(samsungManualPrompt);
+      try {
+        recognition.start();
+      } catch {
+        setStatus("麥克風忙碌中，請稍後再試。")
+      }
+    }
+
+    startListeningFlowRef.current = isSamsungManualMode
+      ? startSamsungRecognition
+      : resumeListening;
     stopVadRef.current = stopVad;
 
     // ── Recognition event handlers ──
     recognition.onstart = () => {
       recRunningRef.current = true;
       setListening(true);
-      setStatus("正在聆聽... 請說「小雞小雞，○○的×怎麼寫」");
+      setStatus(
+        isSamsungManualMode
+          ? samsungManualPrompt
+          : "正在聆聽... 請說「小雞小雞，○○的×怎麼寫」",
+      );
     };
     recognition.onend = () => {
       recRunningRef.current = false;
+      if (isSamsungManualMode) {
+        wantListeningRef.current = false;
+        setListening(false);
+        setStatus(triggeredRef.current ? "查詢中..." : samsungManualPrompt);
+        return;
+      }
       if (!wantListeningRef.current) {
         setListening(false);
         setStatus("");
@@ -197,6 +219,21 @@ export function A1Page() {
       }
     };
     recognition.onerror = (event: { error: string }) => {
+      if (isSamsungManualMode) {
+        recRunningRef.current = false;
+        wantListeningRef.current = false;
+        setListening(false);
+        if (event.error === "aborted") {
+          setStatus("");
+          return;
+        }
+        if (event.error === "no-speech") {
+          setStatus("沒有聽清楚，請再按一次麥克風。")
+          return;
+        }
+        setStatus(`語音辨識失敗：${event.error}`);
+        return;
+      }
       if (event.error === "no-speech" || event.error === "aborted") return;
       recRunningRef.current = false;
       wantListeningRef.current = false;
@@ -210,6 +247,14 @@ export function A1Page() {
       const latest = event.results[event.results.length - 1];
       const transcript = latest[0].transcript.trim();
       if (transcript.length > 50) return;
+
+      if (isSamsungManualMode) {
+        if (!latest.isFinal || !transcript) return;
+        triggeredRef.current = true;
+        setQuery(transcript);
+        void lookupRef.current(transcript);
+        return;
+      }
 
       // Interim: detect wake word + keep wake window alive while speaking
       if (!latest.isFinal) {
@@ -259,6 +304,21 @@ export function A1Page() {
     };
 
     recognitionRef.current = recognition;
+
+    if (isSamsungManualMode) {
+      setSpeechReady(true);
+      setStatus(samsungManualPrompt);
+
+      return () => {
+        wantListeningRef.current = false;
+        try {
+          recognition.abort();
+        } catch {
+          /* ok */
+        }
+        if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
+      };
+    }
 
     // ── Bootstrap: open mic via getUserMedia (silent), then start recognition ──
     navigator.mediaDevices
@@ -408,7 +468,7 @@ export function A1Page() {
     if (!recognitionRef.current) return;
     if (listening) {
       wantListeningRef.current = false;
-      stopVadRef.current();
+      if (!samsungManualModeRef.current) stopVadRef.current();
       wakeWindowRef.current = false;
       triggeredRef.current = false;
       setWakeHit(false);
