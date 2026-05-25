@@ -1,5 +1,6 @@
 services:
   frontend:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: BUILD/docker/frontend.Dockerfile
@@ -7,6 +8,7 @@ services:
       - ../env/frontend.env
 
   backend:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: BUILD/docker/backend.Dockerfile
@@ -14,6 +16,7 @@ services:
       - ../env/backend.env
 
   gateway:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: BUILD/docker/gateway.Dockerfile
