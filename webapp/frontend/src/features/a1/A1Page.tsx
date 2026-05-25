@@ -251,7 +251,6 @@ export function A1Page() {
       if (isSamsungManualMode) {
         if (!latest.isFinal || !transcript) return;
         triggeredRef.current = true;
-        setQuery(transcript);
         void lookupRef.current(transcript);
         return;
       }
@@ -280,7 +279,6 @@ export function A1Page() {
           triggeredRef.current = true;
           if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
           wakeWindowRef.current = false;
-          setQuery(command);
           void lookupRef.current(command);
           return;
         }
@@ -295,7 +293,6 @@ export function A1Page() {
         if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
         wakeWindowRef.current = false;
         triggeredRef.current = true;
-        setQuery(transcript);
         void lookupRef.current(transcript);
         return;
       }
@@ -421,7 +418,7 @@ export function A1Page() {
       return;
     }
 
-    setStatus("查詢中...");
+    setStatus(`查詢「${normalized}」中…`);
     try {
       const response = await apiClient.lookupWord(normalized);
       setResult(response);
