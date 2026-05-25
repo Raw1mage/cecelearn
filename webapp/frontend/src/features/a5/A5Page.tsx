@@ -273,6 +273,15 @@ export function A5Page() {
     }
   }
 
+  function handlePrev() {
+    if (currentIdx > 0) {
+      setCurrentIdx(prev => prev - 1)
+      setShowHint(false)
+      setHasStrokes(false)
+      setEarnedPoints(null)
+    }
+  }
+
   // A5 page active: viewport-fit flex chain + real viewport height detection
   useEffect(() => {
     const root = document.documentElement
@@ -485,6 +494,14 @@ export function A5Page() {
                 </label>
               </div>
             )}
+            <button
+              className="a5-action-btn a5-action-btn--prev"
+              onClick={handlePrev}
+              disabled={currentIdx === 0}
+              aria-label="上一題"
+            >
+              <span>←</span>
+            </button>
             {!isSubmitted ? (
               <>
                 {speaking ? (
