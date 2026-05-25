@@ -4,6 +4,10 @@
 #
 set -euo pipefail
 
+# Ensure node is in PATH (nvm doesn't load in nohup/background contexts)
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 2>/dev/null || true
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$SCRIPT_DIR/webapp/frontend"
 BACKEND_DIR="$SCRIPT_DIR/webapp/backend"
