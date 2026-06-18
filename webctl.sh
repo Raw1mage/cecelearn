@@ -61,7 +61,9 @@ do_start() {
     else
       load_env backend
       cd "$BACKEND_DIR"
-      nohup bun run src/server.ts > "$BACKEND_LOG" 2>&1 &
+      # 開發期長久留存 log：append 不覆寫；每次啟動補一行分隔標記方便定位 run
+      printf '\n===== [backend] start %s port=%s =====\n' "$(date -Is)" "${PORT:-3014}" >> "$BACKEND_LOG"
+      nohup bun run src/server.ts >> "$BACKEND_LOG" 2>&1 &
       local pid=$!
       echo "$pid" > "$BACKEND_PID_FILE"
       echo "[backend] started (PID $pid) on port ${PORT:-3014}"
@@ -77,7 +79,9 @@ do_start() {
       load_env frontend
       export PUBLIC_BASE_PATH="${PUBLIC_BASE_PATH:-/}"
       cd "$FRONTEND_DIR"
-      nohup bun run dev > "$FRONTEND_LOG" 2>&1 &
+      # 開發期長久留存 log：append 不覆寫；每次啟動補一行分隔標記方便定位 run
+      printf '\n===== [frontend] start %s base=%s =====\n' "$(date -Is)" "${PUBLIC_BASE_PATH}" >> "$FRONTEND_LOG"
+      nohup bun run dev >> "$FRONTEND_LOG" 2>&1 &
       local pid=$!
       echo "$pid" > "$FRONTEND_PID_FILE"
       echo "[frontend] started (PID $pid) — base: ${PUBLIC_BASE_PATH}"
