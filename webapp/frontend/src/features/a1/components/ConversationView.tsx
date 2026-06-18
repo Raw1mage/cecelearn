@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { type A1ChatMessage } from '../../../shared/api/client'
 import { type IllustrationMap } from '../hooks/useConversation'
 import { TurnContent } from './TurnContent'
@@ -43,11 +43,14 @@ function MessageIllustration({
   altText,
   state,
   onRedraw,
+  onImageLoad,
 }: {
   msgId: string
   altText: string
   state: IllustrationMap[string] | undefined
   onRedraw: (msgId: string) => void
+  /** 圖片 bitmap 解碼完撐高容器後，通知外層追底 */
+  onImageLoad: () => void
 }) {
   if (!state) return null
   if (state.mode === 'loading') {
@@ -94,6 +97,7 @@ function MessageIllustration({
         className="a1-illustration-img"
         src={state.imageDataUri}
         alt={state.altText ?? altText}
+        onLoad={onImageLoad}
       />
       <div className="a1-inline-illustration-actions">
         <button
@@ -119,9 +123,15 @@ function MessageIllustration({
 export function ConversationView({ messages, busy, illustrations, onRedraw }: ConversationViewProps) {
   const endRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages.length, busy])
+  }, [])
+
+  // 追底：新訊息、busy 切換、以及「新圖文」非同步塞進來時（illustrations 轉態
+  // 會產新物件 → 觸發）都把視窗帶到底。圖片 bitmap 解碼撐高另由 img onLoad 補追。
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages.length, busy, illustrations, scrollToBottom])
 
   return (
     <div className="a1-conversation-stream">
@@ -186,6 +196,7 @@ export function ConversationView({ messages, busy, illustrations, onRedraw }: Co
                     altText={m.draw?.subject ?? m.sentence?.targetWord ?? m.story?.topic ?? '情境插圖'}
                     state={illustrations[m.id]}
                     onRedraw={onRedraw}
+                    onImageLoad={scrollToBottom}
                   />
                 )}
               </div>
