@@ -4,6 +4,9 @@ import type {
   A1IllustrateResponse,
   SceneIllustrationProvider,
 } from '../contracts/providers.js'
+import { RETRYABLE_ILLUSTRATE } from './geminiImageProvider.js'
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 /**
  * Vertex AI 情境插畫 provider。
@@ -71,6 +74,21 @@ export class VertexImageProvider implements SceneIllustrationProvider {
   }
 
   async illustrate(
+    context: string,
+    targetWord?: string,
+    mode: 'scene' | 'diagram' = 'scene',
+  ): Promise<A1IllustrateResponse | A1ErrorResponse> {
+    // 空回/暫態 5xx 重試一次（與 apikey tier 同策略）
+    let result = await this.illustrateOnce(context, targetWord, mode)
+    if (!result.ok && RETRYABLE_ILLUSTRATE.has(result.error)) {
+      log('a1.illustrate.retry', { provider: 'vertex', code: result.error })
+      await sleep(300)
+      result = await this.illustrateOnce(context, targetWord, mode)
+    }
+    return result
+  }
+
+  private async illustrateOnce(
     context: string,
     targetWord?: string,
     mode: 'scene' | 'diagram' = 'scene',

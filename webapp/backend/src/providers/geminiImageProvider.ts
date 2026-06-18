@@ -40,6 +40,14 @@ function log(event: string, fields: Record<string, unknown>): void {
   console.log(JSON.stringify({ event, ...fields, ts: Date.now() }))
 }
 
+/** 生圖暫態失敗（值得在同一 tier 內重試一次）：模型空回、上游 5xx。 */
+export const RETRYABLE_ILLUSTRATE: ReadonlySet<string> = new Set([
+  'ILLUSTRATE_EMPTY',
+  'ILLUSTRATE_UPSTREAM_ERROR',
+])
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
 /* round-robin key index（與 chat provider 各自獨立計數） */
 let keyIndex = 0
 
@@ -56,6 +64,21 @@ export class GeminiImageProvider implements SceneIllustrationProvider {
   }
 
   async illustrate(
+    context: string,
+    targetWord?: string,
+    mode: 'scene' | 'diagram' = 'scene',
+  ): Promise<A1IllustrateResponse | A1ErrorResponse> {
+    // 空回/暫態 5xx 重試一次（Nano Banana 偶發吐不出 image part）
+    let result = await this.illustrateOnce(context, targetWord, mode)
+    if (!result.ok && RETRYABLE_ILLUSTRATE.has(result.error)) {
+      log('a1.illustrate.retry', { provider: 'apikey', code: result.error })
+      await sleep(300)
+      result = await this.illustrateOnce(context, targetWord, mode)
+    }
+    return result
+  }
+
+  private async illustrateOnce(
     context: string,
     targetWord?: string,
     mode: 'scene' | 'diagram' = 'scene',
