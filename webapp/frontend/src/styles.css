@@ -151,9 +151,14 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 @keyframes a1-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.45); } 50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); } }
 .a1-panel--wake { background: rgba(250,204,21,0.18) !important; box-shadow: 0 0 16px 4px rgba(250,204,21,0.35); transition: background 0.2s, box-shadow 0.2s; }
 
-/* A1 — chat layout: 輸入列置頂 + 全寬對話串流（圖框不再常駐左欄，改 inline 在 stream） */
-.a1-chat-layout { display: flex; flex-direction: column; gap: 1rem; width: 100%; }
-.a1-input-panel { width: 100%; }
+/* A1 — chat layout（比照 opencms）：全寬對話串流在上方滾動 + 輸入列釘在底部 */
+/* 整頁鎖在視窗高度，只有對話區內部滾動，文件本身不出現捲軸（:has 僅作用於含聊天版面的頁面） */
+#root:has(.a1-chat-layout) { height: 100dvh; overflow: hidden; }
+.app-frame:has(.a1-chat-layout) { height: 100dvh; padding-bottom: 0; overflow: hidden; display: flex; flex-direction: column; }
+.app-frame:has(.a1-chat-layout) .page-shell { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.app-frame:has(.a1-chat-layout) .feature-page { flex: 1 1 auto; min-height: 0; }
+.a1-chat-layout { display: flex; flex-direction: column; gap: 1rem; width: 100%; height: 100%; min-height: 0; }
+.a1-input-panel { width: 100%; flex: 0 0 auto; }
 
 /* A1 — inline stroke box（筆順移進 stream，要顯示時才出現，不常駐版面） */
 .a1-stroke-inline { width: 100%; display: flex; justify-content: flex-start; }
@@ -183,8 +188,8 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-chip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .history-item { text-align: left; background: rgba(7,12,24,0.6); color: #eef4ff; border: 1px solid rgba(139,170,255,0.16); padding: 0.9rem 1rem; border-radius: 1rem; }
 
-/* A1 — conversation stream (融合對話歷史 + 富內容；全寬) */
-.a1-conversation-panel { width: 100%; }
+/* A1 — conversation stream (融合對話歷史 + 富內容；全寬，置頂可滾動) */
+.a1-conversation-panel { width: 100%; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
 .a1-conversation-stream { display: flex; flex-direction: column; gap: 0.85rem; width: 100%; }
 .a1-conv-empty { padding: 0.5rem 0; }
 .a1-conv-msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 100%; }
@@ -644,26 +649,10 @@ html.a5-active .a5-page {
 .a5-result-word { padding: 0.4rem 0.8rem; border-radius: 0.6rem; background: rgba(117,167,255,0.12); color: #dbe8ff; font-size: 1.1rem; }
 .a5-result-word--hinted { border: 1px dashed rgba(251,191,36,0.4); }
 
-/* A1 — tablet landscape layout：輸入列置頂 + 全寬可滾動對話串流（圖框 inline 在 stream，不常駐） */
+/* A1 — tablet landscape layout：沿用底部輸入列 + 全寬可滾動對話串流，僅放大橫向特有元素 */
 @media (orientation: landscape) and (min-width: 768px) {
-  .a1-chat-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: calc(100dvh - 6rem);
-    overflow: hidden;
-  }
-  .a1-input-panel {
-    flex: 0 0 auto;
-  }
   .a1-chat-layout .a1-chip-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .a1-conversation-panel {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    min-height: 0;
-    min-width: 0;
   }
   /* landscape 下 inline 筆順/插畫稍大，但仍受限不溢出 */
   .a1-conversation-stream .a1-illustration-img { max-width: 380px; }

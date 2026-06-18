@@ -431,6 +431,15 @@ export function A1Page() {
   return (
     <div className="feature-page">
       <div className="a1-chat-layout">
+        <Panel className="a1-conversation-panel">
+          <ConversationView
+            messages={messages}
+            busy={busy}
+            illustrations={illustrations}
+            onRedraw={redrawIllustration}
+          />
+        </Panel>
+
         <Panel className="a1-input-panel">
           <div className="a1-input-wrap">
               <input
@@ -513,15 +522,6 @@ export function A1Page() {
               {displayStatus}
             </p>
           ) : null}
-        </Panel>
-
-        <Panel className="a1-conversation-panel">
-          <ConversationView
-            messages={messages}
-            busy={busy}
-            illustrations={illustrations}
-            onRedraw={redrawIllustration}
-          />
         </Panel>
       </div>
 
