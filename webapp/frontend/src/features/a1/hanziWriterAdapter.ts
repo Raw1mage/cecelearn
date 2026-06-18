@@ -17,16 +17,21 @@ declare global {
   }
 }
 
-export function createHanziWriter(target: HTMLElement, character: string): HanziWriterInstance {
+export function createHanziWriter(
+  target: HTMLElement,
+  character: string,
+  /** SVG 邊長（px）——應等於容器實際渲染尺寸，避免 SVG 比框大而偏移/被裁 */
+  size = 300,
+): HanziWriterInstance {
   const constructor = window.HanziWriter
   if (!constructor) {
     throw new Error('筆順元件尚未載入，請重新整理頁面。')
   }
 
   return constructor.create(target, character, {
-    width: 340,
-    height: 340,
-    padding: 15,
+    width: size,
+    height: size,
+    padding: Math.max(8, Math.round(size * 0.05)),
     showOutline: true,
     strokeAnimationSpeed: 1.2,
     delayBetweenStrokes: 150,

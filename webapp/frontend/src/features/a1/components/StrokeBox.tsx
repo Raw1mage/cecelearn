@@ -28,7 +28,9 @@ export function StrokeBox({ char }: StrokeBoxProps) {
     setPracticing(false)
     setError('')
     try {
-      writerRef.current = createHanziWriter(targetRef.current, char)
+      // SVG 尺寸對齊框的實際渲染寬度（容器是正方形），避免寫死 340 比框大而偏移
+      const size = Math.round(targetRef.current.clientWidth) || 300
+      writerRef.current = createHanziWriter(targetRef.current, char, size)
       writerRef.current.animateCharacter()
     } catch (err) {
       setError(err instanceof Error ? err.message : '無法初始化筆順顯示。')
