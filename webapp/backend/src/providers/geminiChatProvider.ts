@@ -73,6 +73,14 @@ const RESPONSE_SCHEMA = {
         question: { type: 'STRING' },
         steps: { type: 'ARRAY', items: { type: 'STRING' } },
         answer: { type: 'STRING' },
+        words: {
+          type: 'ARRAY',
+          items: {
+            type: 'OBJECT',
+            properties: { word: { type: 'STRING' }, meaning: { type: 'STRING' } },
+            required: ['word', 'meaning'],
+          },
+        },
       },
       required: ['subject', 'question', 'steps'],
     },

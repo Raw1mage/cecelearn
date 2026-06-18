@@ -29,6 +29,7 @@ intent 只能是以下其中一個（封閉集合）：
   · question：把小朋友的題目正規化成一句完整題目。
   · steps：用適齡、口語、可朗讀的中文，一步一步講解（2-5 步）；數學要帶出怎麼想、怎麼算；英文要講意思、關鍵字、怎麼讀懂。
   · answer：最後的答案或結論（若這題有明確答案）。
+  · words：**只有 subject=english 時才填**。挑這題裡 1-5 個關鍵英文單字，每個給 {word（英文單字）, meaning（中文意思）}，給小朋友跟讀練習。非英文題不要填 words。
   · 注意：單純一個算式（如「3+5」）走 solve_arithmetic，不要走 explain；有情境/文字/多步驟的數學才走 explain。
 - "start_dictation"：小朋友想玩/練習「聽寫」測驗（聽詞語寫出來）。常見如「我要練習聽寫」「考我聽寫」「來玩聽寫」「開始聽寫」。→ 只填 reply，用一句期待的引導語（例：「好呀！我們來玩聽寫，仔細聽喔！」）。前端會打開聽寫測驗畫面。
 - "start_idiom"：小朋友想玩/練習「成語」測驗。常見如「來玩成語」「成語練習」「考我成語」「我要玩成語遊戲」。→ 只填 reply，用一句期待的引導語（例：「好呀！我們來玩成語小遊戲！」）。前端會打開成語測驗畫面。
@@ -42,8 +43,8 @@ intent 只能是以下其中一個（封閉集合）：
 - 輸入「說一個小兔子的故事」→ intent=tell_story, story={topic:"小兔子", story:"從前有一隻小白兔..."}
 - 輸入「3 乘 7 怎麼算」→ intent=solve_arithmetic, arithmetic={a:3,b:7,operation:"*",expression:"3 × 7"}, reply="好呀！小雞老師用直式一步一步算給你看。"
 - 輸入「小明有 5 顆糖，給了弟弟 2 顆，還剩幾顆」→ intent=explain, explain={subject:"math", question:"小明有 5 顆糖，給了弟弟 2 顆，還剩幾顆？", steps:["先看小明本來有幾顆：五顆糖。","他給了弟弟兩顆，所以要把兩顆拿走。","用減法：五減二等於三。"], answer:"還剩三顆糖。"}, reply="好呀！這是一題減法的應用題，我們一起想！"
-- 輸入「This is a cat 是什麼意思」→ intent=explain, explain={subject:"english", question:"This is a cat", steps:["This 是「這個」的意思。","is 是「是」。","a cat 是「一隻貓」。","合起來就是：這是一隻貓。"], answer:"這是一隻貓。"}, reply="好呀！我來幫你看懂這句英文！"
-- 輸入「apple 怎麼讀」→ intent=explain, explain={subject:"english", question:"apple", steps:["apple 是「蘋果」的意思。","它讀起來像「ㄟ-ㄆㄛ」。"], answer:"apple 就是蘋果。"}, reply="好呀！我來教你 apple 這個單字！"
+- 輸入「This is a cat 是什麼意思」→ intent=explain, explain={subject:"english", question:"This is a cat", steps:["This 是「這個」的意思。","is 是「是」。","a cat 是「一隻貓」。","合起來就是：這是一隻貓。"], answer:"這是一隻貓。", words:[{word:"this",meaning:"這個"},{word:"is",meaning:"是"},{word:"cat",meaning:"貓"}]}, reply="好呀！我來幫你看懂這句英文！"
+- 輸入「apple 怎麼讀」→ intent=explain, explain={subject:"english", question:"apple", steps:["apple 是「蘋果」的意思。","它讀起來像「ㄟ-ㄆㄛ」。"], answer:"apple 就是蘋果。", words:[{word:"apple",meaning:"蘋果"}]}, reply="好呀！我來教你 apple 這個單字！"
 - 輸入「24 除以 6」→ intent=solve_arithmetic, arithmetic={a:24,b:6,operation:"/",expression:"24 ÷ 6"}, reply="好，我們一起看 24 ÷ 6 怎麼算。"
 - 輸入「我要練習聽寫」→ intent=start_dictation, reply="好呀！我們來玩聽寫，仔細聽喔！"
 - 輸入「考我聽寫」→ intent=start_dictation, reply="沒問題！準備好紙筆，我們開始聽寫囉！"
@@ -130,6 +131,14 @@ export const INTENT_JSON_SCHEMA = {
         question: { type: 'string' },
         steps: { type: 'array', items: { type: 'string' } },
         answer: { type: 'string' },
+        words: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { word: { type: 'string' }, meaning: { type: 'string' } },
+            required: ['word', 'meaning'],
+          },
+        },
       },
       required: ['subject', 'question', 'steps'],
     },

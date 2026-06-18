@@ -47,12 +47,19 @@ export type A1Intent =
   | 'chat'
   | 'unclear'
 
+/** 英文跟讀練習的單字（subject=english 時附帶）：單字 + 中文意思。 */
+export type A1EnglishWord = {
+  word: string
+  meaning: string
+}
+
 /** 小家教講解（唸/打出的題目）：英文題、數學應用題、概念解釋。純算式仍走 solve_arithmetic。 */
 export type A1ExplainPayload = {
   subject: 'english' | 'math' | 'general'
   question: string   // 小朋友唸/打出的題目（正規化後）
   steps: string[]    // 一步步講解，適齡、可朗讀
   answer?: string    // 最後答案/結論（若適用）
+  words?: A1EnglishWord[]   // 英文題：可跟讀練習的關鍵單字（1-5 個）
 }
 
 export type A1DrawPayload = {

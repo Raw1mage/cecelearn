@@ -84,12 +84,19 @@ export type A1DrawPayload = {
   subject: string
 }
 
+/** 英文跟讀練習單字（subject=english 時附帶） */
+export type A1EnglishWord = {
+  word: string
+  meaning: string
+}
+
 /** 小家教講解 payload（唸/打出的題目：英文題、數學應用題、概念） */
 export type A1ExplainPayload = {
   subject: 'english' | 'math' | 'general'
   question: string
   steps: string[]
   answer?: string
+  words?: A1EnglishWord[]
 }
 
 export type A1SentencePayload = {

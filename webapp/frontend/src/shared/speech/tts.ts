@@ -5,6 +5,7 @@
 
 let enabled = true
 let zhVoice: SpeechSynthesisVoice | null = null
+let enVoice: SpeechSynthesisVoice | null = null
 
 /** 最後一次 TTS 播放結束的時間戳（用於 echo 軟閘尾窗）。 */
 let lastSpeechEndedAt = 0
@@ -109,8 +110,45 @@ function pickVoice(): SpeechSynthesisVoice | null {
   )
 }
 
+function pickEnVoice(): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null
+  const voices = window.speechSynthesis.getVoices()
+  if (voices.length === 0) return null
+  return (
+    voices.find((v) => /en[-_]US/i.test(v.lang)) ??
+    voices.find((v) => /^en/i.test(v.lang)) ??
+    null
+  )
+}
+
 export function isTtsSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
+}
+
+/**
+ * 朗讀一個英文單字／句子（英文跟讀練習用）。放慢給小朋友聽清楚。
+ * 不受朗讀總開關 enabled 影響——這是使用者「明確點擊聆聽」的動作。
+ */
+export function speakEnglish(text: string): void {
+  if (!text || !isTtsSupported()) return
+  const synth = window.speechSynthesis
+  synth.cancel()
+  recordSpeechText(text)
+  if (!enVoice) enVoice = pickEnVoice()
+  const utter = new SpeechSynthesisUtterance(text)
+  utter.lang = 'en-US'
+  if (enVoice) utter.voice = enVoice
+  utter.rate = 0.8
+  utter.pitch = 1.0
+  utter.onend = () => {
+    lastSpeechEndedAt = Date.now()
+    notifySpeechEnd()
+  }
+  utter.onerror = () => {
+    lastSpeechEndedAt = Date.now()
+    notifySpeechEnd()
+  }
+  synth.speak(utter)
 }
 
 export function setTtsEnabled(value: boolean): void {
@@ -181,5 +219,6 @@ export function speak(text: string): void {
 if (isTtsSupported()) {
   window.speechSynthesis.onvoiceschanged = () => {
     zhVoice = pickVoice()
+    enVoice = pickEnVoice()
   }
 }

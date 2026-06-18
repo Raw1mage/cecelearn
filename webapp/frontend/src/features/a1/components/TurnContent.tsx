@@ -3,6 +3,7 @@ import {
   type A1LookupWord,
 } from '../../../shared/api/client'
 import { parseBopomofo } from '../bopomofo'
+import { EnglishPractice } from './EnglishPractice'
 
 /** Render a word with vertical bopomofo annotation (沿用 A1Page 既有樣式) */
 function RubyWord({ term, bopomofo }: A1LookupWord) {
@@ -138,6 +139,9 @@ export function TurnContent({ message }: TurnContentProps) {
               <span className="a1-explain-answer__label">答案</span>
               {explain.answer}
             </p>
+          )}
+          {explain.subject === 'english' && explain.words && explain.words.length > 0 && (
+            <EnglishPractice words={explain.words} />
           )}
         </article>
       </div>
