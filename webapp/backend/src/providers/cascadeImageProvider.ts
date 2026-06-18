@@ -52,11 +52,12 @@ export class CascadeImageProvider implements SceneIllustrationProvider {
   async illustrate(
     context: string,
     targetWord?: string,
+    mode: 'scene' | 'diagram' = 'scene',
   ): Promise<A1IllustrateResponse | A1ErrorResponse> {
     const start = Date.now()
 
     // tier 1：免費
-    const primaryResult = await this.primary.illustrate(context, targetWord)
+    const primaryResult = await this.primary.illustrate(context, targetWord, mode)
     if (primaryResult.ok) {
       log('a1.illustrate.cascade', { tier: this.primaryLabel, outcome: 'ok' })
       return primaryResult
@@ -81,7 +82,7 @@ export class CascadeImageProvider implements SceneIllustrationProvider {
     })
 
     // tier 2：福利點數
-    const secondaryResult = await this.secondary.illustrate(context, targetWord)
+    const secondaryResult = await this.secondary.illustrate(context, targetWord, mode)
     log('a1.illustrate.cascade', {
       tier: this.secondaryLabel,
       outcome: secondaryResult.ok ? 'ok' : 'error',

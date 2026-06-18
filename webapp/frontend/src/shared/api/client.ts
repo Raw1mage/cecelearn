@@ -74,6 +74,7 @@ export type A1Intent =
   | 'tell_story'
   | 'draw'
   | 'solve_arithmetic'
+  | 'explain'
   | 'start_dictation'
   | 'start_idiom'
   | 'chat'
@@ -81,6 +82,14 @@ export type A1Intent =
 
 export type A1DrawPayload = {
   subject: string
+}
+
+/** 小家教講解 payload（唸/打出的題目：英文題、數學應用題、概念） */
+export type A1ExplainPayload = {
+  subject: 'english' | 'math' | 'general'
+  question: string
+  steps: string[]
+  answer?: string
 }
 
 export type A1SentencePayload = {
@@ -131,6 +140,7 @@ export type A1ChatMessage = {
   story?: A1StoryPayload
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
+  explain?: A1ExplainPayload
   // 測驗完成回流的成績總結卡（DD-6）；只有 tutor 訊息會帶
   quizSummary?: QuizSummary
 }
@@ -144,6 +154,7 @@ export type A1ChatResponse = {
   story?: A1StoryPayload
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
+  explain?: A1ExplainPayload
   illustratable?: boolean
 }
 
@@ -201,9 +212,13 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(hint ? { messages, hint } : { messages }),
     }),
-  illustrate: (context: string, targetWord?: string) =>
+  illustrate: (context: string, targetWord?: string, mode: 'scene' | 'diagram' = 'scene') =>
     request<A1IllustrateResponse | A1ErrorResponse>('/a1/illustrate', {
       method: 'POST',
-      body: JSON.stringify(targetWord ? { context, targetWord } : { context }),
+      body: JSON.stringify({
+        context,
+        ...(targetWord ? { targetWord } : {}),
+        ...(mode === 'diagram' ? { mode } : {}),
+      }),
     }),
 }

@@ -21,6 +21,7 @@ const INTENT_LABEL: Record<string, string> = {
   tell_story: '故事',
   draw: '畫圖',
   solve_arithmetic: '算術',
+  explain: '講解',
   start_dictation: '聽寫',
   start_idiom: '成語',
   chat: '聊天',
@@ -138,7 +139,7 @@ export function ConversationView({ messages, busy, illustrations, onRedraw }: Co
       {messages.length === 0 && !busy ? (
         <div className="a1-conv-empty">
           <p className="a1-reply-bubble">
-            你好！我是小雞老師，可以說「用蘋果造句」、「用開心造三個句子」、「花可以組什麼詞」、「蘋果的蘋」、「3 乘 7 怎麼算」、「說一個故事」或「畫一隻貓」喔！
+            你好！我是小雞老師，可以說「用蘋果造句」、「花可以組什麼詞」、「蘋果的蘋」、「3 乘 7 怎麼算」、「說一個故事」或「畫一隻貓」。也可以把考卷上的題目唸給我聽，像「This is a cat 是什麼意思」或「小明有 5 顆糖給了弟弟 2 顆還剩幾顆」，我會一步一步講解給你聽喔！
           </p>
         </div>
       ) : (
@@ -193,7 +194,7 @@ export function ConversationView({ messages, busy, illustrations, onRedraw }: Co
                 {m.role === 'tutor' && m.id && (
                   <MessageIllustration
                     msgId={m.id}
-                    altText={m.draw?.subject ?? m.sentence?.targetWord ?? m.story?.topic ?? '情境插圖'}
+                    altText={m.draw?.subject ?? m.sentence?.targetWord ?? m.story?.topic ?? m.explain?.question ?? '情境插圖'}
                     state={illustrations[m.id]}
                     onRedraw={onRedraw}
                     onImageLoad={scrollToBottom}

@@ -14,7 +14,19 @@ import type {
 
 const VERTEX_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 
-function buildPrompt(context: string, targetWord?: string): string {
+function buildPrompt(context: string, targetWord?: string, mode: 'scene' | 'diagram' = 'scene'): string {
+  if (mode === 'diagram') {
+    const focus = targetWord ? `這張圖要幫助理解：「${targetWord}」。` : ''
+    return [
+      '請畫一張適合 6-9 歲兒童的「教學示意圖／圖解」，幫助小朋友理解下面的講解。',
+      '風格簡單清楚、色彩明亮可愛，用具體的東西（例如蘋果、積木、數線、分組、箭頭）把概念視覺化。',
+      '畫面要正向、安全、適齡，不要嚇人或不適合兒童的內容；可有極少量必要的數字標示，但不要大段文字。',
+      focus,
+      `要圖解的內容：${context}`,
+    ]
+      .filter(Boolean)
+      .join('\n')
+  }
   const focus = targetWord ? `重點呈現「${targetWord}」的情境。` : ''
   return [
     '請畫一張適合 6-9 歲兒童的插畫，風格溫暖、可愛、色彩明亮，像兒童繪本或貼紙插圖。',
@@ -61,12 +73,14 @@ export class VertexImageProvider implements SceneIllustrationProvider {
   async illustrate(
     context: string,
     targetWord?: string,
+    mode: 'scene' | 'diagram' = 'scene',
   ): Promise<A1IllustrateResponse | A1ErrorResponse> {
     const start = Date.now()
     log('a1.illustrate.request', {
       provider: 'vertex',
       hasTarget: Boolean(targetWord),
       contextLen: context.length,
+      mode,
     })
 
     if (!context.trim()) {
@@ -106,7 +120,7 @@ export class VertexImageProvider implements SceneIllustrationProvider {
     }
 
     const body = JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: buildPrompt(context, targetWord) }] }],
+      contents: [{ role: 'user', parts: [{ text: buildPrompt(context, targetWord, mode) }] }],
       generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
     })
 

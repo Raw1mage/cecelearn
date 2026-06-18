@@ -217,6 +217,20 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-story-text { margin: 0; line-height: 1.7; color: #eef4ff; }
 .a1-arithmetic-surface { width: 100%; display: flex; justify-content: flex-start; }
 
+/* A1 — explain card（小家教講解：英文題/數學應用題/概念） */
+.a1-explain-card { padding: 0.9rem 1rem; border-radius: 0.9rem; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.28); display: flex; flex-direction: column; gap: 0.65rem; }
+.a1-explain-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+.a1-explain-subject { flex: 0 0 auto; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 0.6rem; color: #06281d; background: #34d399; }
+.a1-explain-subject--english { background: #7dd3fc; color: #082f3f; }
+.a1-explain-subject--math { background: #fcd34d; color: #3a2a06; }
+.a1-explain-subject--general { background: #c4b5fd; color: #241a4a; }
+.a1-explain-question { margin: 0; font-weight: 700; color: #eef4ff; line-height: 1.5; }
+.a1-explain-steps { margin: 0; padding-left: 0; list-style: none; counter-reset: explain-step; display: flex; flex-direction: column; gap: 0.45rem; }
+.a1-explain-step { counter-increment: explain-step; display: flex; align-items: flex-start; gap: 0.6rem; line-height: 1.6; color: #eef4ff; }
+.a1-explain-step::before { content: counter(explain-step); flex: 0 0 auto; width: 1.4rem; height: 1.4rem; display: grid; place-items: center; border-radius: 50%; background: rgba(52,211,153,0.45); color: #fff; font-size: 0.78rem; font-weight: 700; }
+.a1-explain-answer { margin: 0; padding: 0.55rem 0.8rem; border-radius: 0.7rem; background: rgba(52,211,153,0.18); color: #eef4ff; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; line-height: 1.5; }
+.a1-explain-answer__label { flex: 0 0 auto; font-size: 0.72rem; padding: 0.12rem 0.5rem; border-radius: 0.5rem; background: #34d399; color: #06281d; }
+
 /* A1 — inline illustration (per-message，歷史保留，不洗掉) */
 .a1-inline-illustration { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
 .a1-inline-illustration--loading { flex-direction: row; align-items: center; gap: 0.6rem; }

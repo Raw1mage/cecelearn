@@ -34,6 +34,7 @@ export function createA1Module(
     illustrate(
       context: string,
       targetWord?: string,
+      mode: 'scene' | 'diagram' = 'scene',
     ): Promise<A1IllustrateResponse | A1ErrorResponse> {
       if (!illustrationProvider) {
         return Promise.resolve({
@@ -42,7 +43,7 @@ export function createA1Module(
           message: '畫圖功能還在準備中喔！',
         })
       }
-      return illustrationProvider.illustrate(context, targetWord)
+      return illustrationProvider.illustrate(context, targetWord, mode)
     },
   }
 }

@@ -24,7 +24,7 @@ const RESPONSE_SCHEMA = {
   properties: {
     intent: {
       type: 'STRING',
-      enum: ['lookup', 'make_words', 'make_sentence', 'tell_story', 'draw', 'solve_arithmetic', 'start_dictation', 'start_idiom', 'chat', 'unclear'],
+      enum: ['lookup', 'make_words', 'make_sentence', 'tell_story', 'draw', 'solve_arithmetic', 'explain', 'start_dictation', 'start_idiom', 'chat', 'unclear'],
     },
     reply: { type: 'STRING' },
     lookup: {
@@ -65,6 +65,16 @@ const RESPONSE_SCHEMA = {
         expression: { type: 'STRING' },
       },
       required: ['a', 'b', 'operation', 'expression'],
+    },
+    explain: {
+      type: 'OBJECT',
+      properties: {
+        subject: { type: 'STRING', enum: ['english', 'math', 'general'] },
+        question: { type: 'STRING' },
+        steps: { type: 'ARRAY', items: { type: 'STRING' } },
+        answer: { type: 'STRING' },
+      },
+      required: ['subject', 'question', 'steps'],
     },
   },
   required: ['intent', 'reply'],

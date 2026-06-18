@@ -41,10 +41,19 @@ export type A1Intent =
   | 'tell_story'
   | 'draw'
   | 'solve_arithmetic'
+  | 'explain'
   | 'start_dictation'
   | 'start_idiom'
   | 'chat'
   | 'unclear'
+
+/** 小家教講解（唸/打出的題目）：英文題、數學應用題、概念解釋。純算式仍走 solve_arithmetic。 */
+export type A1ExplainPayload = {
+  subject: 'english' | 'math' | 'general'
+  question: string   // 小朋友唸/打出的題目（正規化後）
+  steps: string[]    // 一步步講解，適齡、可朗讀
+  answer?: string    // 最後答案/結論（若適用）
+}
 
 export type A1DrawPayload = {
   subject: string   // 小朋友想畫的東西（直接畫圖請求）
@@ -72,6 +81,7 @@ export type A1ChatMessage = {
   sentence?: A1SentencePayload
   story?: A1StoryPayload
   arithmetic?: A1ArithmeticPayload
+  explain?: A1ExplainPayload
 }
 
 export type A1StoryPayload = {
@@ -100,12 +110,15 @@ export type A1ChatResponse = {
   story?: A1StoryPayload
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
+  explain?: A1ExplainPayload
   illustratable?: boolean
 }
 
 export type A1IllustrateRequest = {
   context: string
   targetWord?: string
+  /** 'scene'＝情境插畫（預設，造句/故事/畫圖）；'diagram'＝教學示意圖/圖解（explain 講解用） */
+  mode?: 'scene' | 'diagram'
 }
 
 export type A1IllustrateResponse = {
@@ -125,7 +138,11 @@ export interface DialogueChatProvider {
 }
 
 export interface SceneIllustrationProvider {
-  illustrate(context: string, targetWord?: string): Promise<A1IllustrateResponse | A1ErrorResponse>
+  illustrate(
+    context: string,
+    targetWord?: string,
+    mode?: 'scene' | 'diagram',
+  ): Promise<A1IllustrateResponse | A1ErrorResponse>
 }
 
 export interface IdiomQuizProvider {

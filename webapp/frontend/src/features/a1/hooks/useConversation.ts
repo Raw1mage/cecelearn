@@ -63,6 +63,10 @@ function buildSpeech(res: A1ChatResponse): string {
     parts.push(...res.sentence.sentences)
   } else if (res.intent === 'tell_story' && res.story?.story) {
     parts.push(res.story.story)
+  } else if (res.intent === 'explain' && res.explain) {
+    // 講解要唸出來：一步步講 + 結論，小家教才像在「教」
+    parts.push(...res.explain.steps)
+    if (res.explain.answer) parts.push(res.explain.answer)
   }
   return parts.filter(Boolean).join('。')
 }
@@ -139,6 +143,7 @@ export function useConversation() {
         if (res.story) tutorMsg.story = res.story
         if (res.draw) tutorMsg.draw = res.draw
         if (res.arithmetic) tutorMsg.arithmetic = res.arithmetic
+        if (res.explain) tutorMsg.explain = res.explain
         setMessages((cur) => [...cur, tutorMsg])
         setStatus('')
         speak(buildSpeech(res))
@@ -184,13 +189,20 @@ export function useConversation() {
         return
       }
 
-      const context =
-        turn.sentence?.sentences?.[0] ??
-        turn.story?.story ??
-        turn.draw?.subject ??
-        turn.reply
-      const targetWord =
-        turn.sentence?.targetWord ?? turn.story?.topic ?? turn.draw?.subject
+      // explain（講解）用「圖解」風格：把題目＋講解步驟當作要圖解的內容
+      const isExplain = turn.intent === 'explain' && !!turn.explain
+      const context = isExplain
+        ? [turn.explain!.question, ...turn.explain!.steps, turn.explain!.answer ?? '']
+            .filter(Boolean)
+            .join(' ')
+        : turn.sentence?.sentences?.[0] ??
+          turn.story?.story ??
+          turn.draw?.subject ??
+          turn.reply
+      const targetWord = isExplain
+        ? turn.explain!.question
+        : turn.sentence?.targetWord ?? turn.story?.topic ?? turn.draw?.subject
+      const illustrateMode: 'scene' | 'diagram' = isExplain ? 'diagram' : 'scene'
 
       illustrateBusyRef.current.add(msgId)
       setIllustrations((cur) => ({ ...cur, [msgId]: { mode: 'loading' } }))
@@ -198,7 +210,7 @@ export function useConversation() {
       bumpDailyCount()
       if (!manual) sessionAutoCountRef.current += 1
       try {
-        const res = await apiClient.illustrate(context, targetWord)
+        const res = await apiClient.illustrate(context, targetWord, illustrateMode)
         if (!res.ok) {
           setIllustrations((cur) => ({ ...cur, [msgId]: { mode: 'error', message: res.message } }))
           return

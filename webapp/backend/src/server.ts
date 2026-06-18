@@ -154,15 +154,21 @@ const server = createServer(async (request, response) => {
     const raw = await readBody(request)
     let context = ''
     let targetWord: string | undefined
+    let mode: 'scene' | 'diagram' = 'scene'
     try {
-      const payload = JSON.parse(raw || '{}') as { context?: string; targetWord?: string }
+      const payload = JSON.parse(raw || '{}') as {
+        context?: string
+        targetWord?: string
+        mode?: 'scene' | 'diagram'
+      }
       if (typeof payload.context === 'string') context = payload.context
       if (typeof payload.targetWord === 'string') targetWord = payload.targetWord
+      if (payload.mode === 'diagram') mode = 'diagram'
     } catch {
       send(400, { ok: false, error: 'ILLUSTRATE_BAD_REQUEST', message: '我還不知道要畫什麼耶。' }, raw)
       return
     }
-    const result = await a1.illustrate(context, targetWord)
+    const result = await a1.illustrate(context, targetWord, mode)
     send(result.ok ? 200 : 502, result, raw)
     return
   }

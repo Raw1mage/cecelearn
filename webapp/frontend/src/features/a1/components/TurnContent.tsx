@@ -33,8 +33,14 @@ function RubyWord({ term, bopomofo }: A1LookupWord) {
 }
 
 export type TurnContentProps = {
-  /** tutor 訊息附帶的富內容 payload（lookup / sentence / story） */
-  message: Pick<A1ChatMessage, 'intent' | 'lookup' | 'sentence' | 'story'>
+  /** tutor 訊息附帶的富內容 payload（lookup / sentence / story / explain） */
+  message: Pick<A1ChatMessage, 'intent' | 'lookup' | 'sentence' | 'story' | 'explain'>
+}
+
+const SUBJECT_LABEL: Record<string, string> = {
+  english: '英文',
+  math: '數學',
+  general: '講解',
 }
 
 /**
@@ -45,7 +51,7 @@ export type TurnContentProps = {
  * - chat / unclear → 無額外內容（只有文字泡泡，由 ConversationView 渲染）
  */
 export function TurnContent({ message }: TurnContentProps) {
-  const { intent, lookup, sentence, story } = message
+  const { intent, lookup, sentence, story, explain } = message
 
   if ((intent === 'lookup' || intent === 'make_words') && lookup) {
     const words = lookup.words ?? []
@@ -102,6 +108,37 @@ export function TurnContent({ message }: TurnContentProps) {
         <article className="a1-story-card">
           {story.topic && <h4 className="a1-story-topic">{story.topic}</h4>}
           <p className="a1-story-text">{story.story}</p>
+        </article>
+      </div>
+    )
+  }
+
+  if (intent === 'explain' && explain) {
+    const steps = explain.steps ?? []
+    return (
+      <div className="a1-turn-content a1-turn-content--explain">
+        <article className="a1-explain-card">
+          <header className="a1-explain-head">
+            <span className={`a1-explain-subject a1-explain-subject--${explain.subject}`}>
+              {SUBJECT_LABEL[explain.subject] ?? '講解'}
+            </span>
+            <p className="a1-explain-question">{explain.question}</p>
+          </header>
+          {steps.length > 0 && (
+            <ol className="a1-explain-steps">
+              {steps.map((s, i) => (
+                <li key={i} className="a1-explain-step">
+                  {s}
+                </li>
+              ))}
+            </ol>
+          )}
+          {explain.answer && (
+            <p className="a1-explain-answer">
+              <span className="a1-explain-answer__label">答案</span>
+              {explain.answer}
+            </p>
+          )}
         </article>
       </div>
     )
