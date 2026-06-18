@@ -387,7 +387,8 @@ export function A1Page() {
       setStatus("請先輸入或說一句話。");
       return;
     }
-    setQuery(normalized);
+    // 送出後清空輸入欄：已送出的字（normalized）已存區域變數，不該再留在欄位裡
+    setQuery("");
     setStatus("");
     try {
       await sendTurn(normalized, detectLookupHint(normalized));
