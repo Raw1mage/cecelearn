@@ -1,0 +1,19 @@
+{
+  "diagram_title": "Run Chick Teacher Dialogue Learning",
+  "node_reference": "A0",
+  "activities": [
+    { "id": "A1", "title": "Route Dialogue Intent", "description": "判定使用者這一輪的意圖（含 start_dictation / start_idiom 與既有意圖）", "decomposition": "A1" },
+    { "id": "A2", "title": "Run Quiz Overlay", "description": "拉起聽寫/成語全螢幕 overlay 並回流成績", "decomposition": "A2" },
+    { "id": "A3", "title": "Render Conversation Stream", "description": "渲染對話泡泡、inline 富內容與成績總結卡", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "AR1", "source": "EXTERNAL", "target": "A1:input", "label": "語音或打字輸入", "type": "input" },
+    { "id": "AR2", "source": "EXTERNAL", "target": "A1:control", "label": "intent 封閉集", "type": "control" },
+    { "id": "AR3", "source": "A1:output", "target": "A2:input", "label": "start_dictation / start_idiom 意圖", "type": "output" },
+    { "id": "AR4", "source": "A1:output", "target": "A3:input", "label": "既有意圖回應 payload", "type": "output" },
+    { "id": "AR5", "source": "A2:output", "target": "A3:input", "label": "測驗成績總結", "type": "output" },
+    { "id": "AR6", "source": "A3:output", "target": "EXTERNAL", "label": "對話畫面", "type": "output" },
+    { "id": "AR7", "source": "EXTERNAL", "target": "A1:mechanism", "label": "Gemini chat provider", "type": "mechanism" },
+    { "id": "AR8", "source": "EXTERNAL", "target": "A2:mechanism", "label": "A5/A2 既有測驗元件", "type": "mechanism" }
+  ]
+}

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useConversation } from "./hooks/useConversation";
 import { ConversationView } from "./components/ConversationView";
 import { Panel } from "../../shared/components/Panel";
+import { A5Page } from "../a5/A5Page";
+import { A2Page } from "../a2/A2Page";
 import {
   isTtsSupported,
   isTtsEnabled,
@@ -33,8 +35,12 @@ export function A1Page() {
     status: convStatus,
     busy,
     illustrations,
+    activeOverlay,
     sendTurn,
     redrawIllustration,
+    openOverlay,
+    closeOverlay,
+    onQuizComplete,
   } = useConversation();
 
   const [query, setQuery] = useState("");
@@ -347,6 +353,32 @@ export function A1Page() {
     };
   }, []);
 
+  // 麥克風互斥（DD-5/R2）：overlay 開啟時暫停 A1 語音辨識（避免與 A5 TTS 資源衝突），
+  // 關閉時恢復。複用既有 abort / startListeningFlow 路徑，不動語音核心 useEffect（DD-10）。
+  const wasListeningBeforeOverlayRef = useRef(false);
+  useEffect(() => {
+    if (activeOverlay) {
+      // 記住進 overlay 前是否在聽，關閉後據此恢復。
+      wasListeningBeforeOverlayRef.current = wantListeningRef.current;
+      wantListeningRef.current = false;
+      triggeredRef.current = false;
+      if (!samsungManualModeRef.current) stopVadRef.current();
+      try {
+        recognitionRef.current?.abort();
+      } catch {
+        /* ok */
+      }
+      setListening(false);
+    } else if (wasListeningBeforeOverlayRef.current) {
+      // 關閉 overlay 且先前在聽：恢復辨識。
+      wasListeningBeforeOverlayRef.current = false;
+      if (recognitionRef.current) {
+        wantListeningRef.current = true;
+        startListeningFlowRef.current();
+      }
+    }
+  }, [activeOverlay]);
+
   // 辨識結果下游：sendTurn 包裝（DD-10：lookupRef 改指向對話送出）
   lookupRef.current = sendTurnFromSpeech;
   async function sendTurnFromSpeech(value = query) {
@@ -459,6 +491,22 @@ export function A1Page() {
                 </button>
               )}
             </div>
+          <div className="a1-quick-chips">
+            <button
+              type="button"
+              className="a1-quick-chip"
+              onClick={() => openOverlay("dictation")}
+            >
+              ✏️ 聽寫
+            </button>
+            <button
+              type="button"
+              className="a1-quick-chip"
+              onClick={() => openOverlay("idiom")}
+            >
+              🧩 成語
+            </button>
+          </div>
           {displayStatus ? (
             <p className="muted" style={{ marginTop: "0.5rem" }}>
               {displayStatus}
@@ -475,6 +523,26 @@ export function A1Page() {
           />
         </Panel>
       </div>
+
+      {activeOverlay && (
+        <div className="a1-quiz-overlay" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="a1-quiz-overlay__close"
+            onClick={closeOverlay}
+            aria-label="關閉並回到小雞老師"
+          >
+            ✕
+          </button>
+          <div className="a1-quiz-overlay__body">
+            {activeOverlay === "dictation" ? (
+              <A5Page onClose={closeOverlay} onComplete={onQuizComplete} />
+            ) : (
+              <A2Page onClose={closeOverlay} onComplete={onQuizComplete} />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

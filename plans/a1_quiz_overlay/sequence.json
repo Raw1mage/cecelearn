@@ -1,0 +1,35 @@
+[
+  {
+    "id": "P1",
+    "name": "語音意圖喚起聽寫並回流",
+    "componentRef": ["A1", "A2", "A3"],
+    "messages": [
+      { "id": "MSG1", "from": "User", "to": "A1Page", "label": "語音 final transcript「我要練習聽寫」" },
+      { "id": "MSG2", "from": "A1Page", "to": "useConversation", "label": "sendTurn(text)" },
+      { "id": "MSG3", "from": "useConversation", "to": "Backend /a1/chat", "label": "POST messages" },
+      { "id": "MSG4", "from": "Backend /a1/chat", "to": "useConversation", "label": "intent=start_dictation + reply" },
+      { "id": "MSG5", "from": "useConversation", "to": "ConversationView", "label": "插入引導語 tutor 泡泡" },
+      { "id": "MSG6", "from": "useConversation", "to": "A1Page", "label": "set activeOverlay='dictation'" },
+      { "id": "MSG7", "from": "A1Page", "to": "SpeechRecognition", "label": "暫停辨識 (wantListening=false + abort)" },
+      { "id": "MSG8", "from": "A1Page", "to": "A5Page(overlay)", "label": "mount with onClose/onComplete" },
+      { "id": "MSG9", "from": "A5Page(overlay)", "to": "User", "label": "全螢幕手寫測驗" },
+      { "id": "MSG10", "from": "A5Page(overlay)", "to": "useConversation", "label": "onComplete({mode,correct,total,maxCombo})" },
+      { "id": "MSG11", "from": "useConversation", "to": "ConversationView", "label": "插入成績總結卡" },
+      { "id": "MSG12", "from": "A1Page", "to": "SpeechRecognition", "label": "恢復辨識" }
+    ]
+  },
+  {
+    "id": "P2",
+    "name": "快捷鈕喚起成語並中途關閉",
+    "componentRef": ["A1", "A2"],
+    "messages": [
+      { "id": "MSG1", "from": "User", "to": "A1Page", "label": "點「成語」快捷 chip" },
+      { "id": "MSG2", "from": "A1Page", "to": "useConversation", "label": "openOverlay('idiom') + 引導語" },
+      { "id": "MSG3", "from": "A1Page", "to": "SpeechRecognition", "label": "暫停辨識" },
+      { "id": "MSG4", "from": "A1Page", "to": "A2Page(overlay)", "label": "mount with onClose/onComplete" },
+      { "id": "MSG5", "from": "User", "to": "A2Page(overlay)", "label": "點關閉（未完成）" },
+      { "id": "MSG6", "from": "A2Page(overlay)", "to": "useConversation", "label": "onClose() — 不回流成績" },
+      { "id": "MSG7", "from": "A1Page", "to": "SpeechRecognition", "label": "恢復辨識" }
+    ]
+  }
+]

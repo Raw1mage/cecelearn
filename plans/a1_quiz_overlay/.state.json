@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "state": "implementing",
+  "profile": [],
+  "history": [
+    {
+      "from": null,
+      "to": "proposed",
+      "at": "2026-06-18T05:30:12.940Z",
+      "by": "pkcs12",
+      "mode": "new",
+      "reason": "initial spec created via plan-init.ts"
+    },
+    {
+      "from": "proposed",
+      "to": "designed",
+      "at": "2026-06-18T05:39:42.093Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "建模與設計 artifacts 完成驗證（design heading + sequence array 已修正）"
+    },
+    {
+      "from": "designed",
+      "to": "planned",
+      "at": "2026-06-18T05:41:51.332Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "observability.md Metrics 標題修正為乾淨格式；planned 所有必需 artifacts 完成"
+    },
+    {
+      "from": "planned",
+      "to": "implementing",
+      "at": "2026-06-18T09:35:58.282Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "User approved start of implementation phase (開始); begin phase 1 backend intent extension per tasks.md"
+    }
+  ]
+}

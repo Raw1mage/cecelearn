@@ -1,0 +1,74 @@
+[
+  {
+    "id": "TV1",
+    "requirement": "對話喚起聽寫測驗 — 語音意圖",
+    "input": { "type": "chat", "messages": [{ "role": "user", "text": "我要練習聽寫" }] },
+    "expected": { "intent": "start_dictation", "reply_nonempty": true, "illustratable": false }
+  },
+  {
+    "id": "TV2",
+    "requirement": "對話喚起聽寫測驗 — 變體說法",
+    "input": { "type": "chat", "messages": [{ "role": "user", "text": "考我聽寫" }] },
+    "expected": { "intent": "start_dictation" }
+  },
+  {
+    "id": "TV3",
+    "requirement": "對話喚起成語測驗 — 語音意圖",
+    "input": { "type": "chat", "messages": [{ "role": "user", "text": "來玩成語" }] },
+    "expected": { "intent": "start_idiom", "reply_nonempty": true, "illustratable": false }
+  },
+  {
+    "id": "TV4",
+    "requirement": "對話喚起成語測驗 — 變體說法",
+    "input": { "type": "chat", "messages": [{ "role": "user", "text": "成語練習" }] },
+    "expected": { "intent": "start_idiom" }
+  },
+  {
+    "id": "TV5",
+    "requirement": "既有意圖不退化 — 造句",
+    "input": { "type": "chat", "messages": [{ "role": "user", "text": "用蘋果造句" }] },
+    "expected": { "intent": "make_sentence", "illustratable": true }
+  },
+  {
+    "id": "TV6",
+    "requirement": "既有意圖不退化 — 算術",
+    "input": { "type": "chat", "messages": [{ "role": "user", "text": "3 乘 7 怎麼算" }] },
+    "expected": { "intent": "solve_arithmetic" }
+  },
+  {
+    "id": "TV7",
+    "requirement": "快捷鈕喚起聽寫 — 前端等同意圖",
+    "input": { "type": "ui_event", "event": "click_chip", "chip": "dictation" },
+    "expected": { "activeOverlay": "dictation", "guidance_bubble_inserted": true, "mic_suspended": true }
+  },
+  {
+    "id": "TV8",
+    "requirement": "快捷鈕喚起成語 — 前端等同意圖",
+    "input": { "type": "ui_event", "event": "click_chip", "chip": "idiom" },
+    "expected": { "activeOverlay": "idiom", "guidance_bubble_inserted": true }
+  },
+  {
+    "id": "TV9",
+    "requirement": "聽寫完成回流總結卡",
+    "input": { "type": "overlay_complete", "mode": "dictation", "summary": { "mode": "dictation", "correct": 8, "total": 10, "maxCombo": 5 } },
+    "expected": { "activeOverlay": null, "summary_card_inserted": true, "summary_card": { "correct": 8, "total": 10, "maxCombo": 5 }, "mic_resumed": true }
+  },
+  {
+    "id": "TV10",
+    "requirement": "成語完成回流總結卡",
+    "input": { "type": "overlay_complete", "mode": "idiom", "summary": { "mode": "idiom", "correct": 4, "total": 5 } },
+    "expected": { "activeOverlay": null, "summary_card_inserted": true, "summary_card": { "correct": 4, "total": 5 } }
+  },
+  {
+    "id": "TV11",
+    "requirement": "中途關閉 overlay 不回流",
+    "input": { "type": "overlay_close", "mode": "dictation" },
+    "expected": { "activeOverlay": null, "summary_card_inserted": false, "mic_resumed": true }
+  },
+  {
+    "id": "TV12",
+    "requirement": "舊 route 直達不退化",
+    "input": { "type": "route", "path": "/a5" },
+    "expected": { "renders": "A5Page", "overlay_props_absent": true, "original_behavior": true }
+  }
+]

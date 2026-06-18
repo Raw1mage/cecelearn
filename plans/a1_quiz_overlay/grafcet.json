@@ -1,0 +1,10 @@
+[
+  { "StepNumber": 0, "ModuleRef": "A1", "StepType": "initial", "StepAction": "監聽對話輸入（語音辨識或打字或快捷鈕）", "LinkInputType": ["convergence_or", "convergence_or", "convergence_or"], "LinkInputNumber": [5, 7, 6], "LinkOutputType": "track", "LinkOutputNumber": [1], "Condition": ["收到使用者 turn"], "SubGrafcet": [] },
+  { "StepNumber": 1, "ModuleRef": "A1", "StepType": "normal", "StepAction": "後端依封閉集判定意圖並產 payload", "LinkInputType": ["track"], "LinkInputNumber": [0], "LinkOutputType": "divergence_or", "LinkOutputNumber": [2, 6], "Condition": ["意圖為 start_dictation 或 start_idiom", "意圖為既有對話意圖"], "SubGrafcet": [] },
+  { "StepNumber": 2, "ModuleRef": "A2", "StepType": "normal", "StepAction": "暫停 A1 語音辨識並插入引導語泡泡", "LinkInputType": ["divergence_or"], "LinkInputNumber": [1], "LinkOutputType": "track", "LinkOutputNumber": [3], "Condition": ["麥克風已暫停"], "SubGrafcet": [] },
+  { "StepNumber": 3, "ModuleRef": "A2", "StepType": "normal", "StepAction": "全螢幕掛載 A5 聽寫或 A2 成語測驗元件", "LinkInputType": ["track"], "LinkInputNumber": [2], "LinkOutputType": "track", "LinkOutputNumber": [4], "Condition": ["使用者完成或關閉測驗"], "SubGrafcet": [] },
+  { "StepNumber": 4, "ModuleRef": "A2", "StepType": "normal", "StepAction": "蒐集測驗結果或中止狀態", "LinkInputType": ["track"], "LinkInputNumber": [3], "LinkOutputType": "divergence_or", "LinkOutputNumber": [5, 7], "Condition": ["測驗完成有成績", "測驗中途關閉"], "SubGrafcet": [] },
+  { "StepNumber": 5, "ModuleRef": "A2", "StepType": "normal", "StepAction": "插入成績總結卡並恢復 A1 語音辨識", "LinkInputType": ["divergence_or"], "LinkInputNumber": [4], "LinkOutputType": "convergence_or", "LinkOutputNumber": [0], "Condition": ["回到對話"], "SubGrafcet": [] },
+  { "StepNumber": 7, "ModuleRef": "A2", "StepType": "normal", "StepAction": "恢復 A1 語音辨識不插入總結卡", "LinkInputType": ["divergence_or"], "LinkInputNumber": [4], "LinkOutputType": "convergence_or", "LinkOutputNumber": [0], "Condition": ["回到對話"], "SubGrafcet": [] },
+  { "StepNumber": 6, "ModuleRef": "A3", "StepType": "normal", "StepAction": "渲染既有意圖 inline 富內容到對話串流", "LinkInputType": ["divergence_or"], "LinkInputNumber": [1], "LinkOutputType": "convergence_or", "LinkOutputNumber": [0], "Condition": ["渲染完成回到聆聽"], "SubGrafcet": [] }
+]

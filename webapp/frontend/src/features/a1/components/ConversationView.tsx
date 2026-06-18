@@ -21,6 +21,8 @@ const INTENT_LABEL: Record<string, string> = {
   tell_story: '故事',
   draw: '畫圖',
   solve_arithmetic: '算術',
+  start_dictation: '聽寫',
+  start_idiom: '成語',
   chat: '聊天',
   unclear: '？',
 }
@@ -142,6 +144,29 @@ export function ConversationView({ messages, busy, illustrations, onRedraw }: Co
               </span>
               <div className="a1-conv-body">
                 <p className="a1-conv-text">{m.text}</p>
+                {m.role === 'tutor' && m.quizSummary && (
+                  <div className={`a1-quiz-summary a1-quiz-summary--${m.quizSummary.mode}`}>
+                    <span className="a1-quiz-summary__title">
+                      {m.quizSummary.mode === 'dictation' ? '聽寫成績' : '成語成績'}
+                    </span>
+                    <div className="a1-quiz-summary__stats">
+                      <span className="a1-quiz-summary__stat">
+                        <strong>{m.quizSummary.correct}</strong>
+                        <small>答對</small>
+                      </span>
+                      <span className="a1-quiz-summary__stat">
+                        <strong>{m.quizSummary.total}</strong>
+                        <small>總題數</small>
+                      </span>
+                      {m.quizSummary.maxCombo != null && (
+                        <span className="a1-quiz-summary__stat">
+                          <strong>{m.quizSummary.maxCombo}</strong>
+                          <small>最高連擊</small>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {m.role === 'tutor' && <TurnContent message={m} />}
                 {m.role === 'tutor' && m.arithmetic && (
                   <div className="a1-arithmetic-surface" data-surface-mode="inline">

@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "a1_quiz_overlay data contracts",
+  "definitions": {
+    "A1Intent": {
+      "type": "string",
+      "enum": ["lookup", "make_words", "make_sentence", "tell_story", "draw", "solve_arithmetic", "chat", "unclear", "start_dictation", "start_idiom"],
+      "description": "對話意圖封閉集；新增 start_dictation / start_idiom 觸發 overlay（DD-3）"
+    },
+    "QuizMode": {
+      "type": "string",
+      "enum": ["dictation", "idiom"],
+      "description": "overlay 測驗種類；對應 activeOverlay 狀態（DD-4）"
+    },
+    "QuizSummary": {
+      "type": "object",
+      "description": "測驗完成回流對話的成績總結（DD-6）",
+      "properties": {
+        "mode": { "$ref": "#/definitions/QuizMode" },
+        "correct": { "type": "integer", "minimum": 0, "description": "答對題數" },
+        "total": { "type": "integer", "minimum": 0, "description": "總題數" },
+        "maxCombo": { "type": "integer", "minimum": 0, "description": "最高連擊（聽寫專用，成語可省略）" }
+      },
+      "required": ["mode", "correct", "total"],
+      "additionalProperties": false
+    },
+    "ActiveOverlay": {
+      "description": "useConversation 持有的 overlay 開啟狀態（DD-4）",
+      "oneOf": [
+        { "type": "null", "description": "無 overlay，正常對話" },
+        { "$ref": "#/definitions/QuizMode" }
+      ]
+    },
+    "QuizOverlayProps": {
+      "type": "object",
+      "description": "A5Page / A2Page 被 A1 以 overlay 掛載時的可選 props（DD-2）；route 模式不傳則維持原行為（R1）",
+      "properties": {
+        "onClose": { "type": "object", "description": "() => void；使用者中途關閉，不回流成績" },
+        "onComplete": { "type": "object", "description": "(summary: QuizSummary) => void；測驗完成回流成績" }
+      },
+      "additionalProperties": true
+    },
+    "A1ChatMessageExt": {
+      "type": "object",
+      "description": "A1ChatMessage 擴充：tutor 訊息可帶 quizSummary 供總結卡渲染（DD-6）",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "tutor"] },
+        "text": { "type": "string" },
+        "intent": { "$ref": "#/definitions/A1Intent" },
+        "quizSummary": { "$ref": "#/definitions/QuizSummary" }
+      },
+      "required": ["role", "text"]
+    }
+  }
+}

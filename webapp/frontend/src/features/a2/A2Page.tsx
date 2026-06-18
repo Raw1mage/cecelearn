@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { apiClient, type A2QuizItem } from '../../shared/api/client'
+import { apiClient, type A2QuizItem, type QuizSummary } from '../../shared/api/client'
 import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
@@ -21,7 +21,14 @@ function parseIdioms(value: string) {
     .filter(Boolean)
 }
 
-export function A2Page() {
+type A2PageProps = {
+  /** overlay 模式：使用者中途關閉（不回流成績）。route 模式不傳則無關閉鈕（R1）。 */
+  onClose?: () => void
+  /** overlay 模式：測驗完成回流成績總結（DD-2/DD-6）。 */
+  onComplete?: (summary: QuizSummary) => void
+}
+
+export function A2Page({ onClose, onComplete }: A2PageProps = {}) {
   const { addScore } = useScore()
   const [mode, setMode] = useState<Mode>('setup')
   const [quizMode, setQuizMode] = useState<QuizMode>('random')
@@ -77,6 +84,8 @@ export function A2Page() {
     if (correctCount > 0) addScore(correctCount)
     if (correctCount === quizItems.length) celebrate()
     setMode('result')
+    // overlay 模式：回流成績總結（DD-6）。route 模式不傳 onComplete 則無作用（R1）。
+    onComplete?.({ mode: 'idiom', correct: correctCount, total: quizItems.length })
   }
 
   function resetQuiz() {
@@ -158,6 +167,7 @@ export function A2Page() {
           <div className="toolbar-row">
             <Button onClick={() => setMode('review')}>查看詳解</Button>
             <Button variant="secondary" onClick={resetQuiz}>再來一次</Button>
+            {onClose && <Button variant="secondary" onClick={onClose}>回到小雞老師</Button>}
           </div>
         </Panel>
       )}

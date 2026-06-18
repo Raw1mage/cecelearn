@@ -41,6 +41,8 @@ export type A1Intent =
   | 'tell_story'
   | 'draw'
   | 'solve_arithmetic'
+  | 'start_dictation'
+  | 'start_idiom'
   | 'chat'
   | 'unclear'
 

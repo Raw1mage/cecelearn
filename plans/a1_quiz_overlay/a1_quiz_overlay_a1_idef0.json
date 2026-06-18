@@ -1,0 +1,18 @@
+{
+  "diagram_title": "Route Dialogue Intent",
+  "node_reference": "A1",
+  "activities": [
+    { "id": "A11", "title": "Capture User Turn", "description": "接收語音辨識 final transcript 或打字輸入 / 快捷鈕觸發", "decomposition": null },
+    { "id": "A12", "title": "Classify Intent Backend", "description": "Gemini 依封閉 enum 判定 intent 並產對應 payload", "decomposition": null },
+    { "id": "A13", "title": "Dispatch Intent Result", "description": "依 intent 分派：開 overlay 或進對話渲染", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "BR1", "source": "EXTERNAL", "target": "A11:input", "label": "語音或打字輸入", "type": "input" },
+    { "id": "BR2", "source": "A11:output", "target": "A12:input", "label": "正規化文字 turn", "type": "output" },
+    { "id": "BR3", "source": "EXTERNAL", "target": "A12:control", "label": "intent 封閉集 schema", "type": "control" },
+    { "id": "BR4", "source": "A12:output", "target": "A13:input", "label": "intent + payload", "type": "output" },
+    { "id": "BR5", "source": "A13:output", "target": "EXTERNAL", "label": "分派決定", "type": "output" },
+    { "id": "BR6", "source": "EXTERNAL", "target": "A11:control", "label": "快捷鈕事件", "type": "control" },
+    { "id": "BR7", "source": "EXTERNAL", "target": "A12:mechanism", "label": "Gemini chat provider", "type": "mechanism" }
+  ]
+}

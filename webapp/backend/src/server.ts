@@ -6,10 +6,12 @@ import { initRequestLog, logRequest, createRequestId, logUpstream } from './logg
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
 import { GeminiChatProvider } from './providers/geminiChatProvider.js'
+import { OpencodeBareChatProvider } from './providers/opencodeBareChatProvider.js'
+import { CascadeChatProvider } from './providers/cascadeChatProvider.js'
 import { GeminiImageProvider } from './providers/geminiImageProvider.js'
 import { VertexImageProvider } from './providers/vertexImageProvider.js'
 import { CascadeImageProvider } from './providers/cascadeImageProvider.js'
-import type { SceneIllustrationProvider } from './contracts/providers.js'
+import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
 import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
@@ -34,9 +36,25 @@ function buildImageProvider(): SceneIllustrationProvider {
   return new GeminiImageProvider(env.geminiApiKeys)
 }
 
+function buildChatProvider(): DialogueChatProvider {
+  const gemini = new GeminiChatProvider(env.geminiApiKeys)
+  // bareChat 在 'bare' / 'cascade' 模式下必存在（loadEnv 已 fail-fast 驗證）
+  if (env.chatProvider === 'bare') {
+    return new OpencodeBareChatProvider(env.bareChat!)
+  }
+  if (env.chatProvider === 'cascade') {
+    // 主→備：Claude（bare session 借訂閱）連線/結構化失敗才掉接 Gemini（使用者授權）
+    return new CascadeChatProvider(new OpencodeBareChatProvider(env.bareChat!), gemini, {
+      primary: 'claude-bare',
+      secondary: 'gemini',
+    })
+  }
+  return gemini
+}
+
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
-  new GeminiChatProvider(env.geminiApiKeys),
+  buildChatProvider(),
   buildImageProvider(),
 )
 const idiomEngine = new IdiomQuizEngine()

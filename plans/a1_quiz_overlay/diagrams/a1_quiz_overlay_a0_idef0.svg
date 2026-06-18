@@ -1,0 +1,45 @@
+<svg width="1148.0" height="705.8" viewBox="-174.0 -165.8 1148.0 705.8" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="black" /></marker>
+<marker id="call_arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 M 0 2 L 6 5 L 0 8" fill="none" stroke="black" stroke-width="1" /></marker>
+</defs>
+<rect x="-174.0" y="-165.8" width="1148.0" height="705.8" fill="white" />
+<rect x="130.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A1" />
+<text x="230.0" y="149.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >A1</text>
+<text x="230.0" y="181.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >ROUTE DIALOGUE</text>
+<text x="230.0" y="212.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >INTENT</text>
+<rect x="470.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A2" />
+<text x="570.0" y="165.0" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A2" >A2</text>
+<text x="570.0" y="197.8" text-anchor="middle" font-size="18" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A2" >RUN QUIZ OVERLAY</text>
+<rect x="130.0" y="330.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A3" />
+<text x="230.0" y="362.4" text-anchor="middle" font-size="13" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A3" >A3</text>
+<text x="230.0" y="391.0" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A3" >RENDER</text>
+<text x="230.0" y="419.1" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A3" >CONVERSATION STREAM</text>
+<rect x="40.0" y="44.2" width="720.0" height="485.8" stroke="black" fill="none" stroke-width="2" />
+<rect x="232.0" y="-155.8" width="336.0" height="110.0" stroke="black" fill="white" stroke-width="1.5" data-id="A0" />
+<text x="400.0" y="-129.8" text-anchor="middle" font-size="14" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A0" >A0</text>
+<text x="400.0" y="-99.8" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A0" >RUN CHICK TEACHER</text>
+<text x="400.0" y="-69.8" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A0" >DIALOGUE LEARNING</text>
+<line x1="232.0" y1="-155.8" x2="40.0" y2="44.2" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="568.0" y1="-155.8" x2="760.0" y2="44.2" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="232.0" y1="-45.8" x2="40.0" y2="530.0" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="568.0" y1="-45.8" x2="760.0" y2="530.0" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<path d="M 330.0 160.0 L 470.0 160.0" stroke="black" stroke-width="1.2" data-arrow-id="AR3" data-waypoints="330.0,160.0 470.0,160.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 670.0 180.0 L 700.0 180.0 Q 710.0 180.0 710.0 190.0 L 710.0 280.0 Q 710.0 290.0 700.0 290.0 L 100.0 290.0 Q 90.0 290.0 90.0 300.0 L 90.0 360.0 Q 90.0 370.0 100.0 370.0 L 130.0 370.0" stroke="black" stroke-width="1.2" data-arrow-id="AR5" data-waypoints="670.0,180.0 710.0,180.0 710.0,290.0 90.0,290.0 90.0,370.0 130.0,370.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 330.0 200.0 L 390.0 200.0 Q 400.0 200.0 400.0 210.0 L 400.0 480.0 Q 400.0 490.0 390.0 490.0 L 100.0 490.0 Q 90.0 490.0 90.0 480.0 L 90.0 420.0 Q 90.0 410.0 100.0 410.0 L 130.0 410.0" stroke="black" stroke-width="1.2" data-arrow-id="AR4" data-waypoints="330.0,200.0 400.0,200.0 400.0,490.0 90.0,490.0 90.0,410.0 130.0,410.0" marker-end="url(#arrow)" fill="none" />
+<path d="M -10.0 180.0 L 130.0 180.0" stroke="black" stroke-width="1.2" data-arrow-id="AR1" data-waypoints="-10.0,180.0 130.0,180.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 84.2 L 230.0 120.0" stroke="black" stroke-width="1.2" data-arrow-id="AR2" data-waypoints="230.0,84.2 230.0,120.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 330.0 390.0 L 810.0 390.0" stroke="black" stroke-width="1.2" data-arrow-id="AR6" data-waypoints="330.0,390.0 810.0,390.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 275.8 L 230.0 240.0" stroke="black" stroke-width="1.2" data-arrow-id="AR7" data-waypoints="230.0,275.8 230.0,240.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 570.0 275.8 L 570.0 240.0" stroke="black" stroke-width="1.2" data-arrow-id="AR8" data-waypoints="570.0,275.8 570.0,240.0" marker-end="url(#arrow)" fill="none" />
+<text x="230.0" y="78.2" font-size="14" text-anchor="middle" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR2">intent 封閉集</text>
+<text x="224.0" y="256.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR7">Gemini chat</text>
+<text x="236.0" y="256.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR7">provider</text>
+<text x="564.0" y="256.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR8">A5/A2</text>
+<text x="576.0" y="256.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR8">既有測驗元件</text>
+<text x="400.0" y="160.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR3"><tspan x="400.0" dy="0">start_dictation</tspan><tspan x="400.0" dy="16.0">/ start_idiom</tspan><tspan x="400.0" dy="16.0">意圖</tspan></text>
+<text x="230.0" y="308.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR5" >測驗成績總結</text>
+<text x="230.0" y="508.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR4" >既有意圖回應 payload</text>
+<text x="-14.0" y="184.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR1">語音或打字輸入</text>
+<text x="814.0" y="394.0" font-size="20" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR6">對話畫面</text>
+</svg>

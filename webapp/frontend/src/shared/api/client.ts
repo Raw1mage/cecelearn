@@ -74,6 +74,8 @@ export type A1Intent =
   | 'tell_story'
   | 'draw'
   | 'solve_arithmetic'
+  | 'start_dictation'
+  | 'start_idiom'
   | 'chat'
   | 'unclear'
 
@@ -106,6 +108,17 @@ export type A1LookupPayload = {
   idioms?: A1LookupWord[]
 }
 
+/** overlay 測驗種類；對應 useConversation 的 activeOverlay 狀態（DD-4） */
+export type QuizMode = 'dictation' | 'idiom'
+
+/** 測驗完成回流對話的成績總結（DD-6） */
+export type QuizSummary = {
+  mode: QuizMode
+  correct: number
+  total: number
+  maxCombo?: number   // 最高連擊（聽寫專用，成語可省略）
+}
+
 export type A1ChatMessage = {
   /** 前端唯一 id（用於插畫掛在特定訊息、歷史不被洗）。後端不需此欄位。 */
   id?: string
@@ -118,6 +131,8 @@ export type A1ChatMessage = {
   story?: A1StoryPayload
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
+  // 測驗完成回流的成績總結卡（DD-6）；只有 tutor 訊息會帶
+  quizSummary?: QuizSummary
 }
 
 export type A1ChatResponse = {

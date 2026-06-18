@@ -3,6 +3,8 @@ import {
   apiClient,
   type A1ChatMessage,
   type A1ChatResponse,
+  type QuizMode,
+  type QuizSummary,
 } from '../../../shared/api/client'
 import { speak } from '../../../shared/speech/tts'
 
@@ -77,12 +79,21 @@ export type IllustrationState =
 /** 插畫歷史：每則 tutor 訊息 id → 該則的插畫狀態（不覆蓋、不被洗）。 */
 export type IllustrationMap = Record<string, IllustrationState>
 
+/** 新 intent → overlay 種類映射（DD-4）。非觸發 intent 回 null。 */
+function overlayForIntent(intent: A1ChatResponse['intent']): QuizMode | null {
+  if (intent === 'start_dictation') return 'dictation'
+  if (intent === 'start_idiom') return 'idiom'
+  return null
+}
+
 export function useConversation() {
   const [messages, setMessages] = useState<A1ChatMessage[]>([])
   const [currentTurn, setCurrentTurn] = useState<A1ChatResponse | null>(null)
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const [illustrations, setIllustrations] = useState<IllustrationMap>({})
+  /** 全螢幕測驗 overlay 開啟狀態（DD-4）；null = 正常對話。 */
+  const [activeOverlay, setActiveOverlay] = useState<QuizMode | null>(null)
   /** 正在生圖的訊息 id 集合（避免同一則重複觸發） */
   const illustrateBusyRef = useRef<Set<string>>(new Set())
   /** msgId → 該則 turn payload（供手動重畫沿用情境） */
@@ -131,6 +142,10 @@ export function useConversation() {
         setMessages((cur) => [...cur, tutorMsg])
         setStatus('')
         speak(buildSpeech(res))
+        // 測驗觸發意圖（DD-3/DD-4）：插入引導語 tutor 泡泡後開全螢幕 overlay。
+        // 不 silent fallback（DD-8）：只有明確 start_dictation/start_idiom 才開。
+        const overlay = overlayForIntent(res.intent)
+        if (overlay) setActiveOverlay(overlay)
         // 自動生圖：illustratable 回合（造句/故事/直接畫圖）掛在該則 tutor 訊息上
         turnByMsgIdRef.current[tutorId] = res
         if (res.illustratable) fetchIllustrationRef.current(tutorId, res)
@@ -222,13 +237,45 @@ export function useConversation() {
     [fetchIllustration],
   )
 
+  /** 直接開 overlay（快捷 chip 用，不經 Gemini intent；DD-3 雙路徑）。 */
+  const openOverlay = useCallback((mode: QuizMode) => {
+    setActiveOverlay(mode)
+  }, [])
+
+  /** 使用者中途關閉 overlay（不回流成績）。 */
+  const closeOverlay = useCallback(() => {
+    setActiveOverlay(null)
+  }, [])
+
+  /**
+   * 測驗完成回流：插入一則 tutor 總結卡訊息（DD-6），並關閉 overlay。
+   * 文字描述成績，quizSummary 供 ConversationView 渲染總結卡。
+   */
+  const onQuizComplete = useCallback((summary: QuizSummary) => {
+    const label = summary.mode === 'dictation' ? '聽寫' : '成語'
+    const text = `你完成了${label}練習！答對 ${summary.correct} / ${summary.total} 題。`
+    const tutorMsg: A1ChatMessage = {
+      id: nextMsgId(),
+      role: 'tutor',
+      text,
+      quizSummary: summary,
+    }
+    setMessages((cur) => [...cur, tutorMsg])
+    setActiveOverlay(null)
+    speak(text)
+  }, [])
+
   return {
     messages,
     currentTurn,
     status,
     busy,
     illustrations,
+    activeOverlay,
     sendTurn,
     redrawIllustration,
+    openOverlay,
+    closeOverlay,
+    onQuizComplete,
   }
 }

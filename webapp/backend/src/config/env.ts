@@ -13,6 +13,21 @@ export type VertexImageEnv = {
  */
 export type ImageProviderMode = 'apikey' | 'vertex' | 'cascade'
 
+/**
+ * 對話 provider 模式:
+ * - 'gemini'  : 只走 GEMINI_API_KEYS（AI Studio），預設（不改既有行為）
+ * - 'bare'    : 只走 opencode bare session（Claude OAuth 訂閱，經同機 unix socket）
+ * - 'cascade' : 先 Claude bare，連線/結構化失敗才掉接 Gemini（使用者授權的主→備）
+ */
+export type ChatProviderMode = 'gemini' | 'bare' | 'cascade'
+
+export type BareChatEnv = {
+  socketPath: string
+  providerId: string
+  modelID: string
+  accountId?: string
+}
+
 export type BackendEnv = {
   port: number
   nodeEnv: string
@@ -21,6 +36,9 @@ export type BackendEnv = {
   imageProvider: ImageProviderMode
   /** imageProvider='vertex'|'cascade' 時必填，否則 loadEnv fail-fast */
   vertexImage?: VertexImageEnv
+  chatProvider: ChatProviderMode
+  /** chatProvider='bare'|'cascade' 時必填，否則 loadEnv fail-fast */
+  bareChat?: BareChatEnv
 }
 
 export function loadEnv(): BackendEnv {
@@ -54,6 +72,37 @@ export function loadEnv(): BackendEnv {
     throw new Error('IMAGE_PROVIDER=cascade 但缺 GEMINI_API_KEYS（免費 tier 無法啟用）')
   }
 
+  // 對話 provider —— 預設 gemini（不改既有行為）；bare/cascade 借 opencode daemon
+  const chatProvider = (process.env.CHAT_PROVIDER || 'gemini').trim() as ChatProviderMode
+  if (!['gemini', 'bare', 'cascade'].includes(chatProvider)) {
+    throw new Error(`CHAT_PROVIDER 必須是 'gemini' | 'bare' | 'cascade'，收到 '${chatProvider}'`)
+  }
+
+  let bareChat: BareChatEnv | undefined
+  if (chatProvider === 'bare' || chatProvider === 'cascade') {
+    const runtimeDir = (process.env.XDG_RUNTIME_DIR || '').trim()
+    const socketPath = (
+      process.env.OPENCODE_DAEMON_SOCKET ||
+      (runtimeDir ? `${runtimeDir}/opencode/daemon.sock` : '')
+    ).trim()
+    if (!socketPath) {
+      throw new Error(
+        `CHAT_PROVIDER=${chatProvider} 但缺 OPENCODE_DAEMON_SOCKET（且無 XDG_RUNTIME_DIR 可推導）`,
+      )
+    }
+    bareChat = {
+      socketPath,
+      providerId: (process.env.OPENCODE_CHAT_PROVIDER_ID || 'claude-cli').trim(),
+      modelID: (process.env.OPENCODE_CHAT_MODEL || 'claude-opus-4-8').trim(),
+      accountId: (process.env.OPENCODE_CHAT_ACCOUNT || '').trim() || undefined,
+    }
+  }
+
+  // cascade 還需要備援 tier 的 Gemini key；缺了直接報錯而非默默變單 tier
+  if (chatProvider === 'cascade' && geminiApiKeys.length === 0) {
+    throw new Error('CHAT_PROVIDER=cascade 但缺 GEMINI_API_KEYS（Gemini 備援 tier 無法啟用）')
+  }
+
   return {
     port: Number(process.env.PORT || 3014),
     nodeEnv: process.env.NODE_ENV || 'development',
@@ -61,5 +110,7 @@ export function loadEnv(): BackendEnv {
     geminiApiKeys,
     imageProvider,
     vertexImage,
+    chatProvider,
+    bareChat,
   }
 }

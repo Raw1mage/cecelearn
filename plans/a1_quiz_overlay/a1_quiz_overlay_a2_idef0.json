@@ -1,0 +1,19 @@
+{
+  "diagram_title": "Run Quiz Overlay",
+  "node_reference": "A2",
+  "activities": [
+    { "id": "A21", "title": "Suspend Dialogue Microphone", "description": "overlay 開啟前暫停 A1 語音辨識避免與測驗 TTS 衝突", "decomposition": null },
+    { "id": "A22", "title": "Mount Quiz Surface", "description": "全螢幕掛載既有 A5 聽寫或 A2 成語測驗元件", "decomposition": null },
+    { "id": "A23", "title": "Collect Quiz Outcome", "description": "測驗完成或關閉，蒐集成績或中止狀態", "decomposition": null },
+    { "id": "A24", "title": "Resume Dialogue Microphone", "description": "overlay 關閉後恢復 A1 語音辨識", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "CR1", "source": "EXTERNAL", "target": "A21:input", "label": "start_dictation / start_idiom 意圖", "type": "input" },
+    { "id": "CR2", "source": "A21:output", "target": "A22:input", "label": "麥克風已暫停信號", "type": "output" },
+    { "id": "CR3", "source": "A22:output", "target": "A23:input", "label": "使用者作答互動", "type": "output" },
+    { "id": "CR4", "source": "A23:output", "target": "A24:input", "label": "成績或中止結果", "type": "output" },
+    { "id": "CR5", "source": "A24:output", "target": "EXTERNAL", "label": "成績總結 + 麥克風恢復", "type": "output" },
+    { "id": "CR6", "source": "EXTERNAL", "target": "A22:mechanism", "label": "A5Page / A2Page 元件", "type": "mechanism" },
+    { "id": "CR7", "source": "EXTERNAL", "target": "A23:control", "label": "完成或關閉事件", "type": "control" }
+  ]
+}

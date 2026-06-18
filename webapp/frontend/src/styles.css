@@ -224,6 +224,28 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-inline-illustration--capped { padding: 0.4rem 0.7rem; border-radius: 0.6rem; background: rgba(139,170,255,0.08); }
 .a1-illustration-spinner { width: 1.6rem; height: 1.6rem; border: 3px solid rgba(139,170,255,0.25); border-top-color: #60a5fa; border-radius: 50%; animation: a1-spin 0.8s linear infinite; }
 @keyframes a1-spin { to { transform: rotate(360deg); } }
+
+/* A1 — 輸入列下方測驗快捷 chip（DD-3 雙路徑：點擊等同對應意圖） */
+.a1-quick-chips { display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.a1-quick-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.85rem; border-radius: 999px; border: 1px solid rgba(139,170,255,0.3); background: rgba(59,130,255,0.12); color: #eef4ff; font-size: 0.9rem; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.a1-quick-chip:hover { background: rgba(59,130,255,0.28); border-color: rgba(139,170,255,0.5); }
+
+/* A1 — 全螢幕測驗 overlay 容器（DD-2/R3：複用 A5/A2 元件，fixed 蓋滿視窗） */
+.a1-quiz-overlay { position: fixed; inset: 0; z-index: 1000; background: #0a0f1e; display: flex; flex-direction: column; }
+.a1-quiz-overlay__close { position: absolute; top: max(0.6rem, env(safe-area-inset-top)); right: max(0.6rem, env(safe-area-inset-right)); z-index: 1002; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 1.1rem; cursor: pointer; transition: background 0.15s; }
+.a1-quiz-overlay__close:hover { background: rgba(0,0,0,0.78); }
+.a1-quiz-overlay__body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+.a1-quiz-overlay__body .feature-page { flex: 1; min-height: 0; }
+
+/* A1 — 對話串流中的測驗成績總結卡（DD-6） */
+.a1-quiz-summary { padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(250,204,21,0.1); border: 1px solid rgba(250,204,21,0.3); display: flex; flex-direction: column; gap: 0.6rem; }
+.a1-quiz-summary--idiom { background: rgba(59,130,255,0.12); border-color: rgba(139,170,255,0.3); }
+.a1-quiz-summary__title { font-weight: 700; color: #fbbf24; font-size: 0.95rem; }
+.a1-quiz-summary--idiom .a1-quiz-summary__title { color: #9bc1ff; }
+.a1-quiz-summary__stats { display: flex; gap: 1.2rem; }
+.a1-quiz-summary__stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+.a1-quiz-summary__stat strong { font-size: 1.5rem; line-height: 1; color: #eef4ff; }
+.a1-quiz-summary__stat small { font-size: 0.72rem; color: #9bc1ff; }
 /* A5 — Dictation practice */
 .a5-page .ui-panel { width: 100%; }
 

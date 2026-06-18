@@ -64,16 +64,19 @@ Does not own:
 
 ## Feature map
 
-### Portal
-- single entrypoint for the web product
-- exposes primary learning cards; A3 is no longer a visible Portal card because arithmetic is taught through A1 dialogue
-- hosts shared navigation and route registry
+### Portal (retired)
+- the card-grid portal (`PortalPage` + `FeatureCard`) is retired as of the a1_quiz_overlay feature; both files were removed
+- `/` now mounts the A1 dialogue tutor directly — "小雞老師" is the single entrypoint for the web product (DD-7)
+- A2 (idiom) and A5 (dictation) are reached from within the A1 conversation (intent or quick-chip → full-screen overlay), not from portal cards
+- `/a2` `/a3` `/a5` remain mounted as debug/direct-test routes
 
 ### A1 feature (dialogue tutor)
 - evolved from single-shot word lookup into a conversational Chinese tutor ("小雞老師")
 - full-duplex voice on desktop: continuous mic, no wake word; any final transcript becomes a turn (Android Chrome full-duplex is out of scope → Samsung manual path retained)
 - echo soft-gate (DD-11): during TTS playback + 700ms tail, recognition results are discarded (Web Speech API does not guarantee AEC between SpeechSynthesis↔SpeechRecognition) — kills the self-feedback loop without pausing the mic. Trade-off: no barge-in while the tutor speaks.
-- intent routing (lookup / make_words / make_sentence / tell_story / draw / solve_arithmetic / chat / unclear) via backend Gemini chat provider; `draw` = direct "draw me X" request → auto-illustrated; `solve_arithmetic` parses natural-language math into typed payload only
+- intent routing (lookup / make_words / make_sentence / tell_story / draw / solve_arithmetic / start_dictation / start_idiom / chat / unclear) via backend Gemini chat provider; `draw` = direct "draw me X" request → auto-illustrated; `solve_arithmetic` parses natural-language math into typed payload only
+- quiz overlay launch (a1_quiz_overlay feature): `start_dictation` / `start_idiom` intents — or the input-row quick-chips (dual trigger path, DD-3) — open A5 (dictation) / A2 (idiom) as a full-screen overlay mounted inside A1Page (DD-2/DD-4). A5Page/A2Page take optional `onClose`/`onComplete` props; route mode (`/a2` `/a5`) passes neither and keeps original behavior (R1). On completion, a `quizSummary` tutor message renders a score summary card back in the conversation stream (DD-6)
+- mic mutual-exclusion (DD-5): while an overlay is open, A1 speech recognition is paused (`wantListening=false` + `recognition.abort()`) to avoid contention with A5's TTS, and resumed on close if it was previously listening. The core speech-recognition useEffect is untouched (DD-10) — the overlay effect only reuses its abort / start-listening refs
 - single-column chat layout: input row on top + full-width conversation stream. No persistent left-column canvas — stroke animation (HanziWriter) and scene illustration both render INLINE per-message in the stream, appearing only when needed
 - per-message illustration history: each tutor turn carries its own illustration state (keyed by message id), never overwritten; each image is downloadable and retained for review
 - generalized result stream: word cards (bopomofo), multi-sentence make_sentence (count-configurable, max 5), story, direct draw, and arithmetic teaching surfaces; fused into a single conversation stream
@@ -91,6 +94,7 @@ Does not own:
 - quiz generation flow
 - explicit quiz/result/review states
 - backend-backed quiz generation boundary required during migration
+- A2Page takes optional `onClose`/`onComplete` props so A1 can mount it as a full-screen overlay (idiom quiz); `/a2` route mode passes neither and keeps original standalone behavior
 
 ### A3 feature
 - four-operations teaching tool now exposed primarily as an A1 inline `solve_arithmetic` teaching surface
@@ -110,7 +114,7 @@ Does not own:
 ## Runtime flow
 1. User reaches external port `7014`
 2. Gateway serves frontend assets and proxies API traffic
-3. Frontend routes user to portal, A1, A2, or A3
+3. Frontend mounts A1 ("小雞老師") at `/` as the single entrypoint; A2/A3/A5 reachable via in-conversation overlays or debug routes
 4. Backend handles health/config/provider-backed endpoints
 5. Future persistence and reporting expand behind backend without changing frontend route ownership
 
