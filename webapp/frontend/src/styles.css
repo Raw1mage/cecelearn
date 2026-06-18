@@ -141,13 +141,15 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a3-note-line--current { color: #93c5fd; font-weight: 600; }
 /* A1 — input with inline mic + search icons */
 .a1-input-wrap { position: relative; display: flex; align-items: center; flex: 1; min-width: 0; }
-.a1-query-input { width: 100%; padding-right: 6.5rem; }
-.a1-mic-btn, .a1-search-btn { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.7rem; background: transparent; color: #9bc1ff; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.a1-query-input { width: 100%; padding-right: 9rem; }
+.a1-mic-btn, .a1-search-btn, .a1-camera-btn { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.7rem; background: transparent; color: #9bc1ff; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.a1-camera-btn { right: 5.6rem; }
 .a1-mic-btn { right: 3rem; }
 .a1-search-btn { right: 0.4rem; }
-.a1-mic-btn:hover, .a1-search-btn:hover { background: rgba(117,167,255,0.18); }
+.a1-mic-btn:hover, .a1-search-btn:hover, .a1-camera-btn:hover { background: rgba(117,167,255,0.18); }
 .a1-mic-btn--active { background: #dc2626 !important; color: #fff !important; animation: a1-pulse 1.2s infinite; }
-.a1-mic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.a1-camera-btn--active { background: #34d399 !important; color: #fff !important; animation: a1-pulse 1.2s infinite; }
+.a1-mic-btn:disabled, .a1-camera-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 @keyframes a1-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.45); } 50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); } }
 .a1-panel--wake { background: rgba(250,204,21,0.18) !important; box-shadow: 0 0 16px 4px rgba(250,204,21,0.35); transition: background 0.2s, box-shadow 0.2s; }
 

@@ -13,6 +13,40 @@ import {
   addSpeechEndListener,
 } from "../../shared/speech/tts";
 import { getSpeechRecognitionConstructor } from "./hanziWriterAdapter";
+import { apiClient } from "../../shared/api/client";
+
+/**
+ * 把拍到的照片縮到最長邊 1280px、輸出 JPEG（品質 0.72），回 { base64, mimeType }。
+ * 縮圖是為了上傳快、省頻寬，OCR 不需要原始高解析度。base64 不含 data: 前綴。
+ */
+async function fileToDownscaledBase64(
+  file: File,
+): Promise<{ base64: string; mimeType: string }> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("讀取照片失敗"));
+    reader.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error("照片格式看不懂"));
+    el.src = dataUrl;
+  });
+  const MAX = 1280;
+  const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("無法處理照片");
+  ctx.drawImage(img, 0, 0, w, h);
+  const out = canvas.toDataURL("image/jpeg", 0.72);
+  return { base64: out.split(",")[1] ?? "", mimeType: "image/jpeg" };
+}
 
 /** 偵測「○○的×」查字結構，給後端 hint=lookup（維持既有 lookup 行為不退化，DD-3） */
 function detectLookupHint(text: string): "lookup" | undefined {
@@ -48,7 +82,9 @@ export function A1Page() {
   const [speechReady, setSpeechReady] = useState(false);
   const [listening, setListening] = useState(false);
   const [ttsOn, setTtsOn] = useState(isTtsEnabled());
+  const [reading, setReading] = useState(false);
 
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const samsungManualModeRef = useRef(false);
   const wantListeningRef = useRef(false);
@@ -397,6 +433,29 @@ export function A1Page() {
     }
   }
 
+  /** 拍照/選圖 → OCR 讀題 → 把辨識出的題目當作小朋友的輸入送進對話（→ explain 講解）。 */
+  async function handlePhotoSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // 清掉，讓同一張可再選
+    if (!file) return;
+    setReading(true);
+    setStatus("小雞老師看看題目…");
+    try {
+      const { base64, mimeType } = await fileToDownscaledBase64(file);
+      const res = await apiClient.readQuestion(base64, mimeType);
+      if (!res.ok) {
+        setStatus(res.message);
+        return;
+      }
+      setStatus("");
+      await sendTurn(res.question, detectLookupHint(res.question));
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "看題目的時候卡住了，再拍一次好嗎？");
+    } finally {
+      setReading(false);
+    }
+  }
+
   function toggleListening() {
     if (!recognitionRef.current) return;
     if (listening) {
@@ -449,6 +508,35 @@ export function A1Page() {
                 onKeyDown={handleKeyDown}
                 placeholder="說說看：用蘋果造句、花可以組什麼詞、蘋果的蘋、說個故事"
               />
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={(e) => void handlePhotoSelected(e)}
+              />
+              <button
+                className={`a1-camera-btn${reading ? " a1-camera-btn--active" : ""}`}
+                onClick={() => photoInputRef.current?.click()}
+                disabled={reading}
+                aria-label="拍照讀題"
+                title="拍照讀題：把考卷上的題目拍給小雞老師看"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </button>
               <button
                 className={`a1-mic-btn${listening ? " a1-mic-btn--active" : ""}`}
                 onClick={toggleListening}

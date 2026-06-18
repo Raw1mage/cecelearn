@@ -127,6 +127,17 @@ export type A1IllustrateResponse = {
   altText?: string
 }
 
+/* 拍照讀題（OCR）：小朋友對著試卷拍照 → 視覺模型辨識成題目文字，再餵進 chat→explain 流程 */
+export type A1ReadQuestionRequest = {
+  imageBase64: string   // 純 base64（不含 data: 前綴）
+  mimeType: string      // image/jpeg | image/png | image/webp
+}
+
+export type A1ReadQuestionResponse = {
+  ok: true
+  question: string      // 辨識出的題目文字（保留英文/數字/符號）
+}
+
 export type A1ErrorResponse = {
   ok: false
   error: string
@@ -147,6 +158,13 @@ export interface SceneIllustrationProvider {
 
 export interface IdiomQuizProvider {
   generate(idioms: string[], questionCount: number): A2QuizResponse
+}
+
+export interface QuestionVisionProvider {
+  readQuestion(
+    imageBase64: string,
+    mimeType: string,
+  ): Promise<A1ReadQuestionResponse | A1ErrorResponse>
 }
 
 /* A5 — Dictation Practice */

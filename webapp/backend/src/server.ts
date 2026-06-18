@@ -11,6 +11,7 @@ import { CascadeChatProvider } from './providers/cascadeChatProvider.js'
 import { GeminiImageProvider } from './providers/geminiImageProvider.js'
 import { VertexImageProvider } from './providers/vertexImageProvider.js'
 import { CascadeImageProvider } from './providers/cascadeImageProvider.js'
+import { GeminiVisionProvider } from './providers/geminiVisionProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
@@ -56,6 +57,7 @@ const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
   buildImageProvider(),
+  new GeminiVisionProvider(env.geminiApiKeys),
 )
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
@@ -170,6 +172,24 @@ const server = createServer(async (request, response) => {
     }
     const result = await a1.illustrate(context, targetWord, mode)
     send(result.ok ? 200 : 502, result, raw)
+    return
+  }
+
+  if (url === '/api/a1/read-question' && method === 'POST') {
+    const raw = await readBody(request)
+    let imageBase64 = ''
+    let mimeType = 'image/jpeg'
+    try {
+      const payload = JSON.parse(raw || '{}') as { imageBase64?: string; mimeType?: string }
+      if (typeof payload.imageBase64 === 'string') imageBase64 = payload.imageBase64
+      if (typeof payload.mimeType === 'string') mimeType = payload.mimeType
+    } catch {
+      send(400, { ok: false, error: 'READ_BAD_REQUEST', message: '我沒看到照片耶，再拍一次好嗎？' }, '[image]')
+      return
+    }
+    const result = await a1.readQuestion(imageBase64, mimeType)
+    // 不把整張 base64 寫進 request.log（會塞爆）：以占位字串記錄
+    send(result.ok ? 200 : 502, result, '[image]')
     return
   }
 

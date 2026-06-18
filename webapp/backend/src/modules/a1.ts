@@ -4,7 +4,9 @@ import type {
   A1ErrorResponse,
   A1IllustrateResponse,
   A1LookupResponse,
+  A1ReadQuestionResponse,
   DialogueChatProvider,
+  QuestionVisionProvider,
   SceneIllustrationProvider,
   WordLookupProvider,
 } from '../contracts/providers.js'
@@ -13,6 +15,7 @@ export function createA1Module(
   provider: WordLookupProvider,
   chatProvider?: DialogueChatProvider,
   illustrationProvider?: SceneIllustrationProvider,
+  visionProvider?: QuestionVisionProvider,
 ) {
   return {
     lookup(query: string): Promise<A1LookupResponse> {
@@ -44,6 +47,19 @@ export function createA1Module(
         })
       }
       return illustrationProvider.illustrate(context, targetWord, mode)
+    },
+    readQuestion(
+      imageBase64: string,
+      mimeType: string,
+    ): Promise<A1ReadQuestionResponse | A1ErrorResponse> {
+      if (!visionProvider) {
+        return Promise.resolve({
+          ok: false,
+          error: 'READ_NOT_CONFIGURED',
+          message: '拍照讀題還在準備中喔！',
+        })
+      }
+      return visionProvider.readQuestion(imageBase64, mimeType)
     },
   }
 }

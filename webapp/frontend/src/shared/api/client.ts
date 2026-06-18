@@ -164,6 +164,11 @@ export type A1IllustrateResponse = {
   altText?: string
 }
 
+export type A1ReadQuestionResponse = {
+  ok: true
+  question: string
+}
+
 export type A1ErrorResponse = {
   ok: false
   error: string
@@ -220,5 +225,10 @@ export const apiClient = {
         ...(targetWord ? { targetWord } : {}),
         ...(mode === 'diagram' ? { mode } : {}),
       }),
+    }),
+  readQuestion: (imageBase64: string, mimeType: string) =>
+    request<A1ReadQuestionResponse | A1ErrorResponse>('/a1/read-question', {
+      method: 'POST',
+      body: JSON.stringify({ imageBase64, mimeType }),
     }),
 }
