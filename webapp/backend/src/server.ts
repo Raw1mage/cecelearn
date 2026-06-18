@@ -12,6 +12,7 @@ import { GeminiImageProvider } from './providers/geminiImageProvider.js'
 import { VertexImageProvider } from './providers/vertexImageProvider.js'
 import { CascadeImageProvider } from './providers/cascadeImageProvider.js'
 import { GeminiVisionProvider } from './providers/geminiVisionProvider.js'
+import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
@@ -27,11 +28,19 @@ function buildImageProvider(): SceneIllustrationProvider {
     return new VertexImageProvider(env.vertexImage!)
   }
   if (env.imageProvider === 'cascade') {
-    // 成本分層：先免費 apikey → 撞 429/502/empty 掉接 Vertex 福利點數（使用者授權）
+    // 成本分層：先免費 apikey（Gemini 多模態）→ 撞 429/502/空回 掉接 Imagen 4（福利點數）。
+    // 後備層用 Imagen 4 而非 Gemini-on-Vertex：Imagen 是專門 T2I，每次都出圖、不會空回文字。
+    const v = env.vertexImage!
     return new CascadeImageProvider(
       new GeminiImageProvider(env.geminiApiKeys),
-      new VertexImageProvider(env.vertexImage!),
-      { primary: 'apikey', secondary: 'vertex' },
+      new ImagenVertexProvider({
+        project: v.project,
+        location: v.location,
+        model: v.imagenModel,
+        keyFile: v.keyFile,
+        apiKeys: env.geminiApiKeys, // 中文→英文 prompt 翻譯（Imagen 只吃英文）
+      }),
+      { primary: 'apikey', secondary: 'imagen' },
     )
   }
   return new GeminiImageProvider(env.geminiApiKeys)

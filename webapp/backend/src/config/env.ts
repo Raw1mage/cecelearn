@@ -2,6 +2,8 @@ export type VertexImageEnv = {
   project: string
   location: string
   model: string
+  /** Imagen 4 模型（cascade 第二層用；專門 T2I，不像 Gemini 多模態會空回文字） */
+  imagenModel: string
   keyFile: string
 }
 
@@ -63,6 +65,7 @@ export function loadEnv(): BackendEnv {
       project,
       location: (process.env.VERTEX_LOCATION || 'us-central1').trim(),
       model: (process.env.VERTEX_IMAGE_MODEL || 'gemini-2.5-flash-image').trim(),
+      imagenModel: (process.env.VERTEX_IMAGEN_MODEL || 'imagen-4.0-fast-generate-001').trim(),
       keyFile,
     }
   }
