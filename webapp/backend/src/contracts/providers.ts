@@ -53,6 +53,24 @@ export type A1EnglishWord = {
   meaning: string
 }
 
+/**
+ * 數學圖解的「確定性視覺規格」：前端用 SVG 照畫，100% 正確，不靠生圖模型隨機性。
+ * 只在 subject=math 且題目可圖像化時填。
+ * - kind='count'：加減法數東西。total 起始數，operation 加/減，operand 加減量，result 結果。
+ * - kind='groups'：乘除法分組。groups 組數，per 每組數量，result 結果。
+ */
+export type A1MathViz = {
+  kind: 'count' | 'groups'
+  icon?: string       // emoji（🍎🍬🍕…），預設 🔵
+  total?: number
+  operation?: 'add' | 'sub'
+  operand?: number
+  groups?: number
+  per?: number
+  result?: number
+  equation?: string   // 如 "8 - 3 = 5"
+}
+
 /** 小家教講解（唸/打出的題目）：英文題、數學應用題、概念解釋。純算式仍走 solve_arithmetic。 */
 export type A1ExplainPayload = {
   subject: 'english' | 'math' | 'general'
@@ -60,6 +78,7 @@ export type A1ExplainPayload = {
   steps: string[]    // 一步步講解，適齡、可朗讀
   answer?: string    // 最後答案/結論（若適用）
   words?: A1EnglishWord[]   // 英文題：可跟讀練習的關鍵單字（1-5 個）
+  viz?: A1MathViz          // 數學題：確定性 SVG 圖解規格
 }
 
 export type A1DrawPayload = {

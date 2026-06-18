@@ -4,6 +4,7 @@ import {
 } from '../../../shared/api/client'
 import { parseBopomofo } from '../bopomofo'
 import { EnglishPractice } from './EnglishPractice'
+import { MathDiagram } from './MathDiagram'
 
 /** Render a word with vertical bopomofo annotation (沿用 A1Page 既有樣式) */
 function RubyWord({ term, bopomofo }: A1LookupWord) {
@@ -134,6 +135,7 @@ export function TurnContent({ message }: TurnContentProps) {
               ))}
             </ol>
           )}
+          {explain.subject === 'math' && explain.viz && <MathDiagram viz={explain.viz} />}
           {explain.answer && (
             <p className="a1-explain-answer">
               <span className="a1-explain-answer__label">答案</span>

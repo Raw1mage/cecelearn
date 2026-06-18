@@ -189,20 +189,14 @@ export function useConversation() {
         return
       }
 
-      // explain（講解）用「圖解」風格：把題目＋講解步驟當作要圖解的內容
-      const isExplain = turn.intent === 'explain' && !!turn.explain
-      const context = isExplain
-        ? [turn.explain!.question, ...turn.explain!.steps, turn.explain!.answer ?? '']
-            .filter(Boolean)
-            .join(' ')
-        : turn.sentence?.sentences?.[0] ??
-          turn.story?.story ??
-          turn.draw?.subject ??
-          turn.reply
-      const targetWord = isExplain
-        ? turn.explain!.question
-        : turn.sentence?.targetWord ?? turn.story?.topic ?? turn.draw?.subject
-      const illustrateMode: 'scene' | 'diagram' = isExplain ? 'diagram' : 'scene'
+      // 情境插畫（造句/故事/畫圖）；explain 不在此（英文走跟讀、數學走 SVG 圖解）
+      const context =
+        turn.sentence?.sentences?.[0] ??
+        turn.story?.story ??
+        turn.draw?.subject ??
+        turn.reply
+      const targetWord =
+        turn.sentence?.targetWord ?? turn.story?.topic ?? turn.draw?.subject
 
       illustrateBusyRef.current.add(msgId)
       setIllustrations((cur) => ({ ...cur, [msgId]: { mode: 'loading' } }))
@@ -210,7 +204,7 @@ export function useConversation() {
       bumpDailyCount()
       if (!manual) sessionAutoCountRef.current += 1
       try {
-        const res = await apiClient.illustrate(context, targetWord, illustrateMode)
+        const res = await apiClient.illustrate(context, targetWord)
         if (!res.ok) {
           setIllustrations((cur) => ({ ...cur, [msgId]: { mode: 'error', message: res.message } }))
           return

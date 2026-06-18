@@ -90,6 +90,19 @@ export type A1EnglishWord = {
   meaning: string
 }
 
+/** 數學圖解的確定性視覺規格（前端用 SVG 照畫） */
+export type A1MathViz = {
+  kind: 'count' | 'groups'
+  icon?: string
+  total?: number
+  operation?: 'add' | 'sub'
+  operand?: number
+  groups?: number
+  per?: number
+  result?: number
+  equation?: string
+}
+
 /** 小家教講解 payload（唸/打出的題目：英文題、數學應用題、概念） */
 export type A1ExplainPayload = {
   subject: 'english' | 'math' | 'general'
@@ -97,6 +110,7 @@ export type A1ExplainPayload = {
   steps: string[]
   answer?: string
   words?: A1EnglishWord[]
+  viz?: A1MathViz
 }
 
 export type A1SentencePayload = {

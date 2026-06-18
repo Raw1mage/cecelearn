@@ -233,6 +233,10 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-explain-answer { margin: 0; padding: 0.55rem 0.8rem; border-radius: 0.7rem; background: rgba(52,211,153,0.18); color: #eef4ff; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; line-height: 1.5; }
 .a1-explain-answer__label { flex: 0 0 auto; font-size: 0.72rem; padding: 0.12rem 0.5rem; border-radius: 0.5rem; background: #34d399; color: #06281d; }
 
+/* A1 — 數學確定性 SVG 圖解（inline 在 explain 數學卡片） */
+.a1-math-diagram { width: 100%; display: flex; justify-content: center; padding: 0.3rem 0; }
+.a1-math-svg { width: 100%; max-width: 340px; height: auto; background: rgba(7,12,24,0.45); border: 1px solid rgba(252,211,77,0.25); border-radius: 0.8rem; }
+
 /* A1 — 英文跟讀練習（inline 在 explain 英文卡片下方） */
 .a1-en-practice { margin-top: 0.4rem; padding-top: 0.6rem; border-top: 1px dashed rgba(125,211,252,0.3); display: flex; flex-direction: column; gap: 0.5rem; }
 .a1-en-practice__title { margin: 0; font-size: 0.9rem; color: #7dd3fc; }
