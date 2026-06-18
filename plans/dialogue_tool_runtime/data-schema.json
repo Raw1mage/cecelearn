@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dialogue Tool Runtime Schema",
+  "type": "object",
+  "properties": {
+    "intent": {
+      "type": "string",
+      "enum": [
+        "lookup",
+        "make_words",
+        "make_sentence",
+        "tell_story",
+        "draw",
+        "solve_arithmetic",
+        "chat",
+        "unclear"
+      ]
+    },
+    "arithmetic": {
+      "type": "object",
+      "properties": {
+        "a": { "type": "number" },
+        "b": { "type": "number" },
+        "operation": { "type": "string", "enum": ["+", "-", "*", "/"] },
+        "expression": { "type": "string" }
+      },
+      "required": ["a", "b", "operation", "expression"],
+      "additionalProperties": false
+    },
+    "modelPolicy": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["text-fast", "text-reasoning", "image", "browser-tts", "deterministic"]
+        },
+        "preferredFamilies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["gemini-cli", "codex", "claude", "openai", "google-api"]
+          }
+        },
+        "maxCostTier": { "type": "string", "enum": ["free", "low", "medium", "high"] },
+        "fallback": { "type": "string", "enum": ["fail-fast", "ask-operator"] }
+      },
+      "required": ["kind", "fallback"],
+      "additionalProperties": false
+    },
+    "contextPolicy": {
+      "type": "object",
+      "properties": {
+        "recentTurns": { "type": "integer", "minimum": 0 },
+        "includeToolSummaries": { "type": "boolean" },
+        "includeSurfaceReferences": { "type": "boolean" },
+        "includeFullHistory": { "type": "boolean", "const": false }
+      },
+      "required": ["recentTurns", "includeToolSummaries", "includeSurfaceReferences", "includeFullHistory"],
+      "additionalProperties": false
+    },
+    "presentation": {
+      "type": "object",
+      "properties": {
+        "surfaceId": { "type": "string" },
+        "messageId": { "type": "string" },
+        "capability": {
+          "type": "string",
+          "enum": ["stroke", "illustration", "arithmetic", "word-card", "story"]
+        },
+        "mode": { "type": "string", "enum": ["inline", "floating"] },
+        "allowedModes": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["inline", "floating"] }
+        },
+        "resizable": { "type": "boolean" },
+        "draggable": { "type": "boolean" },
+        "downloadable": { "type": "boolean" },
+        "replayable": { "type": "boolean" }
+      },
+      "required": ["surfaceId", "messageId", "capability", "mode"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["intent"]
+}

@@ -1,0 +1,168 @@
+[
+  {
+    "requirement": "make_sentence intent",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "用蘋果造句" }
+      ]
+    },
+    "expected": {
+      "ok": true,
+      "intent": "make_sentence",
+      "reply": "好呀！我幫你用「蘋果」造一個句子。",
+      "sentence": { "targetWord": "蘋果", "sentence": "我早餐吃了一顆紅紅的蘋果。" },
+      "illustratable": true
+    }
+  },
+  {
+    "requirement": "make_words intent",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "花可以組什麼詞" }
+      ]
+    },
+    "expected": {
+      "ok": true,
+      "intent": "make_words",
+      "reply": "「花」可以組這些詞喔！",
+      "lookup": {
+        "character": "花",
+        "bopomofo": "ㄏㄨㄚ",
+        "words": [
+          { "term": "花朵", "bopomofo": "ㄏㄨㄚ ㄉㄨㄛˇ" },
+          { "term": "花園", "bopomofo": "ㄏㄨㄚ ㄩㄢˊ" }
+        ]
+      },
+      "illustratable": false
+    }
+  },
+  {
+    "requirement": "lookup intent (backward compatible)",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "蘋果的蘋" }
+      ],
+      "hint": "lookup"
+    },
+    "expected": {
+      "ok": true,
+      "intent": "lookup",
+      "reply": "「蘋」這個字唸 ㄆㄧㄥˊ。",
+      "lookup": {
+        "character": "蘋",
+        "bopomofo": "ㄆㄧㄥˊ",
+        "words": [
+          { "term": "蘋果", "bopomofo": "ㄆㄧㄥˊ ㄍㄨㄛˇ" }
+        ]
+      },
+      "illustratable": false
+    }
+  },
+  {
+    "requirement": "tell_story intent",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "說一個小兔子的故事" }
+      ]
+    },
+    "expected": {
+      "ok": true,
+      "intent": "tell_story",
+      "reply": "好，我說一個小兔子的故事給你聽。",
+      "story": { "topic": "小兔子", "story": "從前有一隻小白兔，牠最喜歡在草地上採紅蘿蔔……" },
+      "illustratable": true
+    }
+  },
+  {
+    "requirement": "chat intent (general)",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "你好呀" }
+      ]
+    },
+    "expected": {
+      "ok": true,
+      "intent": "chat",
+      "reply": "你好！我是你的小家教，今天想學什麼字呢？",
+      "illustratable": false
+    }
+  },
+  {
+    "requirement": "unclear intent (guidance)",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "嗯嗯那個那個" }
+      ]
+    },
+    "expected": {
+      "ok": true,
+      "intent": "unclear",
+      "reply": "我沒聽清楚耶，你可以說「用蘋果造句」或「蘋果的蘋」喔！",
+      "illustratable": false
+    }
+  },
+  {
+    "requirement": "multi-turn context continuity",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "用蘋果造句" },
+        { "role": "tutor", "text": "我早餐吃了一顆紅紅的蘋果。", "intent": "make_sentence" },
+        { "role": "user", "text": "再造一句" }
+      ]
+    },
+    "expected": {
+      "ok": true,
+      "intent": "make_sentence",
+      "sentence": { "targetWord": "蘋果", "sentence": "媽媽把蘋果切成小塊給我吃。" },
+      "illustratable": true
+    }
+  },
+  {
+    "requirement": "illustrate on demand",
+    "endpoint": "POST /api/a1/illustrate",
+    "input": {
+      "context": "我早餐吃了一顆紅紅的蘋果。",
+      "targetWord": "蘋果"
+    },
+    "expected": {
+      "ok": true,
+      "imageDataUri": "data:image/png;base64,<...>",
+      "altText": "一個小朋友開心吃著紅蘋果的趣味插畫"
+    }
+  },
+  {
+    "requirement": "chat failure (no-silent-fallback)",
+    "endpoint": "POST /api/a1/chat",
+    "input": {
+      "messages": [
+        { "role": "user", "text": "用蘋果造句" }
+      ],
+      "_simulate": "gemini_upstream_500"
+    },
+    "expected": {
+      "ok": false,
+      "error": "CHAT_UPSTREAM_ERROR",
+      "message": "小家教剛剛打瞌睡了，請再說一次好嗎？"
+    }
+  },
+  {
+    "requirement": "illustrate failure (no placeholder)",
+    "endpoint": "POST /api/a1/illustrate",
+    "input": {
+      "context": "我早餐吃了一顆紅紅的蘋果。",
+      "_simulate": "image_upstream_error"
+    },
+    "expected": {
+      "ok": false,
+      "error": "ILLUSTRATE_UPSTREAM_ERROR",
+      "message": "畫圖失敗了，要不要再試一次？"
+    }
+  }
+]

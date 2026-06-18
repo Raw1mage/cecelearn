@@ -5,14 +5,40 @@ import { initAccessLog, logAccess } from './logging/accessLog.js'
 import { initRequestLog, logRequest, createRequestId, logUpstream } from './logging/requestLog.js'
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
+import { GeminiChatProvider } from './providers/geminiChatProvider.js'
+import { GeminiImageProvider } from './providers/geminiImageProvider.js'
+import { VertexImageProvider } from './providers/vertexImageProvider.js'
+import { CascadeImageProvider } from './providers/cascadeImageProvider.js'
+import type { SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
 import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
+import type { A1ChatMessage } from './contracts/providers.js'
 
 const env = loadEnv()
 initAccessLog(resolve(process.env.HOME || '/tmp', '.local/state/cecelearn/logs/access.log'))
 initRequestLog(resolve(process.env.HOME || '/tmp', '.local/state/cecelearn/logs/request.log'))
-const a1 = createA1Module(new MoeWordLookupProvider(env.geminiApiKeys))
+function buildImageProvider(): SceneIllustrationProvider {
+  // vertexImage 在 'vertex' / 'cascade' 模式下必存在（loadEnv 已 fail-fast 驗證）
+  if (env.imageProvider === 'vertex') {
+    return new VertexImageProvider(env.vertexImage!)
+  }
+  if (env.imageProvider === 'cascade') {
+    // 成本分層：先免費 apikey → 撞 429/502/empty 掉接 Vertex 福利點數（使用者授權）
+    return new CascadeImageProvider(
+      new GeminiImageProvider(env.geminiApiKeys),
+      new VertexImageProvider(env.vertexImage!),
+      { primary: 'apikey', secondary: 'vertex' },
+    )
+  }
+  return new GeminiImageProvider(env.geminiApiKeys)
+}
+
+const a1 = createA1Module(
+  new MoeWordLookupProvider(env.geminiApiKeys),
+  new GeminiChatProvider(env.geminiApiKeys),
+  buildImageProvider(),
+)
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
 const vocabEngine = new VocabQuizEngine(env.geminiApiKeys)
@@ -63,7 +89,7 @@ const server = createServer(async (request, response) => {
   }
 
   if (url === '/api/health' && method === 'GET') {
-    send(200, { ok: true, service: '希希小家教-backend', port: env.port })
+    send(200, { ok: true, service: '小雞老師-backend', port: env.port })
     return
   }
 
@@ -86,6 +112,40 @@ const server = createServer(async (request, response) => {
     const raw = await readBody(request)
     const payload = JSON.parse(raw || '{}') as { query?: string }
     send(200, await a1.lookup(payload.query?.trim() || '字'), raw)
+    return
+  }
+
+  if (url === '/api/a1/chat' && method === 'POST') {
+    const raw = await readBody(request)
+    let messages: A1ChatMessage[] = []
+    let hint: 'lookup' | undefined
+    try {
+      const payload = JSON.parse(raw || '{}') as { messages?: A1ChatMessage[]; hint?: 'lookup' }
+      if (Array.isArray(payload.messages)) messages = payload.messages
+      if (payload.hint === 'lookup') hint = 'lookup'
+    } catch {
+      send(400, { ok: false, error: 'CHAT_BAD_REQUEST', message: '我沒聽清楚耶，再說一次好嗎？' }, raw)
+      return
+    }
+    const result = await a1.chat(messages, hint)
+    send(result.ok ? 200 : 502, result, raw)
+    return
+  }
+
+  if (url === '/api/a1/illustrate' && method === 'POST') {
+    const raw = await readBody(request)
+    let context = ''
+    let targetWord: string | undefined
+    try {
+      const payload = JSON.parse(raw || '{}') as { context?: string; targetWord?: string }
+      if (typeof payload.context === 'string') context = payload.context
+      if (typeof payload.targetWord === 'string') targetWord = payload.targetWord
+    } catch {
+      send(400, { ok: false, error: 'ILLUSTRATE_BAD_REQUEST', message: '我還不知道要畫什麼耶。' }, raw)
+      return
+    }
+    const result = await a1.illustrate(context, targetWord)
+    send(result.ok ? 200 : 502, result, raw)
     return
   }
 

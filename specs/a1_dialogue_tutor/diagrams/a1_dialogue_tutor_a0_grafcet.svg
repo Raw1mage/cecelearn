@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="705" height="1620" viewBox="2.00 -2.00 35.25 81.00" role="img">
+<style>
+.step{fill:#fff;stroke:#111;stroke-width:.14}.step-inner{fill:none;stroke:#111;stroke-width:.08}
+.action{fill:#fff;stroke:#111;stroke-width:.14}.action-inner{fill:none;stroke:#111;stroke-width:.08}.gate{stroke:#111;stroke-width:.16}
+.edge{fill:none;stroke:#111;stroke-width:.05;stroke-linecap:round;stroke-linejoin:round}.edge-arrow{marker-end:url(#arrow)}
+.flyover-mask{stroke:#fff;stroke-width:.12;stroke-linecap:round}
+.flyover{fill:none;stroke:#111;stroke-width:.05;stroke-linecap:round}
+.junction{fill:#111;stroke:#111;stroke-width:0}.branch-junction{fill:#fff;stroke:#111;stroke-width:.08}
+.assoc{stroke:#111;stroke-width:.05}.label{font:bold .7px 'Times New Roman', 'BiauKai', 'DFKai-SB', serif;text-anchor:middle;dominant-baseline:middle}
+.action-label{font:.55px 'Times New Roman', 'BiauKai', 'DFKai-SB', serif;text-anchor:middle;dominant-baseline:middle}.gate-label{font:italic .55px 'Times New Roman', 'BiauKai', 'DFKai-SB', serif;text-anchor:start;dominant-baseline:middle}.gate-label-left{font:italic .55px 'Times New Roman', 'BiauKai', 'DFKai-SB', serif;text-anchor:end;dominant-baseline:middle}
+</style>
+<defs><marker id="arrow" markerWidth="0.4" markerHeight="0.4" refX="0.36" refY="0.2" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 0.4 0.2 L 0 0.4 z" fill="#111"/></marker></defs>
+<rect x="2.00" y="-2.00" width="35.25" height="81.00" fill="white"/>
+<path class="edge edge-arrow" data-edge-id="edge:S0O1S1I1" data-segment-ids="S0O1S1I1:1S" d="M 21.25 7.00 L 21.25 11.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S1O1S2I1" data-segment-ids="S1O1S2I1:1S" d="M 21.25 14.00 L 21.25 18.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S2O1S3I1" data-segment-ids="S2O1S3I1:1S" d="M 21.25 21.00 L 21.25 25.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S3O1S4I1" data-segment-ids="S3O1S4I1:1S" d="M 21.25 28.00 L 21.25 32.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S4O1S5I1" data-segment-ids="S4O1S5I1:1S" d="M 21.25 35.00 L 21.25 39.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S5O1G1I1" data-segment-ids="S5O1G1I1:1S" d="M 21.25 42.00 L 21.25 44.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:G1O1S6I1" data-segment-ids="G1O1S6I1:1S" d="M 21.25 44.00 L 21.25 48.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:G1O2G3I1" data-segment-ids="G1O2G3I1:1E G1O2G3I1:2S G1O2G3I1:3W G1O2G3I1:4S" d="M 21.25 44.00 L 31.00 44.00 Q 31.50 44.00 31.50 44.50 L 31.50 61.50 Q 31.50 62.00 31.00 62.00 L 16.12 62.00 Q 15.62 62.00 15.62 62.50 L 15.62 66.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S6O1G2I1" data-segment-ids="S6O1G2I1:1S" d="M 21.25 51.00 L 21.25 53.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:G2O1S7I1" data-segment-ids="G2O1S7I1:1S" d="M 10.00 53.00 L 10.00 57.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:G2O2S8I1" data-segment-ids="G2O2S8I1:1S" d="M 21.25 53.00 L 21.25 57.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S7O1G3I2" data-segment-ids="S7O1G3I2:1S" d="M 10.00 60.00 L 10.00 66.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:G3O1S9I1" data-segment-ids="G3O1S9I1:1S" d="M 21.25 66.00 L 21.25 68.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S8O1G3I3" data-segment-ids="S8O1G3I3:1S" d="M 21.25 60.00 L 21.25 66.00"/>
+<path class="edge edge-arrow" data-edge-id="edge:S9O1S0I1" data-segment-ids="S9O1S0I1:1S S9O1S0I1:2W S9O1S0I1:3N S9O1S0I1:4E S9O1S0I1:5S" d="M 21.25 71.00 L 21.25 74.50 Q 21.25 75.00 20.75 75.00 L 6.50 75.00 Q 6.00 75.00 6.00 74.50 L 6.00 2.50 Q 6.00 2.00 6.50 2.00 L 20.75 2.00 Q 21.25 2.00 21.25 2.50 L 21.25 4.00"/>
+<rect class="step" x="19.25" y="4.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<rect class="step-inner" x="19.50" y="4.25" width="3.50" height="2.50" rx="0.22" ry="0.22"/>
+<text class="label" x="21.25" y="5.50">0</text>
+<rect class="step" x="19.25" y="11.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="12.50">1</text>
+<rect class="step" x="19.25" y="18.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="19.50">2</text>
+<rect class="step" x="19.25" y="25.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="26.50">3</text>
+<rect class="step" x="19.25" y="32.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="33.50">4</text>
+<rect class="step" x="19.25" y="39.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="40.50">5</text>
+<rect class="step" x="19.25" y="48.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="49.50">6</text>
+<rect class="step" x="8.00" y="57.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="10.00" y="58.50">7</text>
+<rect class="step" x="19.25" y="57.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="58.50">8</text>
+<rect class="step" x="19.25" y="68.00" width="4.00" height="3.00" rx="0.35" ry="0.35"/>
+<text class="label" x="21.25" y="69.50">9</text>
+<line class="assoc" x1="23.25" y1="5.50" x2="24.25" y2="5.50"/>
+<rect class="action" x="24.25" y="4.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="5.09"><tspan x="26.88" dy="0">Greet Child And</tspan><tspan x="26.88" dy="0.82">Idle For Input</tspan></text>
+<line class="assoc" x1="23.25" y1="12.50" x2="24.25" y2="12.50"/>
+<rect class="action" x="24.25" y="11.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="11.68"><tspan x="26.88" dy="0">Capture And</tspan><tspan x="26.88" dy="0.82">Normalize</tspan><tspan x="26.88" dy="0.82">Child Query</tspan></text>
+<line class="assoc" x1="23.25" y1="19.50" x2="24.25" y2="19.50"/>
+<rect class="action" x="24.25" y="18.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="18.68"><tspan x="26.88" dy="0">Assemble Dialogue</tspan><tspan x="26.88" dy="0.82">Context And</tspan><tspan x="26.88" dy="0.82">Classify Intent</tspan></text>
+<line class="assoc" x1="23.25" y1="26.50" x2="24.25" y2="26.50"/>
+<rect class="action" x="24.25" y="25.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="25.68"><tspan x="26.88" dy="0">Compose Tutor</tspan><tspan x="26.88" dy="0.82">Reply For</tspan><tspan x="26.88" dy="0.82">Classified Intent</tspan></text>
+<line class="assoc" x1="23.25" y1="33.50" x2="24.25" y2="33.50"/>
+<rect class="action" x="24.25" y="32.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="33.09"><tspan x="26.88" dy="0">Render Result Stage</tspan><tspan x="26.88" dy="0.82">And Speak Reply</tspan></text>
+<line class="assoc" x1="23.25" y1="40.50" x2="24.25" y2="40.50"/>
+<rect class="action" x="24.25" y="39.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="39.68"><tspan x="26.88" dy="0">Show Illustration</tspan><tspan x="26.88" dy="0.82">Button Or Stroke</tspan><tspan x="26.88" dy="0.82">Animation</tspan></text>
+<line class="assoc" x1="23.25" y1="49.50" x2="24.25" y2="49.50"/>
+<rect class="action" x="24.25" y="48.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="48.68"><tspan x="26.88" dy="0">Request Scene</tspan><tspan x="26.88" dy="0.82">Illustration From</tspan><tspan x="26.88" dy="0.82">Backend Image Proxy</tspan></text>
+<line class="assoc" x1="12.00" y1="58.50" x2="13.00" y2="58.50"/>
+<rect class="action" x="13.00" y="57.07" width="5.25" height="2.86"/>
+<text class="action-label" x="15.62" y="58.09"><tspan x="15.62" dy="0">Display Scene</tspan><tspan x="15.62" dy="0.82">Illustration In Stage</tspan></text>
+<line class="assoc" x1="23.25" y1="58.50" x2="24.25" y2="58.50"/>
+<rect class="action" x="24.25" y="57.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="57.68"><tspan x="26.88" dy="0">Show Illustration</tspan><tspan x="26.88" dy="0.82">Error And Retry</tspan><tspan x="26.88" dy="0.82">Affordance</tspan></text>
+<line class="assoc" x1="23.25" y1="69.50" x2="24.25" y2="69.50"/>
+<rect class="action" x="24.25" y="68.07" width="5.25" height="2.86"/>
+<text class="action-label" x="26.88" y="68.68"><tspan x="26.88" dy="0">Append Turn</tspan><tspan x="26.88" dy="0.82">To Conversation</tspan><tspan x="26.88" dy="0.82">History</tspan></text>
+<circle class="branch-junction" cx="21.25" cy="44.00" r="0.28"/>
+<line class="gate" x1="8.00" y1="53.00" x2="23.25" y2="53.00"/>
+<line class="gate" x1="8.00" y1="66.00" x2="23.25" y2="66.00"/>
+<line class="gate" x1="20.25" y1="9.00" x2="22.25" y2="9.00" data-label-kind="condition-stub" data-edge-id="edge:S0O1S1I1" data-arrow-id="condition_stub:T1" data-transition-id="T1" data-condition-stub-id="condition_stub:T1"/>
+<text class="gate-label" x="22.65" y="9.00" data-label-kind="condition-stub" data-edge-id="edge:S0O1S1I1" data-arrow-id="condition_stub:T1" data-transition-id="T1" data-condition-stub-id="condition_stub:T1"><tspan x="22.65" dy="0">child_provides_voice_or_text</tspan></text>
+<line class="gate" x1="20.25" y1="16.00" x2="22.25" y2="16.00" data-label-kind="condition-stub" data-edge-id="edge:S1O1S2I1" data-arrow-id="condition_stub:T2" data-transition-id="T2" data-condition-stub-id="condition_stub:T2"/>
+<text class="gate-label" x="22.65" y="16.00" data-label-kind="condition-stub" data-edge-id="edge:S1O1S2I1" data-arrow-id="condition_stub:T2" data-transition-id="T2" data-condition-stub-id="condition_stub:T2"><tspan x="22.65" dy="0">query_normalized</tspan></text>
+<line class="gate" x1="20.25" y1="23.00" x2="22.25" y2="23.00" data-label-kind="condition-stub" data-edge-id="edge:S2O1S3I1" data-arrow-id="condition_stub:T3" data-transition-id="T3" data-condition-stub-id="condition_stub:T3"/>
+<text class="gate-label" x="22.65" y="23.00" data-label-kind="condition-stub" data-edge-id="edge:S2O1S3I1" data-arrow-id="condition_stub:T3" data-transition-id="T3" data-condition-stub-id="condition_stub:T3"><tspan x="22.65" dy="0">intent_label_returned</tspan></text>
+<line class="gate" x1="20.25" y1="30.00" x2="22.25" y2="30.00" data-label-kind="condition-stub" data-edge-id="edge:S3O1S4I1" data-arrow-id="condition_stub:T4" data-transition-id="T4" data-condition-stub-id="condition_stub:T4"/>
+<text class="gate-label" x="22.65" y="30.00" data-label-kind="condition-stub" data-edge-id="edge:S3O1S4I1" data-arrow-id="condition_stub:T4" data-transition-id="T4" data-condition-stub-id="condition_stub:T4"><tspan x="22.65" dy="0">structured_reply_ready</tspan></text>
+<line class="gate" x1="20.25" y1="37.00" x2="22.25" y2="37.00" data-label-kind="condition-stub" data-edge-id="edge:S4O1S5I1" data-arrow-id="condition_stub:T5" data-transition-id="T5" data-condition-stub-id="condition_stub:T5"/>
+<text class="gate-label" x="22.65" y="37.00" data-label-kind="condition-stub" data-edge-id="edge:S4O1S5I1" data-arrow-id="condition_stub:T5" data-transition-id="T5" data-condition-stub-id="condition_stub:T5"><tspan x="22.65" dy="0">reply_displayed</tspan></text>
+<line class="gate" x1="20.25" y1="46.00" x2="22.25" y2="46.00" data-label-kind="condition-stub" data-edge-id="edge:G1O1S6I1" data-arrow-id="condition_stub:T6" data-transition-id="T6" data-condition-stub-id="condition_stub:T6"/>
+<text class="gate-label-left" x="19.85" y="46.00" data-label-kind="condition-stub" data-edge-id="edge:G1O1S6I1" data-arrow-id="condition_stub:T6" data-transition-id="T6" data-condition-stub-id="condition_stub:T6"><tspan x="19.85" dy="0">child_taps_paint_button</tspan></text>
+<line class="gate" x1="14.62" y1="64.00" x2="16.62" y2="64.00" data-label-kind="condition-stub" data-edge-id="edge:G1O2G3I1" data-arrow-id="condition_stub:T7" data-transition-id="T7" data-condition-stub-id="condition_stub:T7"/>
+<text class="gate-label" x="17.02" y="63.32" data-label-kind="condition-stub" data-edge-id="edge:G1O2G3I1" data-arrow-id="condition_stub:T7" data-transition-id="T7" data-condition-stub-id="condition_stub:T7"><tspan x="17.02" dy="0">child_</tspan><tspan x="17.02" dy="0.68">starts_</tspan><tspan x="17.02" dy="0.68">next_turn</tspan></text>
+<line class="gate" x1="9.00" y1="55.00" x2="11.00" y2="55.00" data-label-kind="condition-stub" data-edge-id="edge:G2O1S7I1" data-arrow-id="condition_stub:T8" data-transition-id="T8" data-condition-stub-id="condition_stub:T8"/>
+<text class="gate-label-left" x="5.80" y="54.32" data-label-kind="condition-stub" data-edge-id="edge:G2O1S7I1" data-arrow-id="condition_stub:T8" data-transition-id="T8" data-condition-stub-id="condition_stub:T8"><tspan x="5.80" dy="0">image_</tspan><tspan x="5.80" dy="0.68">generation_</tspan><tspan x="5.80" dy="0.68">succeeded</tspan></text>
+<line class="gate" x1="20.25" y1="55.00" x2="22.25" y2="55.00" data-label-kind="condition-stub" data-edge-id="edge:G2O2S8I1" data-arrow-id="condition_stub:T9" data-transition-id="T9" data-condition-stub-id="condition_stub:T9"/>
+<text class="gate-label" x="22.65" y="55.00" data-label-kind="condition-stub" data-edge-id="edge:G2O2S8I1" data-arrow-id="condition_stub:T9" data-transition-id="T9" data-condition-stub-id="condition_stub:T9"><tspan x="22.65" dy="0">image_generation_failed</tspan></text>
+<line class="gate" x1="9.00" y1="62.00" x2="11.00" y2="62.00" data-label-kind="condition-stub" data-edge-id="edge:S7O1G3I2" data-arrow-id="condition_stub:T10" data-transition-id="T10" data-condition-stub-id="condition_stub:T10"/>
+<text class="gate-label-left" x="5.80" y="61.32" data-label-kind="condition-stub" data-edge-id="edge:S7O1G3I2" data-arrow-id="condition_stub:T10" data-transition-id="T10" data-condition-stub-id="condition_stub:T10"><tspan x="5.80" dy="0">child_</tspan><tspan x="5.80" dy="0.68">starts_</tspan><tspan x="5.80" dy="0.68">next_turn</tspan></text>
+<line class="gate" x1="20.25" y1="64.00" x2="22.25" y2="64.00" data-label-kind="condition-stub" data-edge-id="edge:S8O1G3I3" data-arrow-id="condition_stub:T11" data-transition-id="T11" data-condition-stub-id="condition_stub:T11"/>
+<text class="gate-label" x="22.65" y="64.00" data-label-kind="condition-stub" data-edge-id="edge:S8O1G3I3" data-arrow-id="condition_stub:T11" data-transition-id="T11" data-condition-stub-id="condition_stub:T11"><tspan x="22.65" dy="0">child_starts_next_turn</tspan></text>
+<line class="gate" x1="20.25" y1="73.00" x2="22.25" y2="73.00" data-label-kind="condition-stub" data-edge-id="edge:S9O1S0I1" data-arrow-id="condition_stub:T12" data-transition-id="T12" data-condition-stub-id="condition_stub:T12"/>
+<text class="gate-label" x="22.65" y="73.00" data-label-kind="condition-stub" data-edge-id="edge:S9O1S0I1" data-arrow-id="condition_stub:T12" data-transition-id="T12" data-condition-stub-id="condition_stub:T12"><tspan x="22.65" dy="0">history_updated</tspan></text>
+</svg>

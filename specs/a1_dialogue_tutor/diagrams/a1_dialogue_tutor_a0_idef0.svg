@@ -1,0 +1,79 @@
+<svg width="1545.7" height="723.6" viewBox="-206.9 -171.8 1545.7 723.6" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="black" /></marker>
+<marker id="call_arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 M 0 2 L 6 5 L 0 8" fill="none" stroke="black" stroke-width="1" /></marker>
+</defs>
+<rect x="-206.9" y="-171.8" width="1545.7" height="723.6" fill="white" />
+<rect x="130.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A1" />
+<text x="230.0" y="149.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >A1</text>
+<text x="230.0" y="181.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >CAPTURE CHILD</text>
+<text x="230.0" y="212.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >UTTERANCE</text>
+<rect x="454.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A2" />
+<text x="554.0" y="152.4" text-anchor="middle" font-size="13" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A2" >A2</text>
+<text x="554.0" y="181.0" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A2" >CLASSIFY</text>
+<text x="554.0" y="209.1" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A2" >CONVERSATION INTENT</text>
+<rect x="802.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A3" />
+<text x="902.0" y="149.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A3" >A3</text>
+<text x="902.0" y="181.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A3" >COMPOSE</text>
+<text x="902.0" y="212.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A3" >TUTOR REPLY</text>
+<rect x="130.0" y="340.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A4" />
+<text x="230.0" y="372.4" text-anchor="middle" font-size="13" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A4" >A4</text>
+<text x="230.0" y="401.0" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A4" >DISPLAY</text>
+<text x="230.0" y="429.1" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A4" >CONVERSATION RESULT</text>
+<rect x="454.0" y="340.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A5" />
+<text x="554.0" y="369.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A5" >A5</text>
+<text x="554.0" y="401.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A5" >PAINT SCENE</text>
+<text x="554.0" y="432.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A5" >ILLUSTRATION</text>
+<rect x="40.0" y="38.2" width="1052.0" height="503.6" stroke="black" fill="none" stroke-width="2" />
+<rect x="342.0" y="-161.8" width="448.0" height="110.0" stroke="black" fill="white" stroke-width="1.5" data-id="A0" />
+<text x="566.0" y="-135.8" text-anchor="middle" font-size="14" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A0" >A0</text>
+<text x="566.0" y="-105.8" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A0" >TUTOR CHILD THROUGH CHINESE</text>
+<text x="566.0" y="-75.8" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A0" >DIALOGUE (A0 CONTEXT)</text>
+<line x1="342.0" y1="-161.8" x2="40.0" y2="38.2" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="790.0" y1="-161.8" x2="1092.0" y2="38.2" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="342.0" y1="-51.8" x2="40.0" y2="541.8" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="790.0" y1="-51.8" x2="1092.0" y2="541.8" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<path d="M 330.0 200.0 L 454.0 200.0" stroke="black" stroke-width="1.2" data-arrow-id="AR4" data-waypoints="330.0,200.0 454.0,200.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 654.0 180.0 L 802.0 180.0" stroke="black" stroke-width="1.2" data-arrow-id="AR7" data-waypoints="654.0,180.0 802.0,180.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 330.0 380.0 L 454.0 380.0" stroke="black" stroke-width="1.2" data-arrow-id="AR12" data-waypoints="330.0,380.0 454.0,380.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 1002.0 180.0 L 1032.0 180.0 Q 1042.0 180.0 1042.0 190.0 L 1042.0 280.0 Q 1042.0 290.0 1032.0 290.0 L 100.0 290.0 Q 90.0 290.0 90.0 300.0 L 90.0 390.0 Q 90.0 400.0 100.0 400.0 L 130.0 400.0" stroke="black" stroke-width="1.2" data-arrow-id="AR10" data-waypoints="1002.0,180.0 1042.0,180.0 1042.0,290.0 90.0,290.0 90.0,400.0 130.0,400.0" marker-end="url(#arrow)" fill="none" />
+<path d="M -10.0 180.0 L 130.0 180.0" stroke="black" stroke-width="1.2" data-arrow-id="AR1" data-waypoints="-10.0,180.0 130.0,180.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 84.2 L 230.0 120.0" stroke="black" stroke-width="1.2" data-arrow-id="AR2" data-waypoints="230.0,84.2 230.0,120.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 275.8 L 230.0 240.0" stroke="black" stroke-width="1.2" data-arrow-id="AR3" data-waypoints="230.0,275.8 230.0,240.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 554.0 84.2 L 554.0 120.0" stroke="black" stroke-width="1.2" data-arrow-id="AR5" data-waypoints="554.0,84.2 554.0,120.0" marker-end="url(#arrow)" fill="none" />
+<path d="M -10.0 78.2 L 382.0 78.2 Q 392.0 78.2 392.0 88.2 L 392.0 150.0 Q 392.0 160.0 402.0 160.0 L 454.0 160.0" stroke="black" stroke-width="1.2" data-arrow-id="AR6" data-waypoints="-10.0,78.2 392.0,78.2 392.0,160.0 454.0,160.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 902.0 84.2 L 902.0 120.0" stroke="black" stroke-width="1.2" data-arrow-id="AR8" data-waypoints="902.0,84.2 902.0,120.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 902.0 275.8 L 902.0 240.0" stroke="black" stroke-width="1.2" data-arrow-id="AR9" data-waypoints="902.0,275.8 902.0,240.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 495.8 L 230.0 460.0" stroke="black" stroke-width="1.2" data-arrow-id="AR11" data-waypoints="230.0,495.8 230.0,460.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 554.0 495.8 L 554.0 460.0" stroke="black" stroke-width="1.2" data-arrow-id="AR13" data-waypoints="554.0,495.8 554.0,460.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 304.2 L 230.0 340.0" stroke="black" stroke-width="1.2" data-arrow-id="AR14" data-waypoints="230.0,304.2 230.0,340.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 330.0 420.0 L 382.0 420.0 Q 392.0 420.0 392.0 430.0 L 392.0 491.8 Q 392.0 501.8 402.0 501.8 L 1142.0 501.8" stroke="black" stroke-width="1.2" data-arrow-id="AR15" data-waypoints="330.0,420.0 392.0,420.0 392.0,501.8 1142.0,501.8" marker-end="url(#arrow)" fill="none" />
+<text x="224.0" y="114.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR2">Wake Word And</text>
+<text x="236.0" y="114.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR2">Speech Settings</text>
+<text x="224.0" y="256.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR3">Web Speech</text>
+<text x="236.0" y="256.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR3">Recognition</text>
+<text x="554.0" y="78.2" font-size="14" text-anchor="middle" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR5">Intent Taxonomy</text>
+<text x="902.0" y="78.2" font-size="14" text-anchor="middle" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR8">Child Safety Prompt Policy</text>
+<text x="896.0" y="256.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR9">Backend Gemini</text>
+<text x="908.0" y="256.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR9">Chat Proxy</text>
+<text x="224.0" y="476.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR11">React Stage Components</text>
+<text x="236.0" y="476.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR11">And Speech Synthesis</text>
+<text x="548.0" y="476.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR13">Backend Gemini</text>
+<text x="560.0" y="476.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR13">Image Proxy</text>
+<text x="224.0" y="334.0" font-size="14" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR14">Scene</text>
+<text x="236.0" y="334.0" font-size="14" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR14">Illustration Image</text>
+<text x="392.0" y="195.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR4">Normalized</text>
+<text x="392.0" y="212.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR4">Child Query</text>
+<text x="728.0" y="175.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR7">Intent Label And</text>
+<text x="728.0" y="192.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR7">Dialogue Context</text>
+<text x="392.0" y="375.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR12">Illustration</text>
+<text x="392.0" y="392.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR12">Scene Request</text>
+<text x="554.0" y="308.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR10" >Structured Tutor Reply</text>
+<text x="-14.0" y="171.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR1">Child Voice</text>
+<text x="-14.0" y="197.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR1">And Text</text>
+<text x="-14.0" y="69.2" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR6">Conversation</text>
+<text x="-14.0" y="95.2" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR6">History</text>
+<text x="1146.0" y="479.8" font-size="20" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR15">Rendered</text>
+<text x="1146.0" y="505.8" font-size="20" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR15">Conversation</text>
+<text x="1146.0" y="531.8" font-size="20" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="AR15">And Spoken Reply</text>
+</svg>

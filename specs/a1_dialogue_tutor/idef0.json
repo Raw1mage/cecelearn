@@ -1,0 +1,28 @@
+{
+  "diagram_title": "Tutor Child Through Chinese Dialogue (A0 Context)",
+  "node_reference": "A0",
+  "activities": [
+    { "id": "A1", "title": "Capture Child Utterance", "description": "接收語音或文字輸入並整理為一輪查詢", "decomposition": "A1" },
+    { "id": "A2", "title": "Classify Conversation Intent", "description": "組對話上下文並判定 intent（lookup/make_words/make_sentence/tell_story/chat/unclear）", "decomposition": "A2" },
+    { "id": "A3", "title": "Compose Tutor Reply", "description": "依 intent 經後端 Gemini 產生結構化回覆內容", "decomposition": null },
+    { "id": "A4", "title": "Display Conversation Result", "description": "結果視窗與插圖框依 intent 渲染並語音播報", "decomposition": null },
+    { "id": "A5", "title": "Paint Scene Illustration", "description": "按鈕觸發，依當前句子/故事情境經後端影像模型畫趣味插畫", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "AR1", "source": "EXTERNAL", "target": "A1:input", "label": "Child Voice And Text", "type": "input" },
+    { "id": "AR2", "source": "EXTERNAL", "target": "A1:control", "label": "Wake Word And Speech Settings", "type": "control" },
+    { "id": "AR3", "source": "EXTERNAL", "target": "A1:mechanism", "label": "Web Speech Recognition", "type": "mechanism" },
+    { "id": "AR4", "source": "A1:output", "target": "A2:input", "label": "Normalized Child Query", "type": "output" },
+    { "id": "AR5", "source": "EXTERNAL", "target": "A2:control", "label": "Intent Taxonomy", "type": "control" },
+    { "id": "AR6", "source": "EXTERNAL", "target": "A2:input", "label": "Conversation History", "type": "input" },
+    { "id": "AR7", "source": "A2:output", "target": "A3:input", "label": "Intent Label And Dialogue Context", "type": "output" },
+    { "id": "AR8", "source": "EXTERNAL", "target": "A3:control", "label": "Child Safety Prompt Policy", "type": "control" },
+    { "id": "AR9", "source": "EXTERNAL", "target": "A3:mechanism", "label": "Backend Gemini Chat Proxy", "type": "mechanism" },
+    { "id": "AR10", "source": "A3:output", "target": "A4:input", "label": "Structured Tutor Reply", "type": "output" },
+    { "id": "AR11", "source": "EXTERNAL", "target": "A4:mechanism", "label": "React Stage Components And Speech Synthesis", "type": "mechanism" },
+    { "id": "AR12", "source": "A4:output", "target": "A5:input", "label": "Illustration Scene Request", "type": "output" },
+    { "id": "AR13", "source": "EXTERNAL", "target": "A5:mechanism", "label": "Backend Gemini Image Proxy", "type": "mechanism" },
+    { "id": "AR14", "source": "A5:output", "target": "A4:control", "label": "Scene Illustration Image", "type": "control" },
+    { "id": "AR15", "source": "A4:output", "target": "EXTERNAL", "label": "Rendered Conversation And Spoken Reply", "type": "output" }
+  ]
+}

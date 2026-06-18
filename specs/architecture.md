@@ -66,15 +66,25 @@ Does not own:
 
 ### Portal
 - single entrypoint for the web product
-- exposes A1/A2/A3 cards
+- exposes primary learning cards; A3 is no longer a visible Portal card because arithmetic is taught through A1 dialogue
 - hosts shared navigation and route registry
 
-### A1 feature
-- speech-driven Chinese word lookup
-- character result rendering
-- bopomofo display
-- HanziWriter integration
-- backend-backed lookup/generation boundary required during migration
+### A1 feature (dialogue tutor)
+- evolved from single-shot word lookup into a conversational Chinese tutor ("小雞老師")
+- full-duplex voice on desktop: continuous mic, no wake word; any final transcript becomes a turn (Android Chrome full-duplex is out of scope → Samsung manual path retained)
+- echo soft-gate (DD-11): during TTS playback + 700ms tail, recognition results are discarded (Web Speech API does not guarantee AEC between SpeechSynthesis↔SpeechRecognition) — kills the self-feedback loop without pausing the mic. Trade-off: no barge-in while the tutor speaks.
+- intent routing (lookup / make_words / make_sentence / tell_story / draw / solve_arithmetic / chat / unclear) via backend Gemini chat provider; `draw` = direct "draw me X" request → auto-illustrated; `solve_arithmetic` parses natural-language math into typed payload only
+- single-column chat layout: input row on top + full-width conversation stream. No persistent left-column canvas — stroke animation (HanziWriter) and scene illustration both render INLINE per-message in the stream, appearing only when needed
+- per-message illustration history: each tutor turn carries its own illustration state (keyed by message id), never overwritten; each image is downloadable and retained for review
+- generalized result stream: word cards (bopomofo), multi-sentence make_sentence (count-configurable, max 5), story, direct draw, and arithmetic teaching surfaces; fused into a single conversation stream
+- arithmetic execution is deterministic frontend tool logic (`ArithmeticCard` / A3 engine), rendered inline per tutor message and kept placement-compatible with future floating teaching surfaces
+- scene illustration via Nano Banana (`gemini-2.5-flash-image`), auto-triggered on illustratable turns (make_sentence / tell_story / draw)
+- illustration provider is cost-tiered and config-driven (`IMAGE_PROVIDER` env): `apikey` (free AI Studio quota only), `vertex` (Vertex AI predict, bills GCP GenAI/Cloud credit via service-account auth), or `cascade` (DEFAULT in prod: try free apikey first → on retryable failure 429-cooldown / 502 / empty, fall through to Vertex paid tier). Cascade is an explicit, user-authorized, observable cost ladder (logged per hop), NOT a silent identity fallback — both tiers must be fully configured or `loadEnv` fail-fast throws. Same model (`gemini-2.5-flash-image`) on both tiers; only the billing path differs.
+- Vertex tier auth: service-account key (`VERTEX_KEY_FILE`, kept outside repo) → `google-auth-library` GoogleAuth mints + caches/refreshes access tokens (solves 1h token expiry for long-running server). Providers: `GeminiImageProvider` (apikey), `VertexImageProvider` (Vertex), `CascadeImageProvider` (composes both)
+- TTS reads back reply + sentence/story content (zh-TW, toggleable)
+- backend endpoints: `POST /api/a1/lookup`, `POST /api/a1/chat`, `POST /api/a1/illustrate`
+- spec: `specs/a1_dialogue_tutor/`
+- all provider calls go through backend (`GEMINI_API_KEYS` env), never the browser
 
 ### A2 feature
 - idiom bank input and random selection
@@ -83,10 +93,10 @@ Does not own:
 - backend-backed quiz generation boundary required during migration
 
 ### A3 feature
-- four-operations teaching tool
-- keypad-driven inputs
-- arithmetic animation engine
-- feature can migrate earlier because it has no provider-secret dependency
+- four-operations teaching tool now exposed primarily as an A1 inline `solve_arithmetic` teaching surface
+- `/a3` route remains mounted as a debug/direct-test route
+- keypad-driven debug inputs reuse the same `ArithmeticCard` renderer as A1
+- arithmetic animation engine remains deterministic frontend logic with no provider-secret dependency
 
 ## Migration strategy
 1. Build unified portal shell in `webapp/frontend`

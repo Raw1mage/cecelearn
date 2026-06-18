@@ -1,0 +1,21 @@
+{
+  "id": "dialogue_tool_runtime_grafcet",
+  "states": [
+    { "id": "idle", "label": "Waiting for user turn", "initial": true },
+    { "id": "classifying", "label": "Classifying intent and payload" },
+    { "id": "render_text", "label": "Render tutor reply" },
+    { "id": "render_tool", "label": "Render inline tool card" },
+    { "id": "tool_error", "label": "Show explicit tool error" },
+    { "id": "done", "label": "Turn complete" }
+  ],
+  "transitions": [
+    { "from": "idle", "to": "classifying", "condition": "user submits text or final voice transcript" },
+    { "from": "classifying", "to": "render_text", "condition": "chat response ok" },
+    { "from": "classifying", "to": "tool_error", "condition": "chat response invalid or unsupported payload" },
+    { "from": "render_text", "to": "render_tool", "condition": "response contains tool payload" },
+    { "from": "render_text", "to": "done", "condition": "response has no tool payload" },
+    { "from": "render_tool", "to": "done", "condition": "tool card mounted" },
+    { "from": "tool_error", "to": "done", "condition": "explicit error rendered" },
+    { "from": "done", "to": "idle", "condition": "ready for next turn" }
+  ]
+}

@@ -1,91 +1,61 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  apiClient,
-  type A1LookupResponse,
-  type A1LookupWord,
-} from "../../shared/api/client";
-import { celebrate } from "../../shared/celebrate";
-import { useScore } from "../../shared/ScoreContext";
+import { useConversation } from "./hooks/useConversation";
+import { ConversationView } from "./components/ConversationView";
 import { Panel } from "../../shared/components/Panel";
-import { parseBopomofo } from "./bopomofo";
 import {
-  createHanziWriter,
-  getSpeechRecognitionConstructor,
-  type HanziWriterInstance,
-} from "./hanziWriterAdapter";
+  isTtsSupported,
+  isTtsEnabled,
+  setTtsEnabled,
+  isWithinSpeechGuard,
+  isLikelySelfEcho,
+  addSpeechEndListener,
+} from "../../shared/speech/tts";
+import { getSpeechRecognitionConstructor } from "./hanziWriterAdapter";
 
-/** Render a word with vertical bopomofo annotation to the right of each character */
-function RubyWord({ term, bopomofo }: A1LookupWord) {
-  const chars = term.split("");
-  const phonetics = bopomofo.split(" ").filter(Boolean);
-
-  return (
-    <span className="ruby-word">
-      {chars.map((char, i) => {
-        const ph = i < phonetics.length ? parseBopomofo(phonetics[i]) : null;
-        return (
-          <span key={i} className="ruby-char">
-            <span className="ruby-char__main">{char}</span>
-            {ph && (
-              <span className="ruby-char__phon">
-                <span className="ruby-char__initials">
-                  {ph.phonetics.map((p, j) => (
-                    <span key={j}>{p}</span>
-                  ))}
-                </span>
-                <span className="ruby-char__tone">{ph.tone || "\u00A0"}</span>
-              </span>
-            )}
-          </span>
-        );
-      })}
-    </span>
-  );
+/** 偵測「○○的×」查字結構，給後端 hint=lookup（維持既有 lookup 行為不退化，DD-3） */
+function detectLookupHint(text: string): "lookup" | undefined {
+  const clean = text.replace(/\s+/g, "");
+  const deIdx = clean.lastIndexOf("的");
+  if (deIdx >= 0) {
+    const after = clean.slice(deIdx + 1);
+    if (/^[\u4e00-\u9fff]怎麼寫?$/.test(after) || /^[\u4e00-\u9fff]$/.test(after)) {
+      return "lookup";
+    }
+  }
+  if (/^[\u4e00-\u9fff]怎麼寫$/.test(clean)) return "lookup";
+  return undefined;
 }
-
-const initialResult: A1LookupResponse = {
-  ok: true,
-  query: "字",
-  character: "字",
-  bopomofo: "ㄗˋ",
-  words: [
-    { term: "文字", bopomofo: "ㄨㄣˊ ㄗˋ" },
-    { term: "字典", bopomofo: "ㄗˋ ㄉㄧㄢˇ" },
-  ],
-  idioms: [],
-  note: "請輸入字詞或使用語音查詢。",
-};
 
 export function A1Page() {
   const samsungManualPrompt = "點一下麥克風後直接說出要查的字詞。";
-  const { addScore } = useScore();
+  const {
+    messages,
+    status: convStatus,
+    busy,
+    illustrations,
+    sendTurn,
+    redrawIllustration,
+  } = useConversation();
+
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<A1LookupResponse>(initialResult);
-  const [history, setHistory] = useState<A1LookupResponse[]>([]);
   const [status, setStatus] = useState("");
   const [speechReady, setSpeechReady] = useState(false);
   const [listening, setListening] = useState(false);
-  const [practicing, setPracticing] = useState(false);
-  const [wakeHit, setWakeHit] = useState(false);
-  const [wordsOpen, setWordsOpen] = useState(true);
-  const [idiomsOpen, setIdiomsOpen] = useState(true);
-  const [historyOpen, setHistoryOpen] = useState(true);
-  const strokeContainerRef = useRef<HTMLDivElement | null>(null);
-  const writerTargetRef = useRef<HTMLDivElement | null>(null);
-  const writerRef = useRef<HanziWriterInstance | null>(null);
-  const historyPanelRef = useRef<HTMLElement | null>(null);
+  const [ttsOn, setTtsOn] = useState(isTtsEnabled());
+
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const samsungManualModeRef = useRef(false);
   const wantListeningRef = useRef(false);
   const triggeredRef = useRef(false);
-  const wakeWindowRef = useRef(false);
-  const wakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recRunningRef = useRef(false);
   const vadActiveRef = useRef(false);
   const lookupRef = useRef<(value: string) => Promise<void>>(null!);
   const startListeningFlowRef = useRef<() => void>(() => {});
   const stopVadRef = useRef<() => void>(() => {});
 
+  // ──────────────────────────────────────────────────────────────────
+  // 語音辨識核心 useEffect（DD-10：完全保留，不重寫；僅辨識結果下游改指向 sendTurn）
+  // ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const Recognition = getSpeechRecognitionConstructor();
     if (!Recognition) {
@@ -97,6 +67,10 @@ export function A1Page() {
     let analyser: AnalyserNode | null = null;
     let stream: MediaStream | null = null;
     let vadRafId = 0;
+    let restartTimer: ReturnType<typeof setTimeout> | undefined;
+    let watchdogTimer: ReturnType<typeof setInterval> | undefined;
+    let lastAliveAt = Date.now();
+    let removeSpeechEndListener: (() => void) | undefined;
     const VAD_THRESHOLD = 0.015;
 
     const recognition = new Recognition();
@@ -124,20 +98,8 @@ export function A1Page() {
       try {
         recognition.start();
       } catch {
-        /* already started */
+        startVadWait();
       }
-    }
-
-    function openWakeWindow() {
-      setWakeHit(true);
-      wakeWindowRef.current = true;
-      setStatus("聽到了！請說要查的字...");
-      if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
-      wakeTimerRef.current = setTimeout(() => {
-        wakeWindowRef.current = false;
-        setWakeHit(false);
-        setStatus("正在聆聽... 請說「小雞小雞，○○的×怎麼寫」");
-      }, 4000);
     }
 
     // ── VAD-wait loop: only runs when recognition is NOT running ──
@@ -145,13 +107,16 @@ export function A1Page() {
     function vadWaitLoop() {
       if (!wantListeningRef.current || recRunningRef.current) return;
       vadRafId = requestAnimationFrame(vadWaitLoop);
+      if (isWithinSpeechGuard()) return;
       if (getRms() > VAD_THRESHOLD) {
         cancelAnimationFrame(vadRafId);
+        vadActiveRef.current = false;
         startRecognition();
       }
     }
 
     function startVadWait() {
+      if (vadActiveRef.current) return;
       vadActiveRef.current = true;
       vadRafId = requestAnimationFrame(vadWaitLoop);
     }
@@ -167,11 +132,44 @@ export function A1Page() {
       if (!recRunningRef.current) startVadWait();
     }
 
+    // TTS 後 recognition 常被 Chrome 靜默弄聾（甚至不發 onend，recRunning 卡 true）。
+    // 不靠 RMS：直接 abort 既有 session 再開全新 session（等同手動關開麥克風的恢復路徑）。
+    function restartSession() {
+      if (!wantListeningRef.current) return;
+      if (isWithinSpeechGuard()) {
+        // 仍在朗讀 / echo 尾窗內：稍後再試，等 guard 解除。
+        clearTimeout(restartTimer);
+        restartTimer = setTimeout(restartSession, 400);
+        return;
+      }
+      stopVad();
+      try {
+        recognition.abort();
+      } catch {
+        /* ok */
+      }
+      recRunningRef.current = false;
+      clearTimeout(restartTimer);
+      restartTimer = setTimeout(() => {
+        if (!wantListeningRef.current || isWithinSpeechGuard()) return;
+        try {
+          recognition.start();
+        } catch {
+          // 前一個 session 尚未完全停止：再延遲重試一次。
+          restartTimer = setTimeout(() => {
+            try {
+              recognition.start();
+            } catch {
+              /* ok */
+            }
+          }, 300);
+        }
+      }, 200);
+    }
+
     function startSamsungRecognition() {
       if (recRunningRef.current) return;
       triggeredRef.current = false;
-      wakeWindowRef.current = false;
-      setWakeHit(false);
       wantListeningRef.current = true;
       setStatus(samsungManualPrompt);
       try {
@@ -189,11 +187,12 @@ export function A1Page() {
     // ── Recognition event handlers ──
     recognition.onstart = () => {
       recRunningRef.current = true;
+      lastAliveAt = Date.now();
       setListening(true);
       setStatus(
         isSamsungManualMode
           ? samsungManualPrompt
-          : "正在聆聽... 請說「小雞小雞，○○的×怎麼寫」",
+          : "我在聽，直接說說看吧！",
       );
     };
     recognition.onend = () => {
@@ -209,14 +208,9 @@ export function A1Page() {
         setStatus("");
         return;
       }
-      // Browser killed the session. Decide whether to restart now or wait.
-      if (getRms() > VAD_THRESHOLD) {
-        // Someone is speaking right now → restart immediately
-        startRecognition();
-      } else {
-        // Silent → don't restart (avoids beep). VAD will wake us when voice comes.
-        startVadWait();
-      }
+      // Browser may end recognition while TTS is playing. Do not restart immediately
+      // from speaker RMS; wait until speech guard clears, then VAD will self-heal.
+      startVadWait();
     };
     recognition.onerror = (event: { error: string }) => {
       if (isSamsungManualMode) {
@@ -234,7 +228,11 @@ export function A1Page() {
         setStatus(`語音辨識失敗：${event.error}`);
         return;
       }
-      if (event.error === "no-speech" || event.error === "aborted") return;
+      if (event.error === "no-speech" || event.error === "aborted") {
+        recRunningRef.current = false;
+        if (wantListeningRef.current) startVadWait();
+        return;
+      }
       recRunningRef.current = false;
       wantListeningRef.current = false;
       stopVad();
@@ -255,49 +253,16 @@ export function A1Page() {
         return;
       }
 
-      // Interim: detect wake word + keep wake window alive while speaking
-      if (!latest.isFinal) {
-        if (transcript.includes("小雞")) {
-          openWakeWindow();
-        }
-        if (wakeWindowRef.current && wakeTimerRef.current) {
-          clearTimeout(wakeTimerRef.current);
-          wakeTimerRef.current = setTimeout(() => {
-            wakeWindowRef.current = false;
-            setWakeHit(false);
-            setStatus("正在聆聽... 請說「小雞小雞，○○的×怎麼寫」");
-          }, 4000);
-        }
-        return;
-      }
+      // 自由對話模式（DD-10 v2）：不需喚醒詞。interim 略過，final 直接送出。
+      if (!latest.isFinal) return;
+      if (!transcript) return;
 
-      // Final result: two-phase wake word handling
-      const wakeMatch = transcript.match(/^小雞小雞[，,、\s]*(.+)/);
-      if (wakeMatch) {
-        const command = wakeMatch[1].trim();
-        if (command) {
-          triggeredRef.current = true;
-          if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
-          wakeWindowRef.current = false;
-          void lookupRef.current(command);
-          return;
-        }
-      }
+      // echo 軟閘（DD-11）：小雞朗讀時/尾窗內，或文字高度吻合最近朗讀內容時，
+      // 丟棄該結果擋掉自我迴圈。麥克風不暫停（保住全雙工）。
+      if (isWithinSpeechGuard() || isLikelySelfEcho(transcript)) return;
 
-      if (transcript.includes("小雞")) {
-        openWakeWindow();
-        return;
-      }
-
-      if (wakeWindowRef.current) {
-        if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
-        wakeWindowRef.current = false;
-        triggeredRef.current = true;
-        void lookupRef.current(transcript);
-        return;
-      }
-
-      setWakeHit(false);
+      triggeredRef.current = true;
+      void lookupRef.current(transcript);
     };
 
     recognitionRef.current = recognition;
@@ -313,7 +278,6 @@ export function A1Page() {
         } catch {
           /* ok */
         }
-        if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
       };
     }
 
@@ -331,16 +295,46 @@ export function A1Page() {
         setSpeechReady(true);
         wantListeningRef.current = true;
         // Start recognition immediately — one beep on page load is acceptable.
-        // After this, continuous=true keeps it alive; onend uses VAD to decide restart.
         startRecognition();
       })
       .catch(() => {
         setStatus("無法取得麥克風權限，請在設定中允許。");
       });
 
+    // 小雞老師朗讀結束 → 主動重建辨識 session（TTS 後 Chrome 常把 recognition 弄聾）。
+    removeSpeechEndListener = addSpeechEndListener(() => {
+      if (isSamsungManualMode || !wantListeningRef.current) return;
+      // 等 echo 尾窗解除後再重建，避免立刻聽到自己的尾音。
+      clearTimeout(restartTimer);
+      restartTimer = setTimeout(restartSession, 900);
+    });
+
+    // watchdog 兜底：每 3 秒檢查，若「想聽但 session 已死太久」就硬重建。
+    // 涵蓋 TTS 後 recognition 變聾卻不發 onend（recRunning 卡 true）的情況，
+    // 以及 AudioContext 被瀏覽器 suspend 的恢復。
+    if (!isSamsungManualMode) {
+      watchdogTimer = setInterval(() => {
+        if (!wantListeningRef.current) return;
+        if (audioCtx && audioCtx.state === "suspended") {
+          void audioCtx.resume().catch(() => {});
+        }
+        if (isWithinSpeechGuard()) return;
+        const stalledMs = Date.now() - lastAliveAt;
+        if (!recRunningRef.current && stalledMs > 1500) {
+          restartSession();
+        } else if (recRunningRef.current && stalledMs > 12000) {
+          // 宣稱在跑但長時間零事件 → 極可能已變聾，硬重建。
+          restartSession();
+        }
+      }, 3000);
+    }
+
     return () => {
       wantListeningRef.current = false;
       stopVad();
+      clearTimeout(restartTimer);
+      clearInterval(watchdogTimer);
+      removeSpeechEndListener?.();
       startListeningFlowRef.current = () => {};
       stopVadRef.current = () => {};
       try {
@@ -348,117 +342,26 @@ export function A1Page() {
       } catch {
         /* ok */
       }
-      if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
       if (audioCtx) audioCtx.close();
       if (stream) stream.getTracks().forEach((t) => t.stop());
     };
   }, []);
 
-  useEffect(() => {
-    let frameId = 0;
-
-    const syncHistoryPanelHeight = () => {
-      cancelAnimationFrame(frameId);
-      frameId = requestAnimationFrame(() => {
-        if (!historyPanelRef.current) {
-          historyPanelRef.current = document.querySelector<HTMLElement>(".a1-history-panel");
-        }
-        const historyPanel = historyPanelRef.current;
-        const strokeContainer = strokeContainerRef.current;
-        if (!historyPanel || !strokeContainer) return;
-
-        const isTabletLandscape = window.matchMedia(
-          "(orientation: landscape) and (min-width: 768px)",
-        ).matches;
-        if (!isTabletLandscape) {
-          historyPanel.style.removeProperty("--a1-history-panel-height");
-          return;
-        }
-
-        const canvasBottom = strokeContainer.getBoundingClientRect().bottom;
-        const historyTop = historyPanel.getBoundingClientRect().top;
-        const nextHeight = Math.max(0, Math.round(canvasBottom - historyTop));
-        historyPanel.style.setProperty("--a1-history-panel-height", `${nextHeight}px`);
-      });
-    };
-
-    syncHistoryPanelHeight();
-    window.addEventListener("resize", syncHistoryPanelHeight);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener("resize", syncHistoryPanelHeight);
-    };
-  }, [history.length, historyOpen, idiomsOpen, result.idioms.length, result.words.length, status, wordsOpen]);
-
-  useEffect(() => {
-    if (!writerTargetRef.current) return;
-    writerTargetRef.current.innerHTML = "";
-    setPracticing(false);
-
-    try {
-      writerRef.current = createHanziWriter(
-        writerTargetRef.current,
-        result.character,
-      );
-      writerRef.current.animateCharacter();
-    } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "無法初始化筆順顯示。",
-      );
-      writerRef.current = null;
-    }
-  }, [result.character]);
-
-  lookupRef.current = lookup;
-  async function lookup(value = query) {
+  // 辨識結果下游：sendTurn 包裝（DD-10：lookupRef 改指向對話送出）
+  lookupRef.current = sendTurnFromSpeech;
+  async function sendTurnFromSpeech(value = query) {
     const normalized = value.trim();
     if (!normalized) {
-      setStatus("請先輸入要查詢的字詞。");
+      setStatus("請先輸入或說一句話。");
       return;
     }
-
-    setStatus(`查詢「${normalized}」中…`);
+    setQuery(normalized);
+    setStatus("");
     try {
-      const response = await apiClient.lookupWord(normalized);
-      setResult(response);
-      // Show corrected full phrase (e.g. "老師的溼" → "老師的師")
-      const deIdx = normalized.lastIndexOf("的");
-      if (deIdx >= 0 && response.character !== normalized) {
-        setQuery(normalized.slice(0, deIdx + 1) + response.character);
-      } else {
-        setQuery(response.character);
-      }
-      setHistory((current) => [response, ...current].slice(0, 8));
-      setStatus(response.note ?? "");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "查詢失敗。");
+      await sendTurn(normalized, detectLookupHint(normalized));
     } finally {
       triggeredRef.current = false;
-      setWakeHit(false);
     }
-  }
-
-  function replay() {
-    if (!writerRef.current) {
-      setStatus("目前沒有可重播的筆順動畫。");
-      return;
-    }
-    setPracticing(false);
-    writerRef.current.showCharacter();
-    writerRef.current.animateCharacter();
-  }
-
-  function startPractice() {
-    if (!writerRef.current) return;
-    setPracticing(true);
-    writerRef.current.quiz({
-      onComplete: () => {
-        celebrate();
-        addScore(1);
-        setPracticing(false);
-      },
-    });
   }
 
   function toggleListening() {
@@ -466,10 +369,7 @@ export function A1Page() {
     if (listening) {
       wantListeningRef.current = false;
       if (!samsungManualModeRef.current) stopVadRef.current();
-      wakeWindowRef.current = false;
       triggeredRef.current = false;
-      setWakeHit(false);
-      if (wakeTimerRef.current) clearTimeout(wakeTimerRef.current);
       try {
         recognitionRef.current.abort();
       } catch {
@@ -484,21 +384,28 @@ export function A1Page() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") void lookup();
+    if (e.key === "Enter") void sendTurnFromSpeech();
   }
+
+  function toggleTts() {
+    const next = !ttsOn;
+    setTtsOn(next);
+    setTtsEnabled(next);
+  }
+
+  const displayStatus = status || convStatus;
 
   return (
     <div className="feature-page">
-      <div className="a1-main-layout">
-        <div className="a1-left-col">
-          <Panel className={wakeHit ? "a1-panel--wake" : undefined}>
-            <div className="a1-input-wrap">
+      <div className="a1-chat-layout">
+        <Panel className="a1-input-panel">
+          <div className="a1-input-wrap">
               <input
                 className="a1-query-input"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="輸入想查的字，例如：字、學、勇、百"
+                placeholder="說說看：用蘋果造句、花可以組什麼詞、蘋果的蘋、說個故事"
               />
               <button
                 className={`a1-mic-btn${listening ? " a1-mic-btn--active" : ""}`}
@@ -524,8 +431,8 @@ export function A1Page() {
               </button>
               <button
                 className="a1-search-btn"
-                onClick={() => void lookup()}
-                aria-label="查詢"
+                onClick={() => void sendTurnFromSpeech()}
+                aria-label="送出"
               >
                 <svg
                   width="20"
@@ -541,138 +448,31 @@ export function A1Page() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </button>
-            </div>
-            {status ? (
-              <p className="muted" style={{ marginTop: "0.5rem" }}>
-                {status}
-              </p>
-            ) : null}
-          </Panel>
-
-          <div className="a1-stroke-container" ref={strokeContainerRef}>
-            <div
-              className={`a1-stroke-box${practicing ? " a1-stroke-box--practice" : ""}`}
-              ref={writerTargetRef}
-            />
-            <div className="a1-stroke-actions">
-              <button
-                className="a1-action-btn"
-                onClick={replay}
-                aria-label="重播筆順"
-                title="重播"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </button>
-              <button
-                className={`a1-action-btn${practicing ? " a1-action-btn--active" : ""}`}
-                onClick={startPractice}
-                aria-label="練習寫字"
-                title="練習"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <Panel>
-          <button
-            className="a1-collapse-header"
-            onClick={() => setWordsOpen((o) => !o)}
-          >
-            <span
-              className={`a1-collapse-arrow${wordsOpen ? " a1-collapse-arrow--open" : ""}`}
-            >
-              ▶
-            </span>
-            <h3>造詞</h3>
-          </button>
-          {wordsOpen && (
-            <div className="word-chip-list a1-chip-grid">
-              {result.words.map((word) => (
-                <article
-                  key={`${word.term}-${word.bopomofo}`}
-                  className="word-chip"
-                >
-                  <RubyWord {...word} />
-                </article>
-              ))}
-            </div>
-          )}
-        </Panel>
-
-        <Panel>
-          <button
-            className="a1-collapse-header"
-            onClick={() => setIdiomsOpen((o) => !o)}
-          >
-            <span
-              className={`a1-collapse-arrow${idiomsOpen ? " a1-collapse-arrow--open" : ""}`}
-            >
-              ▶
-            </span>
-            <h3>相關成語</h3>
-          </button>
-          {idiomsOpen && (
-            <div className="word-chip-list a1-chip-grid">
-              {(result.idioms ?? []).map((idiom) => (
-                <article
-                  key={`${idiom.term}-${idiom.bopomofo}`}
-                  className="word-chip"
-                >
-                  <RubyWord {...idiom} />
-                </article>
-              ))}
-            </div>
-          )}
-        </Panel>
-
-        <Panel className="a1-history-panel">
-          <button
-            className="a1-collapse-header"
-            onClick={() => setHistoryOpen((o) => !o)}
-          >
-            <span
-              className={`a1-collapse-arrow${historyOpen ? " a1-collapse-arrow--open" : ""}`}
-            >
-              ▶
-            </span>
-            <h3>最近查詢</h3>
-          </button>
-          {historyOpen && (
-            <div className="history-list">
-              {history.map((item, idx) => (
+              {isTtsSupported() && (
                 <button
-                  key={`${item.query}-${idx}`}
-                  className="history-item"
-                  onClick={() => {
-                    setQuery(item.query);
-                    void lookup(item.query);
-                  }}
+                  className={`a1-action-btn${ttsOn ? " a1-action-btn--active" : ""}`}
+                  onClick={toggleTts}
+                  aria-label={ttsOn ? "關閉朗讀" : "開啟朗讀"}
+                  title={ttsOn ? "朗讀：開" : "朗讀：關"}
                 >
-                  {item.character}（{item.bopomofo}）
+                  {ttsOn ? "🔊" : "🔇"}
                 </button>
-              ))}
+              )}
             </div>
-          )}
+          {displayStatus ? (
+            <p className="muted" style={{ marginTop: "0.5rem" }}>
+              {displayStatus}
+            </p>
+          ) : null}
+        </Panel>
+
+        <Panel className="a1-conversation-panel">
+          <ConversationView
+            messages={messages}
+            busy={busy}
+            illustrations={illustrations}
+            onRedraw={redrawIllustration}
+          />
         </Panel>
       </div>
     </div>

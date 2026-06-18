@@ -1,0 +1,42 @@
+[
+  {
+    "id": "P1",
+    "diagram_title": "Make Sentence Turn",
+    "description": "小朋友說「用蘋果造句」，後端分類為 make_sentence 並回造句，前端渲染 + 朗讀",
+    "messages": [
+      { "id": "MSG1", "from": "Child", "to": "C1", "label": "說『用蘋果造句』(語音)", "componentRef": "C1" },
+      { "id": "MSG2", "from": "C1", "to": "C4", "label": "POST /api/a1/chat { messages }", "componentRef": "C4" },
+      { "id": "MSG3", "from": "C4", "to": "Gemini", "label": "generateContent(contents[], responseSchema)", "componentRef": "C4" },
+      { "id": "MSG4", "from": "Gemini", "to": "C4", "label": "{ intent: make_sentence, sentence, target }", "componentRef": "C4" },
+      { "id": "MSG5", "from": "C4", "to": "C1", "label": "ChatResponse { intent, payload }", "componentRef": "C1" },
+      { "id": "MSG6", "from": "C1", "to": "C2", "label": "render sentence card", "componentRef": "C2" },
+      { "id": "MSG7", "from": "C1", "to": "Child", "label": "SpeechSynthesis 朗讀句子", "componentRef": "C1" }
+    ]
+  },
+  {
+    "id": "P2",
+    "diagram_title": "Paint Illustration On Demand",
+    "description": "造句後小朋友按『畫一張』，後端影像模型依情境生圖回 base64",
+    "messages": [
+      { "id": "MSG8", "from": "Child", "to": "C3", "label": "按『畫一張』按鈕", "componentRef": "C3" },
+      { "id": "MSG9", "from": "C3", "to": "C1", "label": "requestIllustration()", "componentRef": "C1" },
+      { "id": "MSG10", "from": "C1", "to": "C5", "label": "POST /api/a1/illustrate { context }", "componentRef": "C5" },
+      { "id": "MSG11", "from": "C5", "to": "Gemini", "label": "影像生成(情境 prompt)", "componentRef": "C5" },
+      { "id": "MSG12", "from": "Gemini", "to": "C5", "label": "image bytes", "componentRef": "C5" },
+      { "id": "MSG13", "from": "C5", "to": "C1", "label": "IllustrateResponse { dataUri }", "componentRef": "C1" },
+      { "id": "MSG14", "from": "C1", "to": "C3", "label": "IllustrationStage mode=illustration", "componentRef": "C3" }
+    ]
+  },
+  {
+    "id": "P3",
+    "diagram_title": "Lookup Word Turn (Backward Compatible)",
+    "description": "查單字維持既有筆順+造詞行為，intent=lookup 走 stroke 模式",
+    "messages": [
+      { "id": "MSG15", "from": "Child", "to": "C1", "label": "說『蘋果的蘋』", "componentRef": "C1" },
+      { "id": "MSG16", "from": "C1", "to": "C4", "label": "POST /api/a1/chat (hint=lookup)", "componentRef": "C4" },
+      { "id": "MSG17", "from": "C4", "to": "C1", "label": "{ intent: lookup, words[] }", "componentRef": "C1" },
+      { "id": "MSG18", "from": "C1", "to": "C3", "label": "IllustrationStage mode=stroke (HanziWriter)", "componentRef": "C3" },
+      { "id": "MSG19", "from": "C1", "to": "C2", "label": "render 造詞卡片", "componentRef": "C2" }
+    ]
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "diagram_title": "Classify Conversation Intent (A2 Decomposition)",
+  "node_reference": "A2",
+  "activities": [
+    { "id": "A21", "title": "Assemble Dialogue Context", "description": "把前端記憶體 history 與最新查詢組成 Gemini contents 陣列", "decomposition": null },
+    { "id": "A22", "title": "Apply Lookup Hint", "description": "套用前端輕量「○○的×」查字提示以維持既有 lookup 行為", "decomposition": null },
+    { "id": "A23", "title": "Invoke Gemini Classifier", "description": "經後端 proxy 呼叫 Gemini 做分類加內容生成（structured JSON）", "decomposition": null },
+    { "id": "A24", "title": "Validate Intent Label", "description": "校驗回傳 intent 落在封閉集合，否則歸為 unclear", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "CR1", "source": "EXTERNAL", "target": "A21:input", "label": "Normalized Child Query", "type": "input" },
+    { "id": "CR2", "source": "EXTERNAL", "target": "A21:input", "label": "Conversation History", "type": "input" },
+    { "id": "CR3", "source": "A21:output", "target": "A22:input", "label": "Dialogue Context Bundle", "type": "output" },
+    { "id": "CR4", "source": "EXTERNAL", "target": "A22:control", "label": "Lookup Structure Hint", "type": "control" },
+    { "id": "CR5", "source": "A22:output", "target": "A23:input", "label": "Hinted Dialogue Context", "type": "output" },
+    { "id": "CR6", "source": "EXTERNAL", "target": "A23:control", "label": "Intent Taxonomy", "type": "control" },
+    { "id": "CR7", "source": "EXTERNAL", "target": "A23:control", "label": "Child Safety Prompt Policy", "type": "control" },
+    { "id": "CR8", "source": "EXTERNAL", "target": "A23:mechanism", "label": "Backend Gemini Chat Proxy", "type": "mechanism" },
+    { "id": "CR9", "source": "A23:output", "target": "A24:input", "label": "Raw Classified Reply", "type": "output" },
+    { "id": "CR10", "source": "A24:output", "target": "EXTERNAL", "label": "Intent Label And Dialogue Context", "type": "output" }
+  ]
+}

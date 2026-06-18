@@ -1,0 +1,147 @@
+[
+  {
+    "StepNumber": 0,
+    "ModuleRef": "A1",
+    "StepType": "initial",
+    "StepAction": "Greet Child And Idle For Input",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [9],
+    "LinkOutputNumber": [1],
+    "LinkOutputType": "track",
+    "Condition": ["child_provides_voice_or_text"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 1,
+    "ModuleRef": "A1",
+    "StepType": "normal",
+    "StepAction": "Capture And Normalize Child Query",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [0],
+    "LinkOutputNumber": [2],
+    "LinkOutputType": "track",
+    "Condition": ["query_normalized"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 2,
+    "ModuleRef": "A2",
+    "StepType": "normal",
+    "StepAction": "Assemble Dialogue Context And Classify Intent",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [1],
+    "LinkOutputNumber": [3],
+    "LinkOutputType": "track",
+    "Condition": ["intent_label_returned"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 3,
+    "ModuleRef": "A3",
+    "StepType": "normal",
+    "StepAction": "Compose Tutor Reply For Classified Intent",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [2],
+    "LinkOutputNumber": [4],
+    "LinkOutputType": "track",
+    "Condition": ["structured_reply_ready"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 4,
+    "ModuleRef": "A4",
+    "StepType": "normal",
+    "StepAction": "Render Result Stage And Speak Reply",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [3],
+    "LinkOutputNumber": [5],
+    "LinkOutputType": "track",
+    "Condition": ["reply_displayed"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 5,
+    "ModuleRef": "A4",
+    "StepType": "normal",
+    "StepAction": "Show Illustration Button Or Stroke Animation",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [4],
+    "LinkOutputNumber": [6, 9],
+    "LinkOutputType": "divergence_or",
+    "Gates": [
+      { "GateNumber": 1, "GateId": "G1", "GateType": "divergence_or", "Inputs": ["S5O1"], "Outputs": ["G1O1", "G1O2"] }
+    ],
+    "Edges": [
+      { "EdgeId": "S5O1G1I1", "From": "S5O1", "To": "G1I1" },
+      { "EdgeId": "G1O1S6I1", "From": "G1O1", "To": "S6I1", "Condition": "child_taps_paint_button" },
+      { "EdgeId": "G1O2S9I1", "From": "G1O2", "To": "S9I1", "Condition": "child_starts_next_turn" }
+    ],
+    "Condition": ["child_taps_paint_button", "child_starts_next_turn"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 6,
+    "ModuleRef": "A5",
+    "StepType": "normal",
+    "StepAction": "Request Scene Illustration From Backend Image Proxy",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [5],
+    "LinkOutputNumber": [7, 8],
+    "LinkOutputType": "divergence_or",
+    "Gates": [
+      { "GateNumber": 2, "GateId": "G2", "GateType": "divergence_or", "Inputs": ["S6O1"], "Outputs": ["G2O1", "G2O2"] }
+    ],
+    "Edges": [
+      { "EdgeId": "S6O1G2I1", "From": "S6O1", "To": "G2I1" },
+      { "EdgeId": "G2O1S7I1", "From": "G2O1", "To": "S7I1", "Condition": "image_generation_succeeded" },
+      { "EdgeId": "G2O2S8I1", "From": "G2O2", "To": "S8I1", "Condition": "image_generation_failed" }
+    ],
+    "Condition": ["image_generation_succeeded", "image_generation_failed"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 7,
+    "ModuleRef": "A4",
+    "StepType": "normal",
+    "StepAction": "Display Scene Illustration In Stage",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [6],
+    "LinkOutputNumber": [9],
+    "LinkOutputType": "track",
+    "Condition": ["child_starts_next_turn"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 8,
+    "ModuleRef": "A4",
+    "StepType": "normal",
+    "StepAction": "Show Illustration Error And Retry Affordance",
+    "LinkInputType": ["track"],
+    "LinkInputNumber": [6],
+    "LinkOutputNumber": [9],
+    "LinkOutputType": "track",
+    "Condition": ["child_starts_next_turn"],
+    "SubGrafcet": []
+  },
+  {
+    "StepNumber": 9,
+    "ModuleRef": "A1",
+    "StepType": "normal",
+    "StepAction": "Append Turn To Conversation History",
+    "LinkInputType": ["convergence_or"],
+    "LinkInputNumber": [5, 7, 8],
+    "LinkOutputNumber": [0],
+    "LinkOutputType": "track",
+    "Gates": [
+      { "GateNumber": 3, "GateId": "G3", "GateType": "convergence_or", "Inputs": ["S5O2", "S7O1", "S8O1"], "Outputs": ["G3O1"] }
+    ],
+    "Edges": [
+      { "EdgeId": "S5O2G3I1", "From": "S5O2", "To": "G3I1" },
+      { "EdgeId": "S7O1G3I2", "From": "S7O1", "To": "G3I2" },
+      { "EdgeId": "S8O1G3I3", "From": "S8O1", "To": "G3I3" },
+      { "EdgeId": "G3O1S9I1", "From": "G3O1", "To": "S9I1" }
+    ],
+    "Condition": ["history_updated"],
+    "SubGrafcet": []
+  }
+]

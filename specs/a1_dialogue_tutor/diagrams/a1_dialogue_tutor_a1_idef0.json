@@ -1,0 +1,22 @@
+{
+  "diagram_title": "Capture Child Utterance (A1 Decomposition)",
+  "node_reference": "A1",
+  "activities": [
+    { "id": "A11", "title": "Listen Through Microphone", "description": "啟用語音辨識並以 VAD 偵測語音起始", "decomposition": null },
+    { "id": "A12", "title": "Detect Wake Word", "description": "辨識喚醒詞「小雞小雞」並開啟喚醒視窗", "decomposition": null },
+    { "id": "A13", "title": "Transcribe Speech To Text", "description": "把語音轉成文字（含 Samsung manual mode 分支）", "decomposition": null },
+    { "id": "A14", "title": "Accept Typed Text", "description": "接收鍵盤輸入作為替代輸入路徑", "decomposition": null },
+    { "id": "A15", "title": "Normalize Child Query", "description": "整理輸入文字為一輪標準查詢交給下游", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "BR1", "source": "EXTERNAL", "target": "A11:input", "label": "Child Voice And Text", "type": "input" },
+    { "id": "BR2", "source": "EXTERNAL", "target": "A12:control", "label": "Wake Word And Speech Settings", "type": "control" },
+    { "id": "BR3", "source": "EXTERNAL", "target": "A11:mechanism", "label": "Web Speech Recognition", "type": "mechanism" },
+    { "id": "BR4", "source": "A11:output", "target": "A12:input", "label": "Detected Voice Segment", "type": "output" },
+    { "id": "BR5", "source": "A12:output", "target": "A13:input", "label": "Armed Wake Window", "type": "output" },
+    { "id": "BR6", "source": "A13:output", "target": "A15:input", "label": "Raw Transcript", "type": "output" },
+    { "id": "BR7", "source": "EXTERNAL", "target": "A14:input", "label": "Keyboard Text Entry", "type": "input" },
+    { "id": "BR8", "source": "A14:output", "target": "A15:input", "label": "Typed Query Text", "type": "output" },
+    { "id": "BR9", "source": "A15:output", "target": "EXTERNAL", "label": "Normalized Child Query", "type": "output" }
+  ]
+}

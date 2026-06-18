@@ -65,6 +65,85 @@ export type A5QuizResponse = {
   items: A5QuizItem[]
 }
 
+/* A1 — Dialogue Tutor (鏡像 backend contracts) */
+
+export type A1Intent =
+  | 'lookup'
+  | 'make_words'
+  | 'make_sentence'
+  | 'tell_story'
+  | 'draw'
+  | 'solve_arithmetic'
+  | 'chat'
+  | 'unclear'
+
+export type A1DrawPayload = {
+  subject: string
+}
+
+export type A1SentencePayload = {
+  targetWord: string
+  sentences: string[]
+  bopomofo?: string
+}
+
+export type A1StoryPayload = {
+  topic: string
+  story: string
+}
+
+export type A1ArithmeticPayload = {
+  a: number
+  b: number
+  operation: '+' | '-' | '*' | '/'
+  expression: string
+}
+
+export type A1LookupPayload = {
+  character: string
+  bopomofo: string
+  words: A1LookupWord[]
+  idioms?: A1LookupWord[]
+}
+
+export type A1ChatMessage = {
+  /** 前端唯一 id（用於插畫掛在特定訊息、歷史不被洗）。後端不需此欄位。 */
+  id?: string
+  role: 'user' | 'tutor'
+  text: string
+  intent?: A1Intent
+  // tutor 訊息可附富內容 payload，供對話串流 inline 渲染
+  lookup?: A1LookupPayload
+  sentence?: A1SentencePayload
+  story?: A1StoryPayload
+  draw?: A1DrawPayload
+  arithmetic?: A1ArithmeticPayload
+}
+
+export type A1ChatResponse = {
+  ok: true
+  intent: A1Intent
+  reply: string
+  lookup?: A1LookupPayload
+  sentence?: A1SentencePayload
+  story?: A1StoryPayload
+  draw?: A1DrawPayload
+  arithmetic?: A1ArithmeticPayload
+  illustratable?: boolean
+}
+
+export type A1IllustrateResponse = {
+  ok: true
+  imageDataUri: string
+  altText?: string
+}
+
+export type A1ErrorResponse = {
+  ok: false
+  error: string
+  message: string
+}
+
 export const apiClient = {
   getHealth: () => request<HealthResponse>('/health'),
   lookupWord: (query: string) =>
@@ -101,5 +180,15 @@ export const apiClient = {
     request<A5QuizItem>('/a5/next', {
       method: 'POST',
       body: JSON.stringify({ char, index, wordType }),
+    }),
+  chat: (messages: A1ChatMessage[], hint?: 'lookup') =>
+    request<A1ChatResponse | A1ErrorResponse>('/a1/chat', {
+      method: 'POST',
+      body: JSON.stringify(hint ? { messages, hint } : { messages }),
+    }),
+  illustrate: (context: string, targetWord?: string) =>
+    request<A1IllustrateResponse | A1ErrorResponse>('/a1/illustrate', {
+      method: 'POST',
+      body: JSON.stringify(targetWord ? { context, targetWord } : { context }),
     }),
 }

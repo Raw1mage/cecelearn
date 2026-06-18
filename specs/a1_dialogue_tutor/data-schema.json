@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "a1_dialogue_tutor data contracts",
+  "description": "對話型小家教的前後端資料契約。所有 Gemini 呼叫經 webapp/backend proxy。",
+  "definitions": {
+    "Intent": {
+      "type": "string",
+      "enum": ["lookup", "make_words", "make_sentence", "tell_story", "chat", "unclear"],
+      "description": "家教對使用者輸入的語意分類，決定回覆形態與渲染方式"
+    },
+    "Message": {
+      "type": "object",
+      "description": "對話 history 中的單筆訊息（前端記憶體）",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "tutor"] },
+        "text": { "type": "string", "description": "純文字內容（送 Gemini contents[] 用）" },
+        "intent": { "$ref": "#/definitions/Intent", "description": "僅 tutor 訊息有；user 訊息省略" }
+      },
+      "required": ["role", "text"],
+      "additionalProperties": false
+    },
+    "LookupWord": {
+      "type": "object",
+      "description": "造詞/成語卡片（沿用既有 A1LookupWord）",
+      "properties": {
+        "term": { "type": "string" },
+        "bopomofo": { "type": "string", "description": "每字注音以空格分隔" }
+      },
+      "required": ["term", "bopomofo"],
+      "additionalProperties": false
+    },
+    "SentencePayload": {
+      "type": "object",
+      "description": "make_sentence intent 的內容",
+      "properties": {
+        "targetWord": { "type": "string", "description": "造句的目標詞" },
+        "sentence": { "type": "string", "description": "適合兒童的例句" },
+        "bopomofo": { "type": "string", "description": "可選：整句或目標詞注音" }
+      },
+      "required": ["targetWord", "sentence"],
+      "additionalProperties": false
+    },
+    "StoryPayload": {
+      "type": "object",
+      "description": "tell_story intent 的內容",
+      "properties": {
+        "topic": { "type": "string", "description": "故事主題" },
+        "story": { "type": "string", "description": "適齡短故事，長度上限約 200 字" }
+      },
+      "required": ["topic", "story"],
+      "additionalProperties": false
+    },
+    "LookupPayload": {
+      "type": "object",
+      "description": "lookup / make_words intent 的內容（沿用既有 A1 欄位）",
+      "properties": {
+        "character": { "type": "string", "description": "目標字（校正後）" },
+        "bopomofo": { "type": "string" },
+        "words": { "type": "array", "items": { "$ref": "#/definitions/LookupWord" } },
+        "idioms": { "type": "array", "items": { "$ref": "#/definitions/LookupWord" } }
+      },
+      "required": ["character", "bopomofo", "words"],
+      "additionalProperties": false
+    },
+    "ChatRequest": {
+      "type": "object",
+      "description": "POST /api/a1/chat 請求體",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Message" },
+          "description": "完整對話 history（含本輪最新 user 訊息）；後端據此組 Gemini contents[]"
+        },
+        "hint": {
+          "type": "string",
+          "enum": ["lookup"],
+          "description": "可選：前端輕量偵測（如「○○的×」查字結構）給後端的提示，維持既有 lookup 行為不退化"
+        }
+      },
+      "required": ["messages"],
+      "additionalProperties": false
+    },
+    "ChatResponse": {
+      "type": "object",
+      "description": "POST /api/a1/chat 回應體（成功）",
+      "properties": {
+        "ok": { "type": "boolean", "const": true },
+        "intent": { "$ref": "#/definitions/Intent" },
+        "reply": { "type": "string", "description": "家教的口語回覆文字（用於對話泡泡 + TTS 播報）" },
+        "lookup": { "$ref": "#/definitions/LookupPayload", "description": "intent ∈ {lookup, make_words} 時提供" },
+        "sentence": { "$ref": "#/definitions/SentencePayload", "description": "intent = make_sentence 時提供" },
+        "story": { "$ref": "#/definitions/StoryPayload", "description": "intent = tell_story 時提供" },
+        "illustratable": { "type": "boolean", "description": "true 表示 Illustration Stage 可顯示「畫一張」按鈕（make_sentence / tell_story）" }
+      },
+      "required": ["ok", "intent", "reply"],
+      "additionalProperties": false
+    },
+    "IllustrateRequest": {
+      "type": "object",
+      "description": "POST /api/a1/illustrate 請求體",
+      "properties": {
+        "context": { "type": "string", "description": "當前句子或故事文字，作為畫圖情境" },
+        "targetWord": { "type": "string", "description": "可選：目標詞，強化插畫主題" }
+      },
+      "required": ["context"],
+      "additionalProperties": false
+    },
+    "IllustrateResponse": {
+      "type": "object",
+      "description": "POST /api/a1/illustrate 回應體（成功）",
+      "properties": {
+        "ok": { "type": "boolean", "const": true },
+        "imageDataUri": { "type": "string", "description": "data:image/png;base64,... 直接塞 <img src>（DD-7）" },
+        "altText": { "type": "string", "description": "插畫描述，無障礙用" }
+      },
+      "required": ["ok", "imageDataUri"],
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "chat / illustrate 失敗時的統一錯誤體（no-silent-fallback, DD-8）",
+      "properties": {
+        "ok": { "type": "boolean", "const": false },
+        "error": { "type": "string", "description": "錯誤碼，見 errors.md" },
+        "message": { "type": "string", "description": "可顯示給使用者的訊息" }
+      },
+      "required": ["ok", "error", "message"],
+      "additionalProperties": false
+    }
+  }
+}

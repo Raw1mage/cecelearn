@@ -1,0 +1,57 @@
+<svg width="1423.4" height="665.8" viewBox="-109.7 -165.8 1423.4 665.8" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="black" /></marker>
+<marker id="call_arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 M 0 2 L 6 5 L 0 8" fill="none" stroke="black" stroke-width="1" /></marker>
+</defs>
+<rect x="-109.7" y="-165.8" width="1423.4" height="665.8" fill="white" />
+<rect x="130.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A11" />
+<text x="230.0" y="149.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A11" >A11</text>
+<text x="230.0" y="181.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A11" >LISTEN THROUGH</text>
+<text x="230.0" y="212.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A11" >MICROPHONE</text>
+<rect x="478.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A12" />
+<text x="578.0" y="165.0" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A12" >A12</text>
+<text x="578.0" y="197.8" text-anchor="middle" font-size="18" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A12" >DETECT WAKE WORD</text>
+<rect x="834.0" y="120.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A13" />
+<text x="934.0" y="149.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A13" >A13</text>
+<text x="934.0" y="181.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A13" >TRANSCRIBE</text>
+<text x="934.0" y="212.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A13" >SPEECH TO TEXT</text>
+<rect x="130.0" y="330.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A14" />
+<text x="230.0" y="359.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A14" >A14</text>
+<text x="230.0" y="391.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A14" >ACCEPT</text>
+<text x="230.0" y="422.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A14" >TYPED TEXT</text>
+<rect x="478.0" y="330.0" width="200.0" height="120.0" stroke="black" fill="white" stroke-width="1.5" data-id="A15" />
+<text x="578.0" y="359.6" text-anchor="middle" font-size="15" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A15" >A15</text>
+<text x="578.0" y="391.0" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A15" >NORMALIZE</text>
+<text x="578.0" y="422.9" text-anchor="middle" font-size="17" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A15" >CHILD QUERY</text>
+<rect x="80.0" y="44.2" width="1044.0" height="445.8" stroke="black" fill="none" stroke-width="2" />
+<rect x="406.0" y="-155.8" width="392.0" height="110.0" stroke="black" fill="white" stroke-width="1.5" data-id="A1" />
+<text x="602.0" y="-129.8" text-anchor="middle" font-size="14" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >A1</text>
+<text x="602.0" y="-99.8" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >CAPTURE CHILD UTTERANCE</text>
+<text x="602.0" y="-69.8" text-anchor="middle" font-size="16" font-weight="bold" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-id="A1" >(A1 DECOMPOSITION)</text>
+<line x1="406.0" y1="-155.8" x2="80.0" y2="44.2" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="798.0" y1="-155.8" x2="1124.0" y2="44.2" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="406.0" y1="-45.8" x2="80.0" y2="490.0" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<line x1="798.0" y1="-45.8" x2="1124.0" y2="490.0" stroke="red" stroke-dasharray="5,5" stroke-width="1.0" opacity="0.6" />
+<path d="M 330.0 180.0 L 478.0 180.0" stroke="black" stroke-width="1.2" data-arrow-id="BR4" data-waypoints="330.0,180.0 478.0,180.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 678.0 180.0 L 834.0 180.0" stroke="black" stroke-width="1.2" data-arrow-id="BR5" data-waypoints="678.0,180.0 834.0,180.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 330.0 410.0 L 478.0 410.0" stroke="black" stroke-width="1.2" data-arrow-id="BR8" data-waypoints="330.0,410.0 478.0,410.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 1034.0 180.0 L 1064.0 180.0 Q 1074.0 180.0 1074.0 190.0 L 1074.0 280.0 Q 1074.0 290.0 1064.0 290.0 L 414.0 290.0 Q 404.0 290.0 404.0 300.0 L 404.0 360.0 Q 404.0 370.0 414.0 370.0 L 478.0 370.0" stroke="black" stroke-width="1.2" data-arrow-id="BR6" data-waypoints="1034.0,180.0 1074.0,180.0 1074.0,290.0 404.0,290.0 404.0,370.0 478.0,370.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 30.0 180.0 L 130.0 180.0" stroke="black" stroke-width="1.2" data-arrow-id="BR1" data-waypoints="30.0,180.0 130.0,180.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 578.0 84.2 L 578.0 120.0" stroke="black" stroke-width="1.2" data-arrow-id="BR2" data-waypoints="578.0,84.2 578.0,120.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 230.0 275.8 L 230.0 240.0" stroke="black" stroke-width="1.2" data-arrow-id="BR3" data-waypoints="230.0,275.8 230.0,240.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 30.0 390.0 L 130.0 390.0" stroke="black" stroke-width="1.2" data-arrow-id="BR7" data-waypoints="30.0,390.0 130.0,390.0" marker-end="url(#arrow)" fill="none" />
+<path d="M 678.0 390.0 L 1174.0 390.0" stroke="black" stroke-width="1.2" data-arrow-id="BR9" data-waypoints="678.0,390.0 1174.0,390.0" marker-end="url(#arrow)" fill="none" />
+<text x="578.0" y="78.2" font-size="14" text-anchor="middle" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR2">Wake Word And Speech Settings</text>
+<text x="230.0" y="291.8" font-size="14" text-anchor="middle" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR3">Web Speech Recognition</text>
+<text x="404.0" y="175.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR4">Detected</text>
+<text x="404.0" y="192.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR4">Voice Segment</text>
+<text x="756.0" y="172.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR5" >Armed Wake Window</text>
+<text x="404.0" y="402.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR8" >Typed Query Text</text>
+<text x="578.0" y="282.0" font-size="14" font-weight="bold" fill="black" text-anchor="middle" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR6" >Raw Transcript</text>
+<text x="26.0" y="171.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR1">Child Voice</text>
+<text x="26.0" y="197.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR1">And Text</text>
+<text x="26.0" y="381.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR7">Keyboard</text>
+<text x="26.0" y="407.0" font-size="20" text-anchor="end" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR7">Text Entry</text>
+<text x="1178.0" y="381.0" font-size="20" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR9">Normalized</text>
+<text x="1178.0" y="407.0" font-size="20" text-anchor="start" font-weight="bold" fill="black" font-family="'Times New Roman', 'BiauKai', 'DFKai-SB', '標楷體', 'KaiTi', serif" data-arrow-id="BR9">Child Query</text>
+</svg>

@@ -1,0 +1,33 @@
+{
+  "diagram_title": "A1 Dialogue Tutor (Container View)",
+  "diagram_level": "container",
+  "diagram_layout": "top_down",
+  "scope": { "type": "software_system", "id": "SYS1" },
+  "persons": [
+    { "id": "P1", "name": "Child Learner", "description": "用語音或文字與小家教互動的小朋友", "external": true }
+  ],
+  "systems": [
+    { "id": "SYS1", "name": "A1 Dialogue Tutor", "description": "對話型中文小家教（查字/造詞/造句/故事/插畫）", "external": false },
+    { "id": "SYS2", "name": "Gemini API", "description": "Google Gemini generateContent（文字）與影像生成模型", "external": true }
+  ],
+  "containers": [
+    { "id": "CT1", "type": "spa", "name": "A1 Frontend", "technology": "React + Web Speech API", "description": "語音辨識迴圈、ResultStage、IllustrationStage、TTS", "systemRef": "SYS1" },
+    { "id": "CT2", "type": "api", "name": "A1 Backend", "technology": "node:http 手刻 router", "description": "/api/a1/chat 與 /api/a1/illustrate proxy，無狀態", "systemRef": "SYS1" }
+  ],
+  "components": [
+    { "id": "C1", "type": "none", "name": "useConversation Hook", "technology": "React state", "description": "維護 messages history、sendTurn、requestIllustration（moduleRef A1/A4）", "containerRef": "CT1" },
+    { "id": "C2", "type": "none", "name": "ResultStage", "technology": "React", "description": "依 intent 渲染造詞/造句/故事/泡泡（moduleRef A4）", "containerRef": "CT1" },
+    { "id": "C3", "type": "none", "name": "IllustrationStage", "technology": "React + HanziWriter", "description": "stroke/illustration/loading/error 圖框（moduleRef A4/A5）", "containerRef": "CT1" },
+    { "id": "C4", "type": "none", "name": "GeminiChatProvider", "technology": "fetch + responseSchema", "description": "組 contents[] 呼叫 Gemini 文字模型，回結構化 intent+payload（moduleRef A2/A3）", "containerRef": "CT2" },
+    { "id": "C5", "type": "none", "name": "GeminiImageProvider", "technology": "fetch", "description": "呼叫影像模型回 base64 data URI（moduleRef A5）", "containerRef": "CT2" }
+  ],
+  "relationships": [
+    { "id": "REL1", "source": "P1", "target": "CT1", "description": "語音/文字輸入", "technology": "Web Speech", "position": "down" },
+    { "id": "REL2", "source": "C1", "target": "C4", "description": "POST /api/a1/chat (messages)", "technology": "HTTP JSON", "position": "down" },
+    { "id": "REL3", "source": "C1", "target": "C5", "description": "POST /api/a1/illustrate (context)", "technology": "HTTP JSON", "position": "down" },
+    { "id": "REL4", "source": "C4", "target": "SYS2", "description": "generateContent 文字 + responseSchema", "technology": "HTTPS", "position": "down" },
+    { "id": "REL5", "source": "C5", "target": "SYS2", "description": "影像生成", "technology": "HTTPS", "position": "down" },
+    { "id": "REL6", "source": "C1", "target": "C2", "description": "傳遞 turn 結果", "technology": "props", "position": "right" },
+    { "id": "REL7", "source": "C1", "target": "C3", "description": "傳遞 stroke/illustration 狀態", "technology": "props", "position": "right" }
+  ]
+}

@@ -71,6 +71,15 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a3-end-bar { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem; }
 .a3-speed-label { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
 .a3-speed-label select { width: auto; }
+.a3-card { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+.a3-card__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; color: #dbe8ff; }
+.a3-card .a3-note-log { width: 100%; margin: 0.5rem 0 0; }
+.a3-card--compact { max-width: min(100%, 420px); padding: 0.8rem; border-radius: 1rem; background: rgba(117,167,255,0.08); border: 1px solid rgba(139,170,255,0.16); }
+.a3-card--compact .vertical-math { font-size: 1.35rem; }
+.a3-card--compact .vrow__cell { width: 1.9rem; height: 1.9rem; }
+.a3-card--compact .vrow__digits { grid-auto-columns: 1.9rem; }
+.a3-card--compact .a3-note-log { max-height: 6rem; font-size: 0.8rem; }
+.a3-card--compact .a3-speed-label { font-size: 0.8rem; }
 .keypad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 1rem; width: 320px; margin-left: auto; margin-right: auto; }
 .keypad-grid .ui-button { padding: 0.8rem 0; aspect-ratio: 1; }
 .score-text { font-size: 1.2rem; font-weight: 700; }
@@ -142,12 +151,13 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 @keyframes a1-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.45); } 50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); } }
 .a1-panel--wake { background: rgba(250,204,21,0.18) !important; box-shadow: 0 0 16px 4px rgba(250,204,21,0.35); transition: background 0.2s, box-shadow 0.2s; }
 
-/* A1 — layout wrapper */
-.a1-main-layout { display: contents; }
-.a1-left-col { display: contents; }
+/* A1 — chat layout: 輸入列置頂 + 全寬對話串流（圖框不再常駐左欄，改 inline 在 stream） */
+.a1-chat-layout { display: flex; flex-direction: column; gap: 1rem; width: 100%; }
+.a1-input-panel { width: 100%; }
 
-/* A1 — fixed-size stroke box */
-.a1-stroke-container { position: relative; width: min(360px, calc(100vw - 4rem)); height: min(360px, calc(100vw - 4rem)); margin: 0 auto; }
+/* A1 — inline stroke box（筆順移進 stream，要顯示時才出現，不常駐版面） */
+.a1-stroke-inline { width: 100%; display: flex; justify-content: flex-start; }
+.a1-stroke-container { position: relative; width: min(300px, calc(100vw - 4rem)); height: min(300px, calc(100vw - 4rem)); }
 .a1-stroke-box { width: 100%; height: 100%; border-radius: 1rem; background: #f8fafc; display: grid; place-items: center; cursor: default; transition: box-shadow 0.2s; }
 .a1-stroke-box--practice { cursor: crosshair; box-shadow: 0 0 0 3px #3b82f6; }
 .a1-stroke-actions { position: absolute; right: 0.5rem; bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
@@ -172,6 +182,48 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 /* A1 — chip grid (responsive) */
 .a1-chip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .history-item { text-align: left; background: rgba(7,12,24,0.6); color: #eef4ff; border: 1px solid rgba(139,170,255,0.16); padding: 0.9rem 1rem; border-radius: 1rem; }
+
+/* A1 — conversation stream (融合對話歷史 + 富內容；全寬) */
+.a1-conversation-panel { width: 100%; }
+.a1-conversation-stream { display: flex; flex-direction: column; gap: 0.85rem; width: 100%; }
+.a1-conv-empty { padding: 0.5rem 0; }
+.a1-conv-msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 100%; }
+.a1-conv-msg--user { align-items: flex-end; }
+.a1-conv-msg--tutor { align-items: flex-start; }
+.a1-conv-role { font-size: 0.72rem; color: #9bc1ff; font-weight: 600; }
+.a1-conv-body { display: flex; flex-direction: column; gap: 0.5rem; max-width: 92%; }
+.a1-conv-msg--user .a1-conv-body { align-items: flex-end; }
+.a1-conv-text { margin: 0; padding: 0.6rem 0.9rem; border-radius: 1rem; line-height: 1.5; word-break: break-word; }
+.a1-conv-msg--user .a1-conv-text { background: rgba(59,130,255,0.22); color: #eef4ff; border-bottom-right-radius: 0.3rem; }
+.a1-conv-msg--tutor .a1-conv-text { background: rgba(7,12,24,0.6); color: #eef4ff; border: 1px solid rgba(139,170,255,0.16); border-bottom-left-radius: 0.3rem; }
+.a1-conv-text--thinking { color: #9bc1ff; font-style: italic; }
+
+/* A1 — tutor turn rich content (inline in stream) */
+.a1-turn-content { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
+.a1-reply-bubble { margin: 0; padding: 0.6rem 0.9rem; border-radius: 1rem; background: rgba(7,12,24,0.6); border: 1px solid rgba(139,170,255,0.16); color: #eef4ff; line-height: 1.5; }
+.a1-result-subhead { margin: 0.4rem 0 0.2rem; font-size: 0.85rem; color: #9bc1ff; }
+.a1-sentence-target { display: inline-block; font-weight: 700; color: #fbbf24; font-size: 1.05rem; }
+.a1-sentence-list { list-style: none; counter-reset: sentence; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.a1-sentence-card { counter-increment: sentence; display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.7rem 0.9rem; border-radius: 0.9rem; background: rgba(59,130,255,0.12); border: 1px solid rgba(139,170,255,0.18); }
+.a1-sentence-card::before { content: counter(sentence); flex: 0 0 auto; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; border-radius: 50%; background: rgba(59,130,255,0.4); color: #fff; font-size: 0.8rem; font-weight: 700; }
+.a1-sentence-text { margin: 0; line-height: 1.6; font-size: 1.05rem; color: #eef4ff; }
+.a1-story-card { padding: 0.9rem 1rem; border-radius: 0.9rem; background: rgba(250,204,21,0.1); border: 1px solid rgba(250,204,21,0.25); }
+.a1-story-topic { margin: 0 0 0.4rem; color: #fbbf24; }
+.a1-story-text { margin: 0; line-height: 1.7; color: #eef4ff; }
+.a1-arithmetic-surface { width: 100%; display: flex; justify-content: flex-start; }
+
+/* A1 — inline illustration (per-message，歷史保留，不洗掉) */
+.a1-inline-illustration { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.a1-inline-illustration--loading { flex-direction: row; align-items: center; gap: 0.6rem; }
+.a1-illustration-img { width: 100%; max-width: 320px; border-radius: 0.9rem; border: 1px solid rgba(139,170,255,0.18); display: block; }
+.a1-inline-illustration-actions { display: flex; gap: 0.5rem; }
+.a1-inline-illustration-actions .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
+.a1-inline-illustration--error .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
+.a1-inline-illustration--offer { flex-direction: row; align-items: center; gap: 0.6rem; }
+.a1-inline-illustration--offer .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
+.a1-inline-illustration--capped { padding: 0.4rem 0.7rem; border-radius: 0.6rem; background: rgba(139,170,255,0.08); }
+.a1-illustration-spinner { width: 1.6rem; height: 1.6rem; border: 3px solid rgba(139,170,255,0.25); border-top-color: #60a5fa; border-radius: 50%; animation: a1-spin 0.8s linear infinite; }
+@keyframes a1-spin { to { transform: rotate(360deg); } }
 /* A5 — Dictation practice */
 .a5-page .ui-panel { width: 100%; }
 
@@ -570,45 +622,29 @@ html.a5-active .a5-page {
 .a5-result-word { padding: 0.4rem 0.8rem; border-radius: 0.6rem; background: rgba(117,167,255,0.12); color: #dbe8ff; font-size: 1.1rem; }
 .a5-result-word--hinted { border: 1px dashed rgba(251,191,36,0.4); }
 
-/* A1 — tablet landscape layout */
+/* A1 — tablet landscape layout：輸入列置頂 + 全寬可滾動對話串流（圖框 inline 在 stream，不常駐） */
 @media (orientation: landscape) and (min-width: 768px) {
-  .a1-main-layout {
-    display: grid;
-    grid-template-columns: auto 1fr 1fr;
-    grid-template-rows: auto 1fr;
-    gap: 1rem;
-    align-items: start;
-    height: calc(100dvh - 6rem);
-    overflow: hidden;
-  }
-  .a1-left-col {
+  .a1-chat-layout {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    grid-row: 1 / -1;
+    height: calc(100dvh - 6rem);
+    overflow: hidden;
   }
-  .a1-left-col .a1-stroke-container {
-    --a1-canvas: calc(100dvh - 12rem);
-    width: var(--a1-canvas);
-    height: var(--a1-canvas);
-    max-width: 380px;
-    max-height: 380px;
-    margin: 0;
+  .a1-input-panel {
     flex: 0 0 auto;
   }
-  .a1-main-layout > .ui-panel {
-    min-width: 0;
+  .a1-chat-layout .a1-chip-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .a1-main-layout .a1-chip-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .a1-history-panel {
-    grid-column: 2 / -1;
-    align-self: stretch;
-    height: var(--a1-history-panel-height, auto);
+  .a1-conversation-panel {
+    flex: 1 1 auto;
     overflow-y: auto;
     min-height: 0;
+    min-width: 0;
   }
+  /* landscape 下 inline 筆順/插畫稍大，但仍受限不溢出 */
+  .a1-conversation-stream .a1-illustration-img { max-width: 380px; }
 }
 
 @media (max-width: 900px) {

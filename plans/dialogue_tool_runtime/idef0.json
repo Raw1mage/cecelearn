@@ -1,0 +1,44 @@
+{
+  "id": "A0",
+  "title": "Dialogue Tool Runtime",
+  "purpose": "Route child dialogue turns into typed teaching tool renderers without turning cecelearn into a full agent platform.",
+  "controls": [
+    "child-safe Traditional Chinese tutor persona",
+    "typed intent schema",
+    "no silent fallback",
+    "A1 stream-first UI rule"
+  ],
+  "inputs": [
+    "voice or text user turn",
+    "frontend conversation history",
+    "existing A3 arithmetic engine"
+  ],
+  "outputs": [
+    "tutor reply",
+    "typed tool payload",
+    "inline rich teaching component"
+  ],
+  "mechanisms": [
+    "GeminiChatProvider",
+    "ConversationView",
+    "ArithmeticCard",
+    "buildVertical arithmetic engine"
+  ],
+  "children": [
+    {
+      "id": "A1",
+      "title": "Classify Turn",
+      "outputs": ["intent", "reply", "tool payload"]
+    },
+    {
+      "id": "A2",
+      "title": "Execute Deterministic Tool",
+      "outputs": ["vertical math rows", "animation steps"]
+    },
+    {
+      "id": "A3",
+      "title": "Render Inline Teaching Card",
+      "outputs": ["stream message with rich content"]
+    }
+  ]
+}
