@@ -15,22 +15,26 @@ import {
 } from './a1ChatShared.js'
 
 /**
- * Opencode bare/passthrough session chat provider.
+ * Opencode bare/passthrough chat provider.
  *
  * 借用同機 opencode daemon 的對話層（帳號池 + Claude OAuth 訂閱）跑小雞老師的
- * intent 分類。經同機 unix socket 開一個 reserved `bare` agent 的 session：
- * system prompt 只有小雞老師（daemon 端 layer-zeroing 清掉 opencode 人格），
- * format=json_schema 帶 intent schema，model 釘死 Claude 訂閱帳號。
+ * intent 分類。經同機 unix socket 打一發 **無狀態 one-shot completion**
+ * （`POST /api/v2/completion`，opencode daemon_stateless_completion）：
+ * agent=bare（daemon 端 layer-zeroing 清掉 opencode 人格），system 帶小雞老師、
+ * format=json_schema 帶 intent schema、model 釘 Claude 訂閱帳號。daemon 端不建
+ * session、不寫任何 storage、不進 session list、不發 session 級 Bus 事件——所以
+ * 不再污染 userhome 的 project session list，也無須呼叫端事後 DELETE 收尾。
  *
  * 重要現實（opencode POC 實證）：claude-cli（OAuth 訂閱）後端 **不強制**
  * toolChoice:required，結構化輸出是軟性的——模型常把 JSON 包在 ```json fence
- * 或散文裡。故這裡解析回覆文字抽 JSON；抽不到就回 fallthrough 錯誤碼，由
- * CascadeChatProvider 掉接 Gemini（Gemini 硬強制 responseSchema）。不 silent
- * 降級輸出形狀（天條 #11）。
+ * 或散文裡。故這裡解析回覆 parts 抽 JSON（優先 StructuredOutput tool part，否則
+ * text fence）；抽不到就回 fallthrough 錯誤碼，由 CascadeChatProvider 掉接
+ * Gemini（Gemini 硬強制 responseSchema）。不 silent 降級輸出形狀（天條 #11）。
  *
- * 歷史：daemon 端不落地（DD-10）；reset-on-reload 由前端每頁開新 session 處理。
- * 後端 provider 目前無狀態（每次 chat() 拿完整 messages[]），把對話渲染成單一
- * prompt、開一個一次性 bare session。session 重用屬日後優化。
+ * 歷史：原本走 create session → message → DELETE 三步（session 用完即刪治標）；
+ * opencode 落地 stateless completion 端點後（BR issue_20260619），改為單步呼叫，
+ * 移除 create/dispose。daemon 端不落地（DD-10）；reset-on-reload 由前端每頁處理。
+ * 後端 provider 無狀態（每次 chat() 拿完整 messages[]，渲染成單一 prompt）。
  */
 
 export type OpencodeBareConfig = {
@@ -90,12 +94,12 @@ function socketRequest(
   })
 }
 
-/* opencode v2 message 回應形狀（取我們需要的子集） */
-type BareMessagePart = { type?: string; text?: string; tool?: string; state?: { output?: unknown } }
-type BareMessageResponse = {
-  info?: { error?: { name?: string; data?: { message?: string } } }
-  parts?: BareMessagePart[]
-}
+/* opencode POST /api/v2/completion 回應形狀（200；與 message 回應的 parts 同形，故解析端零改） */
+type CompletionPart = { type?: string; text?: string; tool?: string; state?: { output?: unknown } }
+type CompletionResponse = { parts?: CompletionPart[] }
+/* completion 失敗 body（HTTP 4xx/5xx）：{ code, message }。code ∈
+ * RATE_LIMITED(429) | PROVIDER_ERROR(502) | DAEMON_ERROR(500) | MODEL_NOT_FOUND(400) | BAD_REQUEST(400) */
+type CompletionErrorBody = { code?: string; message?: string }
 
 export class OpencodeBareChatProvider implements DialogueChatProvider {
   private readonly cfg: Required<OpencodeBareConfig>
@@ -110,33 +114,6 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
       `[OpencodeBareChatProvider] enabled — socket=${this.cfg.socketPath} model=${this.cfg.providerId}/${this.cfg.modelID}` +
         (this.cfg.accountId ? ` account=${this.cfg.accountId}` : ' (帳號池)'),
     )
-  }
-
-  /**
-   * 一次性 bare session 收尾：用完即刪，避免堆積在 daemon 的 session store
-   * （userhome 下，會外洩成 pkcs12 這個 project 的可見 session list）。
-   * best-effort——刪不掉只 log，不影響已回給小朋友的內容（這是服務端中介資料，
-   * 非天條 #11 的功能性 fallback）。
-   */
-  private async disposeSession(sessionId: string): Promise<void> {
-    try {
-      const res = await socketRequest(
-        this.cfg.socketPath,
-        'DELETE',
-        `/api/v2/session/${sessionId}`,
-        undefined,
-        this.cfg.timeoutMs,
-      )
-      if (res.status !== 200) {
-        log('a1.chat.bare.session_dispose', { sessionId, ok: false, status: res.status })
-      }
-    } catch (error) {
-      log('a1.chat.bare.session_dispose', {
-        sessionId,
-        ok: false,
-        detail: error instanceof Error ? error.message : String(error),
-      })
-    }
   }
 
   async chat(
@@ -163,33 +140,9 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
       '\n\n【輸出格式｜務必遵守】直接輸出「一個嚴格的 JSON 物件」：所有鍵與字串值都用雙引號；' +
       '不要用 StructuredOutput(...) 之類的函式語法、不要 markdown 標題、不要任何解釋文字，只回 JSON 本體。'
 
-    // 一次性 bare session 的 id；finally 統一收尾刪除（避免堆積成 userhome project session）
-    let sessionId: string | undefined
     try {
-      // 1) 開 bare session
-      const created = await socketRequest(
-        this.cfg.socketPath,
-        'POST',
-        '/api/v2/session',
-        { title: 'cecelearn-小雞老師' },
-        this.cfg.timeoutMs,
-      )
-      sessionId = (created.json as { id?: string } | undefined)?.id
-      if (created.status !== 200 || !sessionId) {
-        log('a1.chat.bare.error', {
-          code: 'CHAT_BARE_UNAVAILABLE',
-          stage: 'create',
-          status: created.status,
-          latencyMs: Date.now() - start,
-        })
-        return {
-          ok: false,
-          error: 'CHAT_BARE_UNAVAILABLE',
-          message: '小雞老師連線怪怪的，再說一次好嗎？',
-        }
-      }
-
-      // 2) 送一輪 bare message（agent=bare + 小雞老師 system + json_schema + 釘帳號）
+      // 單步無狀態 completion：agent=bare + 小雞老師 system + json_schema + 釘帳號。
+      // daemon 不建 session、不落地，呼叫前後 GET /api/v2/session 數量不變。
       const body: Record<string, unknown> = {
         agent: 'bare',
         system: SYSTEM_PROMPT,
@@ -204,16 +157,25 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
       const sent = await socketRequest(
         this.cfg.socketPath,
         'POST',
-        `/api/v2/session/${sessionId}/message`,
+        '/api/v2/completion',
         body,
         this.cfg.timeoutMs,
       )
 
       if (sent.status !== 200) {
+        // 失敗 body：{ code, message }。可用性失敗（429 RATE_LIMITED / 502 PROVIDER_ERROR /
+        // 500 DAEMON_ERROR）→ 掉接 Gemini；設定/請求錯（400 MODEL_NOT_FOUND / BAD_REQUEST）
+        // 理論上不該發生（model 釘死）→ 同樣回可掉接碼但 log warn 以利排查。
+        const err = sent.json as CompletionErrorBody | undefined
+        const code = err?.code ?? 'UNKNOWN'
+        const isConfigError = sent.status === 400
         log('a1.chat.bare.error', {
           code: 'CHAT_BARE_UNAVAILABLE',
-          stage: 'message',
+          stage: 'completion',
           status: sent.status,
+          daemonCode: code,
+          ...(isConfigError ? { warn: 'config/request error — 檢查 model/agent 設定' } : {}),
+          detail: err?.message?.slice(0, 200),
           latencyMs: Date.now() - start,
         })
         return {
@@ -223,25 +185,9 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
         }
       }
 
-      const msg = sent.json as BareMessageResponse | undefined
-      if (msg?.info?.error) {
-        // daemon 端明確錯誤（fail-fast / rate-limit / provider 錯）→ 掉接
-        log('a1.chat.bare.error', {
-          code: 'CHAT_BARE_ERROR',
-          daemonError: msg.info.error.name,
-          detail: msg.info.error.data?.message?.slice(0, 200),
-          latencyMs: Date.now() - start,
-        })
-        return {
-          ok: false,
-          error: 'CHAT_BARE_ERROR',
-          message: '小雞老師剛剛打瞌睡了，請再說一次好嗎？',
-        }
-      }
-
-      // 3) 抽結構化 JSON。優先 StructuredOutput tool part（若被強制呼叫了），
-      //    否則 claude-cli 軟性輸出 → 從 text parts 抽 ```json fence。
-      const parts = msg?.parts ?? []
+      // 抽結構化 JSON。優先 StructuredOutput tool part（toolChoice:required 強制，
+      // 但 claude-cli 軟性結構化常仍走 text）→ 後備從 text parts 抽 ```json fence。
+      const parts = (sent.json as CompletionResponse | undefined)?.parts ?? []
       let parsed = null as ReturnType<typeof extractStructuredJson>
       const toolPart = parts.find((p) => p.type === 'tool' && p.tool === 'StructuredOutput')
       if (toolPart?.state?.output && typeof toolPart.state.output === 'object') {
@@ -288,10 +234,6 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
         error: 'CHAT_BARE_UNAVAILABLE',
         message: '小雞老師連線怪怪的，再說一次好嗎？',
       }
-    } finally {
-      // 用完即刪這個一次性 bare session，避免堆積成 userhome 的可見 project session。
-      // 即使 create 成功但後續步驟失敗也要刪（sessionId 已落地）。
-      if (sessionId) await this.disposeSession(sessionId)
     }
   }
 }
