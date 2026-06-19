@@ -14,6 +14,7 @@ import { CascadeImageProvider } from './providers/cascadeImageProvider.js'
 import { GeminiVisionProvider } from './providers/geminiVisionProvider.js'
 import { YoutubeVideoProvider } from './providers/youtubeVideoProvider.js'
 import { ChildChannelLibrary } from './providers/childChannelLibrary.js'
+import { VideoBank } from './providers/videoBank.js'
 import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
@@ -67,13 +68,15 @@ function buildChatProvider(): DialogueChatProvider {
 }
 
 const channelLibrary = new ChildChannelLibrary()
+const videoBank = new VideoBank()
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
   buildImageProvider(),
   new GeminiVisionProvider(env.geminiApiKeys),
-  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary),
+  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank),
   channelLibrary,
+  videoBank,
 )
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
@@ -217,15 +220,24 @@ const server = createServer(async (request, response) => {
   if (url === '/api/a1/videos' && method === 'POST') {
     const raw = await readBody(request)
     let query = ''
+    let topic: string | undefined
     try {
-      const payload = JSON.parse(raw || '{}') as { query?: string }
+      const payload = JSON.parse(raw || '{}') as { query?: string; topic?: string }
       if (typeof payload.query === 'string') query = payload.query
+      if (typeof payload.topic === 'string') topic = payload.topic
     } catch {
       send(400, { ok: false, error: 'VIDEO_BAD_REQUEST', message: '我還不知道要找什麼影片耶。' }, raw)
       return
     }
-    const result = await a1.searchVideos(query)
+    const result = await a1.searchVideos(query, topic)
     send(result.ok ? 200 : 502, result, raw)
+    return
+  }
+
+  // 影片庫：各主題摘要（後台檢索：累積了哪些主題、各幾支）
+  if (url === '/api/a1/videobank' && method === 'GET') {
+    const result = a1.videoBankSummary()
+    send(result.ok ? 200 : 500, result)
     return
   }
 

@@ -16,6 +16,7 @@ import type {
   WordLookupProvider,
 } from '../contracts/providers.js'
 import type { ChildChannelLibrary } from '../providers/childChannelLibrary.js'
+import type { VideoBank } from '../providers/videoBank.js'
 
 export function createA1Module(
   provider: WordLookupProvider,
@@ -24,6 +25,7 @@ export function createA1Module(
   visionProvider?: QuestionVisionProvider,
   videoProvider?: VideoSearchProvider,
   channelLibrary?: ChildChannelLibrary,
+  videoBank?: VideoBank,
 ) {
   return {
     lookup(query: string): Promise<A1LookupResponse> {
@@ -69,7 +71,7 @@ export function createA1Module(
       }
       return visionProvider.readQuestion(imageBase64, mimeType)
     },
-    searchVideos(query: string): Promise<A1VideoSearchResponse | A1ErrorResponse> {
+    searchVideos(query: string, topic?: string): Promise<A1VideoSearchResponse | A1ErrorResponse> {
       if (!videoProvider) {
         return Promise.resolve({
           ok: false,
@@ -77,7 +79,7 @@ export function createA1Module(
           message: '找影片功能還在準備中喔！',
         })
       }
-      return videoProvider.search(query)
+      return videoProvider.search(query, topic)
     },
     listChannels(): ChannelListResponse | A1ErrorResponse {
       if (!channelLibrary) {
@@ -110,6 +112,12 @@ export function createA1Module(
           message: err instanceof Error ? err.message : '寫入頻道庫失敗。',
         }
       }
+    },
+    videoBankSummary() {
+      if (!videoBank) {
+        return { ok: false as const, error: 'BANK_NOT_CONFIGURED', message: '影片庫還沒準備好。' }
+      }
+      return { ok: true as const, topics: videoBank.summary() }
     },
   }
 }
