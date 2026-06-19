@@ -58,14 +58,14 @@
 
 ### 找影片＋兒童知識型頻道庫
 
-找影片的搜尋來源以**自架 Invidious 為主**（借鏡同機的 `ytlite`，`INVIDIOUS_API_URL` 預設 `http://localhost:1215`），**零 YouTube Data API 配額**；YouTube Data API v3（`YOUTUBE_API_KEY`）降為 Invidious 不可用時的後備。播放仍用真實 videoId 走 YouTube iframe，只換搜尋這層。
+找影片的搜尋來源以 **`yt-dlp` 被動函式為主**（呼叫才 spawn 去爬 YouTube metadata、回完即退，**無 daemon／docker／postgres**），**零 YouTube Data API 配額**；YouTube Data API v3（`YOUTUBE_API_KEY`）降為 yt-dlp 不可用時的後備。播放仍用真實 videoId 走 YouTube iframe，只換搜尋這層。
 
-> **⚠️ 共用 Invidious 層（明示化依賴）**：cecelearn 找影片連到**獨立共用 Invidious 層**（`/home/pkcs12/projects/invidious-shared`，`db + companion + engine` 三容器，誰都不擁有）——cecelearn 與 [`ytlite`](../ytlite) **共用同一份**、各自不自帶 infra。預設 `http://localhost:1215` 指向共用層的對外 port。代價：
-> - 共用 Invidious 層要在**同機跑著**；停了的話找影片 **fail-soft** 退 Data API（若有 key）或影片庫既有內容，**不崩**。
-> - **feed 預熱**（`POST /api/a1/prewarm`，抓精選頻道最新片）需 Invidious **≥2026.06**（頻道 parser 修復後才解得出 `latestVideos`）；共用層已 pin `2026.06.15`。
-> - 後端啟動時會 probe Invidious 一次,連不到只 log warn（見 `server.ts` startup health probe）。
-> - 共用層起停：`cd /home/pkcs12/projects/invidious-shared && docker compose up -d`。
-> - 要讓 cecelearn **完全自足**：把 `INVIDIOUS_API_URL` 指向自己專屬的 Invidious；設空字串＝停用、純走 Data API。
+> **為什麼是 yt-dlp 而非 Invidious**：Invidious 是「伺服器形狀」（連線池／反爬 token／postgres，需 3 容器常駐 daemon）；cecelearn 的找影片只是 `query → 清單` 的被動需求，yt-dlp 是「函式形狀」——更貼合、零常駐 infra。
+> - `YTDLP_PATH` 預設 `yt-dlp`（走 PATH）；可設絕對路徑（如 `~/.local/bin/yt-dlp`）。設空字串＝停用 yt-dlp、退 Data API。
+> - 安裝：下載單一 binary 到 PATH（`curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp && chmod +x` ，需系統 python3）。偶爾 `-U` 更新即可。
+> - **feed 預熱**（`POST /api/a1/prewarm`）遍歷精選頻道 `/videos` 抓最新片寫回影片庫。
+> - 後端啟動時 probe `yt-dlp --version` 一次，連不到只 log warn（見 `server.ts` startup health probe），找影片 **fail-soft** 退 Data API（若有 key）或影片庫既有內容，**不崩**。
+> - 兒童安全靠**精選頻道白名單（排前）+ 家長黑名單（硬擋）**兩道閘（yt-dlp 無 Invidious 的 `isFamilyFriendly` 欄位）。
 
 兒童安全採「**精選優先＋家庭友善過濾**」：精選頻道（頻道庫）一律放行並排最前，非精選頻道用 Invidious 的頻道 `isFamilyFriendly` 把關（查不到則保守剔除）。
 

@@ -6,20 +6,22 @@ import type {
 } from '../contracts/providers.js'
 import type { ChildChannelLibrary } from './childChannelLibrary.js'
 import type { VideoBank } from './videoBank.js'
-import type { InvidiousClient } from './invidiousClient.js'
+import type { YtDlpVideoProvider } from './ytDlpVideoProvider.js'
 import type { Blocklist } from './blocklist.js'
 
 /**
  * 找影片 provider —— 小朋友問知識，小雞老師找適齡影片，前端 inline 開成小播放窗。
  *
- * 搜尋來源（借鏡 ytlite）：**自架 Invidious 為主**（/api/v1/search，零 YouTube Data API
- * 配額）；Invidious 不可用且有 YOUTUBE_API_KEY 時，退回 Data API search.list（safeSearch=
- * strict）當後備。播放仍用真實 videoId 走 YouTube iframe，所以只換「搜尋」這層。
+ * 搜尋來源：**yt-dlp 被動函式為主**（DD-32，取代熱 service Invidious）。yt-dlp 是
+ * 「函式形狀」——呼叫才 spawn 去爬、回 metadata 就退出，無 daemon/docker/postgres；
+ * cecelearn 的找影片本就是 query→清單 的被動需求。yt-dlp 不可用且有 YOUTUBE_API_KEY 時，
+ * 退回 Data API search.list（safeSearch=strict）當後備。播放仍用真實 videoId 走 YouTube
+ * iframe，只換「搜尋」這層。
  *
- * 兒童安全（精選優先＋家庭友善過濾）：
+ * 兒童安全（精選優先＋黑名單硬擋）：
  *  - 精選優先：命中兒童知識型頻道庫（active）的結果標 curated 並穩定排到最前。
- *  - 家庭友善：Invidious 無 safeSearch 參數，改用頻道層級 isFamilyFriendly 過濾——精選頻道
- *    一律放行（已人工核可），非精選頻道只在確認 family-friendly 時保留（查不到則保守剔除）。
+ *  - 黑名單硬擋：命中家長黑名單的 channelId 一律剔除（優先於白名單加權）。
+ *  （yt-dlp 無 Invidious 的 isFamilyFriendly 欄位，故不做頻道層軟過濾；安全靠白名單+黑名單兩道閘。）
  *
  * 影片庫：先查庫（夠多就免搜），搜回的好結果寫回庫分門別類累積——常見主題漸漸免外部請求。
  *
@@ -76,22 +78,22 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   private apiKey: string
   private library?: ChildChannelLibrary
   private bank?: VideoBank
-  private invidious?: InvidiousClient
+  private ytdlp?: YtDlpVideoProvider
   private blocklist?: Blocklist
 
   constructor(
     apiKey = '',
     library?: ChildChannelLibrary,
     bank?: VideoBank,
-    invidious?: InvidiousClient,
+    ytdlp?: YtDlpVideoProvider,
     blocklist?: Blocklist,
   ) {
     this.apiKey = apiKey.trim()
     this.library = library
     this.bank = bank
-    this.invidious = invidious
+    this.ytdlp = ytdlp
     this.blocklist = blocklist
-    const src = invidious ? 'invidious' : this.apiKey ? 'youtube-api' : 'bank-only'
+    const src = ytdlp ? 'yt-dlp' : this.apiKey ? 'youtube-api' : 'bank-only'
     const extras = [library && 'channel library', bank && 'video bank', blocklist && 'blocklist']
       .filter(Boolean)
       .join(' + ')
@@ -130,20 +132,18 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       return { ok: true, query: q, items }
     }
 
-    // 2) 庫內不足 → 搜尋。來源：Invidious 為主（零配額），不可用才退 Data API。
+    // 2) 庫內不足 → 搜尋。來源：yt-dlp 為主（被動函式、零配額），不可用才退 Data API。
     let raw: A1VideoItem[] | null = null
     let usedSource = ''
-    if (this.invidious) {
-      raw = await this.invidious.search(q)
-      if (raw) usedSource = 'invidious'
+    if (this.ytdlp) {
+      raw = await this.ytdlp.search(q, MAX_RESULTS)
+      if (raw) usedSource = 'yt-dlp'
     }
-    let viaYoutubeApi = false
     if (!raw && this.apiKey) {
       const r = await this.runQuery(q) // Data API 後備（safeSearch=strict）
       if ('items' in r) {
         raw = r.items
         usedSource = 'youtube-api'
-        viaYoutubeApi = true
       }
     }
 
@@ -154,18 +154,15 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
         log('a1.video.bank_only', { category, count: items.length })
         return { ok: true, query: q, items }
       }
-      if (!this.invidious && !this.apiKey) {
+      if (!this.ytdlp && !this.apiKey) {
         return { ok: false, error: 'VIDEO_NOT_CONFIGURED', message: '找影片功能還在準備中喔！' }
       }
       return { ok: false, error: 'VIDEO_UPSTREAM', message: '我現在找不到影片耶，等一下再試試看好嗎？' }
     }
 
-    // 3) 家庭友善過濾：精選頻道一律放行；非精選頻道只在 Invidious 確認 family-friendly 時保留。
-    //    （Data API 後備自帶 safeSearch=strict，且 Invidious 不在線上，故跳過此過濾。）
-    const safe = viaYoutubeApi ? raw : await this.familyFilter(raw)
-
-    // 4) 精選旗標＋穩定排前。
-    const items = this.flagAndSort(safe)
+    // 3) 精選旗標＋穩定排前（內含黑名單硬擋）。yt-dlp 無頻道層 family-friendly 欄位，
+    //    兒童安全靠精選白名單（排前）+ 家長黑名單（硬擋）兩道閘；Data API 後備自帶 safeSearch=strict。
+    const items = this.flagAndSort(raw)
 
     log('a1.video.search', {
       query: q,
@@ -187,15 +184,13 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   }
 
   /**
-   * Feed 預熱（借鏡 ytlite 的 latestVideos 聚合，DD-27）：
-   * 遍歷頻道庫 active 頻道 → Invidious channelLatestVideos → 黑名單硬擋 → 依該頻道的
+   * Feed 預熱（yt-dlp channelLatestVideos 聚合，DD-32；原 Invidious 版見 DD-27）：
+   * 遍歷頻道庫 active 頻道 → yt-dlp 抓該頻道 /videos 最新片 → 黑名單硬擋 → 依該頻道的
    * topics 寫回 VideoBank。讓常見主題在小朋友還沒問之前就先備好「精選頻道的最新片」。
    *
    * 手動觸發（無排程）：POST /api/a1/prewarm。回各主題新增數摘要。
-   * 精選頻道本身已人工核可，預熱時不再跑 isFamilyFriendly（只硬擋黑名單）。
-   *
-   * 註：需要 Invidious 的頻道端點可解析 latestVideos（≥2026.06 修好頻道 parser）；
-   * 若該端點回空（parse-error / 舊版），prewarm 自然回 channels:0，不崩、不亂塞。
+   * 精選頻道本身已人工核可，預熱只硬擋黑名單。
+   * 某頻道抓不到（私人/刪除/yt-dlp 失敗）自然略過，不崩、不亂塞。
    */
   async prewarm(): Promise<{
     ok: boolean
@@ -203,8 +198,8 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     topics: Array<{ topic: string; added: number }>
     error?: string
   }> {
-    if (!this.invidious) {
-      return { ok: false, channels: 0, topics: [], error: 'PREWARM_NO_INVIDIOUS' }
+    if (!this.ytdlp) {
+      return { ok: false, channels: 0, topics: [], error: 'PREWARM_NO_YTDLP' }
     }
     if (!this.library || !this.bank) {
       return { ok: false, channels: 0, topics: [], error: 'PREWARM_NOT_CONFIGURED' }
@@ -217,7 +212,7 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
 
     await Promise.all(
       active.map(async (ch) => {
-        const vids = await this.invidious!.channelLatestVideos(ch.channelId as string)
+        const vids = await this.ytdlp!.channelLatestVideos(ch.channelId as string)
         if (!vids || vids.length === 0) return
         channelsHit += 1
         const safe = this.blocklist ? this.blocklist.filter(vids) : vids
@@ -237,41 +232,13 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       .map(([topic, added]) => ({ topic, added }))
       .sort((a, b) => b.added - a.added)
     log('a1.video.prewarm', {
-      mode: 'channel-latest',
+      mode: 'ytdlp-channel-latest',
       channels: channelsHit,
       topics: topics.length,
       added: topics.reduce((n, t) => n + t.added, 0),
       ms: Date.now() - start,
     })
     return { ok: true, channels: channelsHit, topics }
-  }
-
-  /**
-   * 家庭友善過濾（精選優先＋家庭友善）：
-   *  - 精選頻道（庫內 active）：信任、放行。
-   *  - 非精選頻道：查 Invidious 頻道 isFamilyFriendly，true 才留；false / 查不到一律剔除（保守）。
-   * 以唯一 channelId 平行查詢＋快取，控制對 Invidious 的請求數。
-   */
-  private async familyFilter(items: A1VideoItem[]): Promise<A1VideoItem[]> {
-    if (!this.invidious) return items
-    const curatedIds = this.library?.activeIds()
-    const nonCurated = [
-      ...new Set(
-        items
-          .map((it) => it.channelId)
-          .filter((cid) => cid && !(curatedIds ? curatedIds.has(cid) : false)),
-      ),
-    ]
-    const verdicts = new Map<string, boolean | null>()
-    await Promise.all(
-      nonCurated.map(async (cid) => {
-        verdicts.set(cid, await this.invidious!.isChannelFamilyFriendly(cid))
-      }),
-    )
-    return items.filter((it) => {
-      if (curatedIds?.has(it.channelId)) return true
-      return verdicts.get(it.channelId) === true
-    })
   }
 
   /**

@@ -41,10 +41,10 @@ export type BackendEnv = {
   chatProvider: ChatProviderMode
   /** chatProvider='bare'|'cascade' 時必填，否則 loadEnv fail-fast */
   bareChat?: BareChatEnv
-  /** 找影片（YouTube Data API v3）金鑰；空字串＝不啟用 Data API 後備（主要走 Invidious） */
+  /** 找影片（YouTube Data API v3）金鑰；空字串＝不啟用 Data API 後備（主要走 yt-dlp） */
   youtubeApiKey: string
-  /** 找影片主要來源：自架 Invidious 的 base URL（零 YouTube 配額）。空字串＝停用、改走 Data API */
-  invidiousApiUrl: string
+  /** 找影片主要來源：yt-dlp binary 路徑（被動函式、零配額、無 daemon）。空字串＝停用、改走 Data API */
+  ytDlpPath: string
 }
 
 export function loadEnv(): BackendEnv {
@@ -116,19 +116,16 @@ export function loadEnv(): BackendEnv {
     process.env.YOUTUBE_API_KEY || geminiApiKeys[0] || ''
   ).trim()
 
-  // 找影片主要來源：自架 Invidious（零 YouTube 配額）。
+  // 找影片主要來源：yt-dlp 被動函式（DD-32，取代熱 service Invidious）。
   //
-  // 跨服務運行期依賴（DD-31，supersede DD-30）：預設 http://localhost:1215 指向**獨立共用
-  // Invidious 層**（/home/pkcs12/projects/invidious-shared，db+companion+engine 三容器，
-  // 誰都不擁有）——cecelearn 與 ytlite 共用同一份、各自不自帶 infra。代價是找影片依賴此共用
-  // 層在跑：(1) 共用 Invidious 要在同機跑著（host port 1215）；(2) feed 預熱需 Invidious
-  // ≥2026.06（頻道 parser，共用層已 pin 2026.06.15）。連不到時 server 啟動會 log warn
-  // （見 server.ts health probe），找影片 fail-soft 退 Data API（若有 YOUTUBE_API_KEY）
-  // 或影片庫既有內容。要完全自足，改設 INVIDIOUS_API_URL 指向自己專屬的 Invidious；
-  // 設空字串＝停用、走 Data API。
-  const invidiousApiUrl = (
-    process.env.INVIDIOUS_API_URL ?? 'http://localhost:1215'
-  ).trim()
+  // 為什麼是 yt-dlp 而非 Invidious：Invidious 是「伺服器形狀」（連線池/反爬 token/postgres，
+  // 需 3 容器常駐 daemon）；cecelearn 的找影片只是 query→清單 的被動需求，yt-dlp 是「函式
+  // 形狀」——呼叫才 spawn 去爬、回 metadata 就退出，無 daemon/docker/postgres。預設 'yt-dlp'
+  // 走 PATH；可設絕對路徑（如 ~/.local/bin/yt-dlp）。設空字串＝停用 yt-dlp、退 Data API。
+  // 連不到時 server 啟動會 log warn（見 server.ts health probe），找影片 fail-soft 退
+  // Data API（若有 YOUTUBE_API_KEY）或影片庫既有內容。兒童安全靠精選白名單+家長黑名單兩道閘
+  // （yt-dlp 無 Invidious 的 isFamilyFriendly 欄位）。
+  const ytDlpPath = (process.env.YTDLP_PATH ?? 'yt-dlp').trim()
 
   return {
     port: Number(process.env.PORT || 3014),
@@ -140,6 +137,6 @@ export function loadEnv(): BackendEnv {
     chatProvider,
     bareChat,
     youtubeApiKey,
-    invidiousApiUrl,
+    ytDlpPath,
   }
 }

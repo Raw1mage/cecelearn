@@ -15,7 +15,7 @@ import { GeminiVisionProvider } from './providers/geminiVisionProvider.js'
 import { YoutubeVideoProvider } from './providers/youtubeVideoProvider.js'
 import { ChildChannelLibrary } from './providers/childChannelLibrary.js'
 import { VideoBank } from './providers/videoBank.js'
-import { InvidiousClient } from './providers/invidiousClient.js'
+import { YtDlpVideoProvider } from './providers/ytDlpVideoProvider.js'
 import { Blocklist } from './providers/blocklist.js'
 import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
@@ -71,14 +71,14 @@ function buildChatProvider(): DialogueChatProvider {
 
 const channelLibrary = new ChildChannelLibrary()
 const videoBank = new VideoBank()
-const invidious = env.invidiousApiUrl ? new InvidiousClient(env.invidiousApiUrl) : undefined
+const ytdlp = env.ytDlpPath ? new YtDlpVideoProvider(env.ytDlpPath) : undefined
 const blocklist = new Blocklist()
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
   buildImageProvider(),
   new GeminiVisionProvider(env.geminiApiKeys),
-  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank, invidious, blocklist),
+  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank, ytdlp, blocklist),
   channelLibrary,
   videoBank,
   blocklist,
@@ -381,21 +381,21 @@ const server = createServer(async (request, response) => {
 
 server.listen(env.port, '0.0.0.0', () => {
   console.log(`Backend listening on ${env.port}`)
-  // 明示化跨機依賴（DD-30）：找影片借用同機 ytlite 的自架 Invidious。啟動時 probe 一次，
+  // yt-dlp health probe（DD-32）：找影片走被動函式 yt-dlp（無 daemon）。啟動時 probe 一次，
   // 連不到只 log warn、不崩——找影片會退 Data API（若有 key）或影片庫既有內容。
-  if (invidious) {
-    void invidious.ping().then((ok) => {
+  if (ytdlp) {
+    void ytdlp.ping().then((ok) => {
       if (ok) {
-        console.log(`[startup] Invidious OK: ${invidious.baseUrl()}（找影片零 YouTube 配額）`)
+        console.log(`[startup] yt-dlp OK: ${ytdlp.binary()}（找影片被動函式、零 YouTube 配額、無 daemon）`)
       } else {
         console.warn(
-          `[startup] WARN: 連不到 Invidious（${invidious.baseUrl()}）。` +
+          `[startup] WARN: 跑不起 yt-dlp（${ytdlp.binary()}）。` +
             `找影片將退 YouTube Data API 或影片庫既有內容。` +
-            `此依賴為同機 ytlite 的 Invidious docker（≥2026.06 才支援 feed 預熱頻道 parser）。`,
+            `安裝：下載單一 binary 到 PATH 或設 YTDLP_PATH 指向它。`,
         )
       }
     })
   } else {
-    console.log('[startup] Invidious 已停用（INVIDIOUS_API_URL 空），找影片走 YouTube Data API')
+    console.log('[startup] yt-dlp 已停用（YTDLP_PATH 空），找影片走 YouTube Data API')
   }
 })
