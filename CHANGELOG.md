@@ -25,6 +25,10 @@
 - **生圖 cascade 第二層**從 Gemini-on-Vertex（同樣多模態、會空回）換成 Imagen 4。
 - **聊天版面**改為對話置頂可滾動、輸入列釘底（比照 opencms）。
 - **開發期 log** 改 append 長久留存，每次啟動補帶時間戳的分隔標記。
+- **對話層改走 daemon 無狀態 completion**：意圖分類原本每輪向 opencode daemon 開一個一次性 `bare` session（`POST /session` → `message` → `DELETE`），會把純服務端中介資料落地成 userhome 的可見 project session（先污染再打掃）。opencode 落地 stateless completion 端點後，收斂成單步 `POST /api/v2/completion`：daemon 不建 session、不寫 storage、不進 list，呼叫前後 session 數不變。回應 `parts[]` 形狀與原 message 一致，解析端零改；失敗碼（429/502/500 → 掉接 Gemini，400 設定錯不掉接）維持 cascade 行為。
+
+### 修正 Fixed（服務端中介資料）
+- **對話 session 堆積在 userhome**：移除一次性 bare session 的 create+delete 治標、改用無狀態 completion，根治「小朋友對話變成 `pkcs12` userhome 可見 project session」；並清掉歷史已堆積的 95 個殘留 session。
 
 ### 修正 Fixed
 - **造句中英夾雜**：system prompt 加「純中文鐵則」，禁止把「每天」吐成「every天」（教英文除外）。

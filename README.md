@@ -42,7 +42,7 @@
 ```
 瀏覽器 ──► gateway (nginx, :7014) ──► frontend (Vite/React, :5173 dev)
                                   └─► backend  (Bun + node:http, :3014)
-                                            ├─ 對話 cascade：Claude 訂閱（opencode bare session, 同機 unix socket）→ Gemini 2.5 Flash
+                                             ├─ 對話 cascade：Claude 訂閱（opencode 無狀態 completion, 同機 unix socket）→ Gemini 2.5 Flash
                                             ├─ 生圖 cascade：免費 apikey（Gemini 多模態）→ Imagen 4（Vertex 福利點數）
                                             ├─ 拍照讀題：Gemini 2.5 Flash 多模態（OCR）
                                             └─ 查字 / 聽寫 / 成語：本地教育部辭典 + 課綱題庫
@@ -54,7 +54,7 @@
 
 ### 對話借 Claude 訂閱
 
-後端不直接呼叫 Anthropic API，而是經同機 `opencode` daemon 的 unix socket 開一個一次性 `bare` session，**借 Claude OAuth 訂閱**跑意圖分類（model 釘 `claude-opus-4-8`）。失敗才掉接 Gemini（硬強制 responseSchema）。
+後端不直接呼叫 Anthropic API，而是經同機 `opencode` daemon 的 unix socket 打一發**無狀態 one-shot completion**（`POST /api/v2/completion`，agent=`bare`），**借 Claude OAuth 訂閱**跑意圖分類（model 釘 `claude-opus-4-8`）。daemon 端不建 session、不寫 storage、不進 session list——對話歷史每輪由後端完整帶入（無狀態），不在 daemon 落地任何中介資料。失敗才掉接 Gemini（硬強制 responseSchema）。
 
 ### 找影片＋兒童知識型頻道庫
 
