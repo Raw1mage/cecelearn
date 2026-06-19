@@ -8,8 +8,6 @@ import { A2Page } from "../a2/A2Page";
 import { QuizPage } from "../a6/QuizPage";
 import {
   isTtsSupported,
-  isTtsEnabled,
-  setTtsEnabled,
   isWithinSpeechGuard,
   isLikelySelfEcho,
   addSpeechEndListener,
@@ -89,7 +87,6 @@ export function A1Page() {
   const [status, setStatus] = useState("");
   const [speechReady, setSpeechReady] = useState(false);
   const [listening, setListening] = useState(false);
-  const [ttsOn, setTtsOn] = useState(isTtsEnabled());
   const [reading, setReading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
@@ -147,9 +144,6 @@ export function A1Page() {
     let restartTimer: ReturnType<typeof setTimeout> | undefined;
     let watchdogTimer: ReturnType<typeof setInterval> | undefined;
     let lastAliveAt = Date.now();
-    // Barge-in（DD-25）：因小朋友插話而 cancelSpeech() 時設 true，讓「朗讀結束→重啟辨識」
-    // 的自我修復跳過這一次——辨識器此刻正活著捕捉小朋友的話，不可被 abort 重啟洗掉。
-    let suppressRestartOnBargeIn = false;
     // 小朋友已搶得發言權（barge-in 後到本段送出/丟棄之間）：echo 軟閘暫時不丟棄辨識結果，
     // 讓插話後的後續語音能即時流入累積（小雞已被 cancelSpeech 停掉，沒有自己的聲音可回授）。
     let childHasFloor = false;
@@ -487,7 +481,6 @@ export function A1Page() {
           return;
         }
         // 不是回音 → 小朋友插話了：停掉小雞朗讀、取得發言權，這段話照常處理。
-        suppressRestartOnBargeIn = true;
         cancelSpeech();
         childHasFloor = true;
       }
@@ -757,12 +750,6 @@ export function A1Page() {
     if (e.key === "Enter") void sendTurnFromSpeech();
   }
 
-  function toggleTts() {
-    const next = !ttsOn;
-    setTtsOn(next);
-    setTtsEnabled(next);
-  }
-
   const displayStatus = status || convStatus;
 
   // 跟讀借用入口（給深層的 EnglishPractice 用）：穩定 identity，只隨 speechReady 變。
@@ -884,16 +871,6 @@ export function A1Page() {
                   <rect x="6" y="6" width="12" height="12" rx="2.5" />
                 </svg>
               </button>
-              {isTtsSupported() && (
-                <button
-                  className={`a1-action-btn${ttsOn ? " a1-action-btn--active" : ""}`}
-                  onClick={toggleTts}
-                  aria-label={ttsOn ? "關閉朗讀" : "開啟朗讀"}
-                  title={ttsOn ? "朗讀：開" : "朗讀：關"}
-                >
-                  {ttsOn ? "🔊" : "🔇"}
-                </button>
-              )}
             </div>
           <div className="a1-quick-chips">
             <button

@@ -18,6 +18,10 @@ body {
 }
 a { color: inherit; }
 .app-title-link { text-decoration: none; }
+.app-header__title { display: flex; align-items: center; gap: 0.6rem; }
+.app-tts-toggle { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.7rem; background: rgba(117,167,255,0.12); color: #9bc1ff; font-size: 1.1rem; cursor: pointer; transition: background 0.15s; }
+.app-tts-toggle:hover { background: rgba(117,167,255,0.22); }
+.app-tts-toggle--active { background: #3b82ff; color: #fff; }
 .app-score { display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 999px; background: rgba(251,191,36,0.15); color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
 button, input, textarea, select { font: inherit; }
 #root { min-height: 100vh; }
