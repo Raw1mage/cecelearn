@@ -115,18 +115,25 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     return flagged
   }
 
-  async search(query: string, topic?: string): Promise<A1VideoSearchResponse | A1ErrorResponse> {
+  async search(
+    query: string,
+    topic?: string,
+    limit = MAX_RESULTS,
+  ): Promise<A1VideoSearchResponse | A1ErrorResponse> {
     const start = Date.now()
     const q = query.trim()
     const category = (topic?.trim() || q)
-    log('a1.video.request', { query: q, topic: topic?.trim() || null })
+    // 取回上限：載入更多時 fetchLimit 會超過 MAX_RESULTS（重搜更大 N，前端去重後 append）。
+    const fetchLimit = Math.max(MAX_RESULTS, Math.floor(limit) || MAX_RESULTS)
+    log('a1.video.request', { query: q, topic: topic?.trim() || null, limit: fetchLimit })
 
     if (!q) {
       return { ok: false, error: 'VIDEO_BAD_REQUEST', message: '我還不知道要找什麼影片耶。' }
     }
 
     // 1) 先查影片庫：此主題已累積足夠 → 直接服務，不打 API（漸漸不需要 API）。
-    if (this.bank && this.bank.size(category) >= BANK_SERVE_MIN) {
+    //    載入更多（fetchLimit > 庫內量）時不走庫捷徑，逕行外部搜尋多抓一些。
+    if (this.bank && this.bank.size(category) >= Math.max(BANK_SERVE_MIN, fetchLimit)) {
       const items = this.flagAndSort(this.bank.get(category) as A1VideoItem[])
       log('a1.video.bank_hit', { category, count: items.length, ms: Date.now() - start })
       return { ok: true, query: q, items }
@@ -136,11 +143,11 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     let raw: A1VideoItem[] | null = null
     let usedSource = ''
     if (this.ytdlp) {
-      raw = await this.ytdlp.search(q, MAX_RESULTS)
+      raw = await this.ytdlp.search(q, fetchLimit)
       if (raw) usedSource = 'yt-dlp'
     }
     if (!raw && this.apiKey) {
-      const r = await this.runQuery(q) // Data API 後備（safeSearch=strict）
+      const r = await this.runQuery(q, undefined, fetchLimit) // Data API 後備（safeSearch=strict）
       if ('items' in r) {
         raw = r.items
         usedSource = 'youtube-api'
@@ -191,7 +198,10 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   private async runQuery(
     q: string,
     channelId?: string,
+    limit = MAX_RESULTS,
   ): Promise<{ items: A1VideoItem[] } | { error: A1ErrorResponse }> {
+    // Data API maxResults 硬上限 50；載入更多時上抬至 fetchLimit（仍受 50 約束）。
+    const maxResults = Math.min(50, Math.max(MAX_RESULTS, Math.floor(limit) || MAX_RESULTS))
     const params = new URLSearchParams({
       key: this.apiKey,
       part: 'snippet',
@@ -199,7 +209,7 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       type: 'video',
       safeSearch: 'strict',
       videoEmbeddable: 'true',
-      maxResults: String(MAX_RESULTS),
+      maxResults: String(maxResults),
       regionCode: 'TW',
       relevanceLanguage: 'zh-Hant',
       order: 'relevance',

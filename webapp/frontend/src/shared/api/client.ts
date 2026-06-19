@@ -322,10 +322,14 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ imageBase64, mimeType }),
     }),
-  searchVideos: (query: string, topic?: string) =>
+  searchVideos: (query: string, topic?: string, limit?: number) =>
     request<A1VideoSearchResponse | A1ErrorResponse>('/a1/videos', {
       method: 'POST',
-      body: JSON.stringify(topic ? { query, topic } : { query }),
+      body: JSON.stringify({
+        query,
+        ...(topic ? { topic } : {}),
+        ...(typeof limit === 'number' ? { limit } : {}),
+      }),
     }),
   videoBankSummary: () =>
     request<A1VideoBankSummaryResponse | A1ErrorResponse>('/a1/videobank'),

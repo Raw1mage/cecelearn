@@ -288,7 +288,8 @@ export interface QuestionVisionProvider {
 }
 
 export interface VideoSearchProvider {
-  search(query: string, topic?: string): Promise<A1VideoSearchResponse | A1ErrorResponse>
+  /** limit：本次最多取回幾支（載入更多時調大，重搜去重後 append）。預設由 provider 決定。 */
+  search(query: string, topic?: string, limit?: number): Promise<A1VideoSearchResponse | A1ErrorResponse>
 }
 
 /* A5 — Dictation Practice */

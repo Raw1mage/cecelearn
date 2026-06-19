@@ -23,6 +23,10 @@ const DAILY_KEY = 'a1_illustrate_daily'
 /* ── 找影片配額（YouTube Data API search 預設每日 ~100 次，留頭）：每日硬上限 ── */
 const VIDEO_DAILY_LIMIT = 50
 const VIDEO_DAILY_KEY = 'a1_video_daily'
+/** 佇列每次露出的影片數（初始可見、每按一次「載入更多」再多露這麼多）。 */
+const VIDEO_PAGE_SIZE = 12
+/** 初始一次抓回快取的支數（佇列先只露 VIDEO_PAGE_SIZE，其餘存著供載入更多即時取用）。 */
+const VIDEO_INITIAL_FETCH = 36
 
 function today(): string {
   return new Date().toISOString().slice(0, 10) // YYYY-MM-DD
@@ -84,7 +88,20 @@ export type IllustrationMap = Record<string, IllustrationState>
 /** 找影片狀態：每則 find_video tutor 訊息掛一個小播放窗。 */
 export type VideoState =
   | { mode: 'loading' }
-  | { mode: 'results'; topic?: string; items: A1VideoItem[] }
+  | {
+      mode: 'results'
+      topic?: string
+      /** 完整快取：初始一次抓回的整批影片（可能 > 露出數），載入更多優先從這裡即時取用。 */
+      items: A1VideoItem[]
+      /** 佇列實際露出的支數（◀▶ 只在這個範圍內走）。初始 12，每次載入更多 +12。 */
+      visibleCount: number
+      /** 該則的原始搜尋詞（快取用盡後真搜沿用） */
+      query: string
+      /** 正在真搜載入更多（按鈕轉圈、避免重複觸發）。從快取露出是即時的、不設此旗標。 */
+      loadingMore?: boolean
+      /** 已無更多：快取露完且重搜也沒有新影片 → 按鈕收起 */
+      exhausted?: boolean
+    }
   | { mode: 'error'; message: string }
   /** 每日搜尋上限已達：完全停止找影片 */
   | { mode: 'capped'; message: string }
@@ -125,6 +142,9 @@ export function useConversation() {
   const [busy, setBusy] = useState(false)
   const [illustrations, setIllustrations] = useState<IllustrationMap>({})
   const [videos, setVideos] = useState<VideoMap>({})
+  /** videos 的最新值鏡像（loadMoreVideos 讀當前佇列、不進依賴避免重建 callback） */
+  const videosRef = useRef<VideoMap>({})
+  videosRef.current = videos
   /** 正在找影片的訊息 id 集合（避免同一則重複觸發） */
   const videoBusyRef = useRef<Set<string>>(new Set())
   /** 全螢幕測驗 overlay 開啟狀態（DD-4）；null = 正常對話。 */
@@ -331,12 +351,22 @@ export function useConversation() {
     setVideos((cur) => ({ ...cur, [msgId]: { mode: 'loading' } }))
     bumpDailyKey(VIDEO_DAILY_KEY)
     try {
-      const res = await apiClient.searchVideos(query, topic)
+      // 初始一次多抓一些存著（快取），佇列先只露 VIDEO_PAGE_SIZE 支。
+      const res = await apiClient.searchVideos(query, topic, VIDEO_INITIAL_FETCH)
       if (!res.ok) {
         setVideos((cur) => ({ ...cur, [msgId]: { mode: 'error', message: res.message } }))
         return
       }
-      setVideos((cur) => ({ ...cur, [msgId]: { mode: 'results', topic, items: res.items } }))
+      setVideos((cur) => ({
+        ...cur,
+        [msgId]: {
+          mode: 'results',
+          topic,
+          items: res.items,
+          visibleCount: Math.min(VIDEO_PAGE_SIZE, res.items.length),
+          query,
+        },
+      }))
     } catch (error) {
       setVideos((cur) => ({
         ...cur,
@@ -351,6 +381,103 @@ export function useConversation() {
   }, [])
 
   fetchVideosRef.current = (msgId, query, topic) => void fetchVideos(msgId, query, topic)
+
+  /**
+   * 載入更多：先從已抓回的快取再露一批（即時、零網路、零配額）；快取露完才真搜。
+   * - 快取還有沒露出的（visibleCount < items.length）→ 只把 visibleCount +VIDEO_PAGE_SIZE。
+   * - 快取已露完 → 真打一次搜尋（更大 N，去重後 append 並同步露出），計一次每日配額；
+   *   重搜沒有任何新影片 → 標記 exhausted（按鈕收起）。
+   */
+  const loadMoreVideos = useCallback(async (msgId: string) => {
+    const cur = videosRef.current[msgId]
+    if (!cur || cur.mode !== 'results') return
+    if (cur.loadingMore || cur.exhausted) return
+
+    // 1) 快取捷徑：還有抓回但沒露出的影片 → 直接多露 VIDEO_PAGE_SIZE，不打網路、不耗配額。
+    if (cur.visibleCount < cur.items.length) {
+      setVideos((m) => {
+        const s = m[msgId]
+        if (!s || s.mode !== 'results') return m
+        return {
+          ...m,
+          [msgId]: { ...s, visibleCount: Math.min(s.visibleCount + VIDEO_PAGE_SIZE, s.items.length) },
+        }
+      })
+      return
+    }
+
+    // 2) 快取已露完 → 真搜。沿用該則 turn 的 query/topic。
+    const turn = turnByMsgIdRef.current[msgId]
+    if (!turn?.video?.query) {
+      setVideos((m) => {
+        const s = m[msgId]
+        if (!s || s.mode !== 'results') return m
+        return { ...m, [msgId]: { ...s, exhausted: true } }
+      })
+      return
+    }
+    if (videoBusyRef.current.has(msgId)) return
+
+    // 每日硬上限：真搜才算一次配額（快取捷徑不算）。
+    if (readDailyKey(VIDEO_DAILY_KEY) >= VIDEO_DAILY_LIMIT) {
+      setVideos((m) => ({
+        ...m,
+        [msgId]: { mode: 'capped', message: '今天找影片的次數用完囉，明天再來看！' },
+      }))
+      return
+    }
+
+    // 真搜抓回比目前快取再多一批，去重後 append。
+    const wantTotal = cur.items.length + VIDEO_INITIAL_FETCH
+
+    videoBusyRef.current.add(msgId)
+    setVideos((m) => {
+      const s = m[msgId]
+      if (!s || s.mode !== 'results') return m
+      return { ...m, [msgId]: { ...s, loadingMore: true } }
+    })
+    bumpDailyKey(VIDEO_DAILY_KEY)
+    try {
+      const res = await apiClient.searchVideos(turn.video.query, turn.video.topic, wantTotal)
+      if (!res.ok) {
+        // 真搜失敗：不丟既有佇列，只解除 loading。
+        setVideos((m) => {
+          const s = m[msgId]
+          if (!s || s.mode !== 'results') return m
+          return { ...m, [msgId]: { ...s, loadingMore: false } }
+        })
+        return
+      }
+      setVideos((m) => {
+        const s = m[msgId]
+        if (!s || s.mode !== 'results') return m
+        const seen = new Set(s.items.map((it) => it.videoId))
+        const fresh = res.items.filter((it) => it.videoId && !seen.has(it.videoId))
+        if (fresh.length === 0) {
+          return { ...m, [msgId]: { ...s, loadingMore: false, exhausted: true } }
+        }
+        const items = [...s.items, ...fresh]
+        return {
+          ...m,
+          [msgId]: {
+            ...s,
+            items,
+            // 真搜回來：露出原本看到的 + 一批新影片。
+            visibleCount: Math.min(s.visibleCount + VIDEO_PAGE_SIZE, items.length),
+            loadingMore: false,
+          },
+        }
+      })
+    } catch {
+      setVideos((m) => {
+        const s = m[msgId]
+        if (!s || s.mode !== 'results') return m
+        return { ...m, [msgId]: { ...s, loadingMore: false } }
+      })
+    } finally {
+      videoBusyRef.current.delete(msgId)
+    }
+  }, [])
 
   /** 找影片失敗時手動重試（沿用該則 turn 的 query）。 */
   const retryVideos = useCallback(
@@ -410,6 +537,7 @@ export function useConversation() {
     endStory,
     redrawIllustration,
     retryVideos,
+    loadMoreVideos,
     openOverlay,
     closeOverlay,
     onQuizComplete,

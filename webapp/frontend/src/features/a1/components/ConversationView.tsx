@@ -50,6 +50,8 @@ export type ConversationViewProps = {
   videos: VideoMap
   /** 重新找某則訊息的影片 */
   onRetryVideos: (msgId: string) => void
+  /** 看到最後一支時載入更多影片 */
+  onLoadMoreVideos: (msgId: string) => void
   /** 影片播放/暫停狀態變化（外層據此暫停/恢復麥克風） */
   onVideoPlayingChange: (playing: boolean) => void
 }
@@ -176,7 +178,7 @@ function MessageIllustration({
  * 每則 tutor 訊息：文字泡泡 reply + inline 富內容（造詞 / 造句 / 故事）
  *                 + inline 筆順(lookup) + inline 情境插畫(造句/故事/畫圖，歷史保留)。
  */
-export function ConversationView({ messages, busy, illustrations, onRedraw, videos, onRetryVideos, onVideoPlayingChange }: ConversationViewProps) {
+export function ConversationView({ messages, busy, illustrations, onRedraw, videos, onRetryVideos, onLoadMoreVideos, onVideoPlayingChange }: ConversationViewProps) {
   const endRef = useRef<HTMLDivElement | null>(null)
   // 正在朗讀的 tutor 訊息 id（驅動各 bubble 鈕的 重播/停止 樣態）。
   const [playingId, setPlayingId] = useState<string | null>(getPlayingSpeechId())
@@ -277,6 +279,7 @@ export function ConversationView({ messages, busy, illustrations, onRedraw, vide
                     msgId={m.id}
                     state={videos[m.id]}
                     onRetry={onRetryVideos}
+                    onLoadMore={onLoadMoreVideos}
                     onPlayingChange={onVideoPlayingChange}
                   />
                 )}

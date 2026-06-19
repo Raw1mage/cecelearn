@@ -46,11 +46,14 @@ export function VideoPlayer({
   msgId,
   state,
   onRetry,
+  onLoadMore,
   onPlayingChange,
 }: {
   msgId: string
   state: VideoState | undefined
   onRetry: (msgId: string) => void
+  /** 看到最後一支時「載入更多」：再抓一批接到佇列後面 */
+  onLoadMore?: (msgId: string) => void
   /** 影片開始播放 → true（外層據此暫停麥克風）；暫停/播完 → false（外層恢復麥克風）。 */
   onPlayingChange?: (playing: boolean) => void
 }) {
@@ -65,13 +68,21 @@ export function VideoPlayer({
   indexRef.current = index
   const [ready, setReady] = useState(false)
 
-  const items = state?.mode === 'results' ? state.items : []
-  // 結果集的識別字：換一批新影片（新搜尋）才重建 player；同一批內切換用 loadVideoById。
-  const setKey = items.map((i) => i.videoId).join(',')
+  // items 是完整快取；佇列實際露出的只有前 visibleCount 支（載入更多時才變多）。
+  const allItems = state?.mode === 'results' ? state.items : []
+  const visibleCount = state?.mode === 'results' ? state.visibleCount : 0
+  const items = allItems.slice(0, visibleCount)
+  // 結果集識別字：只認「第一支的 videoId」。
+  // 換一批新搜尋（第一支會變）才重建 player；「載入更多」是露出更多/append 到尾端、第一支不變，
+  // 故不重建、不跳回第 0 支——這正是維持播放位置的關鍵。
+  const firstId = items[0]?.videoId ?? ''
+  // 已露出的 videoId 序列（go 切換時即時讀，避免進依賴害 player 重建）。
+  const idsRef = useRef<string[]>([])
+  idsRef.current = items.map((i) => i.videoId)
 
   useEffect(() => {
-    if (!setKey || !hostRef.current) return
-    const ids = setKey.split(',')
+    if (!firstId || !hostRef.current) return
+    const ids = idsRef.current
     setIndex(0)
     indexRef.current = 0
     setReady(false)
@@ -119,16 +130,17 @@ export function VideoPlayer({
       playerRef.current = null
       if (hostRef.current) hostRef.current.innerHTML = ''
     }
-  }, [setKey])
+  }, [firstId])
 
   /** 切到第 next 支：同一個播放窗載入新影片（自動播放），不重打 API。 */
   function go(next: number) {
-    if (next < 0 || next >= items.length) return
+    const ids = idsRef.current
+    if (next < 0 || next >= ids.length) return
     setIndex(next)
     const p = playerRef.current
     if (p?.loadVideoById) {
       try {
-        p.loadVideoById(items[next].videoId)
+        p.loadVideoById(ids[next])
       } catch {
         /* ok */
       }
@@ -166,6 +178,11 @@ export function VideoPlayer({
   // results
   if (items.length === 0) return null
   const active = items[Math.min(index, items.length - 1)]
+  const atLast = index >= items.length - 1
+  const loadingMore = state.loadingMore === true
+  const exhausted = state.exhausted === true
+  // 看到最後一支才出現「載入更多」（未用盡時）；正在抓時顯示轉圈不可重按。
+  const showLoadMore = !!onLoadMore && atLast && !exhausted
 
   return (
     <div className="a1-inline-video a1-inline-video--player">
@@ -200,6 +217,21 @@ export function VideoPlayer({
             下一部 ▶
           </button>
         </div>
+      )}
+      {showLoadMore && (
+        <div className="a1-video-more">
+          <button
+            type="button"
+            className="a1-action-btn"
+            onClick={() => onLoadMore?.(msgId)}
+            disabled={loadingMore}
+          >
+            {loadingMore ? '找更多影片中…' : '＋ 載入更多影片'}
+          </button>
+        </div>
+      )}
+      {exhausted && atLast && (
+        <p className="a1-video-more-hint muted">沒有更多影片囉，這些都看完啦！</p>
       )}
     </div>
   )

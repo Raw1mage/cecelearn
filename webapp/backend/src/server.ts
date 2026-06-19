@@ -235,15 +235,17 @@ const server = createServer(async (request, response) => {
     const raw = await readBody(request)
     let query = ''
     let topic: string | undefined
+    let limit: number | undefined
     try {
-      const payload = JSON.parse(raw || '{}') as { query?: string; topic?: string }
+      const payload = JSON.parse(raw || '{}') as { query?: string; topic?: string; limit?: number }
       if (typeof payload.query === 'string') query = payload.query
       if (typeof payload.topic === 'string') topic = payload.topic
+      if (typeof payload.limit === 'number' && Number.isFinite(payload.limit)) limit = payload.limit
     } catch {
       send(400, { ok: false, error: 'VIDEO_BAD_REQUEST', message: '我還不知道要找什麼影片耶。' }, raw)
       return
     }
-    const result = await a1.searchVideos(query, topic)
+    const result = await a1.searchVideos(query, topic, limit)
     send(result.ok ? 200 : 502, result, raw)
     return
   }

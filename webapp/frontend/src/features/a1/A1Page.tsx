@@ -78,6 +78,7 @@ export function A1Page() {
     endStory,
     redrawIllustration,
     retryVideos,
+    loadMoreVideos,
     openOverlay,
     closeOverlay,
     onQuizComplete,
@@ -774,6 +775,7 @@ export function A1Page() {
             onRedraw={redrawIllustration}
             videos={videos}
             onRetryVideos={retryVideos}
+            onLoadMoreVideos={loadMoreVideos}
             onVideoPlayingChange={handleVideoPlayingChange}
           />
         </Panel>

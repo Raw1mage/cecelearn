@@ -75,7 +75,11 @@ export function createA1Module(
       }
       return visionProvider.readQuestion(imageBase64, mimeType)
     },
-    searchVideos(query: string, topic?: string): Promise<A1VideoSearchResponse | A1ErrorResponse> {
+    searchVideos(
+      query: string,
+      topic?: string,
+      limit?: number,
+    ): Promise<A1VideoSearchResponse | A1ErrorResponse> {
       if (!videoProvider) {
         return Promise.resolve({
           ok: false,
@@ -83,7 +87,7 @@ export function createA1Module(
           message: '找影片功能還在準備中喔！',
         })
       }
-      return videoProvider.search(query, topic)
+      return videoProvider.search(query, topic, limit)
     },
     listChannels(): ChannelListResponse | A1ErrorResponse {
       if (!channelLibrary) {
