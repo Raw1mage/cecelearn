@@ -17,6 +17,7 @@ export default function App() {
         <Route path="/a2" element={<A2Page />} />
         <Route path="/a3" element={<A3Page />} />
         <Route path="/a5" element={<A5Page />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </AppLayout>
     </ScoreProvider>
