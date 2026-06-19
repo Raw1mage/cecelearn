@@ -63,7 +63,6 @@
 > **為什麼是 yt-dlp 而非 Invidious**：Invidious 是「伺服器形狀」（連線池／反爬 token／postgres，需 3 容器常駐 daemon）；cecelearn 的找影片只是 `query → 清單` 的被動需求，yt-dlp 是「函式形狀」——更貼合、零常駐 infra。
 > - `YTDLP_PATH` 預設 `yt-dlp`（走 PATH）；可設絕對路徑（如 `~/.local/bin/yt-dlp`）。設空字串＝停用 yt-dlp、退 Data API。
 > - 安裝：下載單一 binary 到 PATH（`curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp && chmod +x` ，需系統 python3）。偶爾 `-U` 更新即可。
-> - **feed 預熱**（`POST /api/a1/prewarm`）遍歷精選頻道 `/videos` 抓最新片寫回影片庫。
 > - 後端啟動時 probe `yt-dlp --version` 一次，連不到只 log warn（見 `server.ts` startup health probe），找影片 **fail-soft** 退 Data API（若有 key）或影片庫既有內容，**不崩**。
 > - 兒童安全靠**精選頻道白名單（排前）+ 家長黑名單（硬擋）**兩道閘（yt-dlp 無 Invidious 的 `isFamilyFriendly` 欄位）。
 

@@ -114,10 +114,10 @@
 - [ ] R11.A3 youtubeVideoProvider：search 結果、familyFilter、bank serve（bank_hit/bank_only）一律先 filter 掉 blocklist 命中的 channelId（硬擋優先於白名單加權）
 - [ ] R11.A4 `POST /api/a1/block`（action=block/unblock，body channelId/channelName）管理端點 + blocklist 檢索端點
 
-### Phase B — Feed 預熱（手動端點，DD-27）
-- [x] R11.B1 InvidiousClient 新增 `channelLatestVideos(channelId)`：打 `/api/v1/channels/{id}` 取 latestVideos → A1VideoItem[]
-- [x] R11.B2 `POST /api/a1/prewarm`：遍歷 channelLibrary active 頻道 → channelLatestVideos → blocklist 硬擋 → 依頻道 topics 寫回 VideoBank；回各主題新增數摘要
-- [x] R11.B3 驗證：手動打 prewarm 端點 → channels:4、16 主題共 +525 支寫回庫、videobank.json 持久化。**前置 blocker（DD-29）**：原 Invidious 2026.04.09 頻道 parser 解不出 latestVideos（每筆 type:parse-error，ytlite 同端點同症狀），升級 ytlite Invidious 至 2026.06.15-73a1bac 後 parser 修復、頻道影片正常回
+### Phase B — Feed 預熱（手動端點，DD-27）— ⛔ 已移除（DD-33）
+- [-] ~~R11.B1 InvidiousClient 新增 `channelLatestVideos(channelId)`~~ 移除：feed 預熱整體拆除（DD-33）
+- [-] ~~R11.B2 `POST /api/a1/prewarm`：遍歷 channelLibrary active 頻道 → channelLatestVideos → blocklist 硬擋 → 依頻道 topics 寫回 VideoBank~~ 移除：「頻道最新片 × 頻道標籤」灌主題庫＝文不對題 root cause（DD-33）
+- [-] ~~R11.B3 驗證：手動打 prewarm 端點 → channels:4、16 主題共 +525 支寫回庫~~ 廢止：該批 +525 支正是污染來源，已清空。影片庫往後只由真實 query 搜尋累積
 
 ### Phase C — 可點主題索引（動態取自 VideoBank，DD-28）
 - [x] R11.C1 前端 client.ts：videoBankSummary 鏡像型別（A1VideoBankTopic/A1VideoBankSummaryResponse）+ videoBankSummary() method；A1Page 載入時 useEffect 打一次取已累積主題（取 count>0、前 8 個）

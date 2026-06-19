@@ -123,20 +123,6 @@ export function createA1Module(
       }
       return { ok: true as const, topics: videoBank.summary() }
     },
-    async prewarm() {
-      if (!videoProvider || typeof videoProvider.prewarm !== 'function') {
-        return { ok: false as const, error: 'PREWARM_NOT_CONFIGURED', message: 'feed 預熱還沒準備好。' }
-      }
-      const result = await videoProvider.prewarm()
-      if (!result.ok) {
-        return {
-          ok: false as const,
-          error: result.error || 'PREWARM_FAILED',
-          message: 'feed 預熱失敗（請確認自架 Invidious 在線上）。',
-        }
-      }
-      return { ok: true as const, channels: result.channels, topics: result.topics }
-    },
     listBlocked(): BlockListResponse | A1ErrorResponse {
       if (!blocklist) {
         return { ok: false, error: 'BLOCKLIST_NOT_CONFIGURED', message: '黑名單還沒準備好。' }

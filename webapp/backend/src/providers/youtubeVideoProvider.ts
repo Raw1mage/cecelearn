@@ -184,64 +184,6 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   }
 
   /**
-   * Feed 預熱（yt-dlp channelLatestVideos 聚合，DD-32；原 Invidious 版見 DD-27）：
-   * 遍歷頻道庫 active 頻道 → yt-dlp 抓該頻道 /videos 最新片 → 黑名單硬擋 → 依該頻道的
-   * topics 寫回 VideoBank。讓常見主題在小朋友還沒問之前就先備好「精選頻道的最新片」。
-   *
-   * 手動觸發（無排程）：POST /api/a1/prewarm。回各主題新增數摘要。
-   * 精選頻道本身已人工核可，預熱只硬擋黑名單。
-   * 某頻道抓不到（私人/刪除/yt-dlp 失敗）自然略過，不崩、不亂塞。
-   */
-  async prewarm(): Promise<{
-    ok: boolean
-    channels: number
-    topics: Array<{ topic: string; added: number }>
-    error?: string
-  }> {
-    if (!this.ytdlp) {
-      return { ok: false, channels: 0, topics: [], error: 'PREWARM_NO_YTDLP' }
-    }
-    if (!this.library || !this.bank) {
-      return { ok: false, channels: 0, topics: [], error: 'PREWARM_NOT_CONFIGURED' }
-    }
-    const start = Date.now()
-    const active = this.library.list().filter((c) => c.status === 'active' && c.channelId)
-    // 累計各主題新增數（一個頻道可掛多個 topic，逐 topic 寫回庫）。
-    const addedByTopic = new Map<string, number>()
-    let channelsHit = 0
-
-    await Promise.all(
-      active.map(async (ch) => {
-        const vids = await this.ytdlp!.channelLatestVideos(ch.channelId as string)
-        if (!vids || vids.length === 0) return
-        channelsHit += 1
-        const safe = this.blocklist ? this.blocklist.filter(vids) : vids
-        if (safe.length === 0) return
-        // 沒掛 topic 的頻道，用標題當主題，至少進得了庫。
-        const topics = ch.topics.length > 0 ? ch.topics : [ch.title]
-        for (const topic of topics) {
-          const before = this.bank!.size(topic)
-          this.bank!.accumulate(topic, topic, `prewarm:${ch.title}`, safe)
-          const delta = this.bank!.size(topic) - before
-          if (delta > 0) addedByTopic.set(topic, (addedByTopic.get(topic) ?? 0) + delta)
-        }
-      }),
-    )
-
-    const topics = [...addedByTopic.entries()]
-      .map(([topic, added]) => ({ topic, added }))
-      .sort((a, b) => b.added - a.added)
-    log('a1.video.prewarm', {
-      mode: 'ytdlp-channel-latest',
-      channels: channelsHit,
-      topics: topics.length,
-      added: topics.reduce((n, t) => n + t.added, 0),
-      ms: Date.now() - start,
-    })
-    return { ok: true, channels: channelsHit, topics }
-  }
-
-  /**
    * 跑一支 search.list（含暫態重試、結果整形、curated 標記）。
    * channelId 給定時鎖定該頻道（精選頻道內搜尋）。
    * 回 {items} 或 {error}（呼叫端決定如何合併/傳遞）。

@@ -246,13 +246,6 @@ const server = createServer(async (request, response) => {
     return
   }
 
-  // Feed 預熱（管理）：遍歷精選頻道最新片寫回影片庫（借鏡 ytlite latestVideos 聚合）
-  if (url === '/api/a1/prewarm' && method === 'POST') {
-    const result = await a1.prewarm()
-    send(result.ok ? 200 : 500, result)
-    return
-  }
-
   // 兒童知識型頻道庫：列出（檢索）
   if (url === '/api/a1/channels' && method === 'GET') {
     const result = a1.listChannels()

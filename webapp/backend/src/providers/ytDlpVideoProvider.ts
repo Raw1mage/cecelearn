@@ -81,32 +81,6 @@ export class YtDlpVideoProvider {
     }
   }
 
-  /**
-   * 取某頻道最新片（feed 預熱用）。打頻道 /videos 頁 flat metadata；失敗回 null。
-   */
-  async channelLatestVideos(channelId: string, limit = 10): Promise<A1VideoItem[] | null> {
-    const cid = channelId.trim()
-    if (!cid) return null
-    try {
-      const out = await this.run([
-        `https://www.youtube.com/channel/${cid}/videos`,
-        '--flat-playlist',
-        '--playlist-end',
-        String(limit),
-        '--dump-json',
-        '--no-warnings',
-        '--ignore-errors',
-      ])
-      return this.parseEntries(out)
-    } catch (err) {
-      log('a1.video.ytdlp_channel_exception', {
-        channelId: cid,
-        error: err instanceof Error ? err.message : String(err),
-      })
-      return null
-    }
-  }
-
   /** 把 yt-dlp 的 NDJSON（每行一支影片）解析成 A1VideoItem[]。 */
   private parseEntries(ndjson: string): A1VideoItem[] {
     const items: A1VideoItem[] = []

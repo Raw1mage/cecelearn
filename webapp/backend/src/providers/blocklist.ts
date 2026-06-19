@@ -7,9 +7,8 @@ import type { BlockedChannel } from '../contracts/providers.js'
  * 家長黑名單（反向硬擋）——借鏡 ytlite 的 blocklist，但全域、無登入。
  *
  * 維護一份「家長不想讓小孩看到」的頻道清單（data/blocklist.json）。
- * 小雞老師找影片時，YoutubeVideoProvider 在 search 結果、家庭友善過濾、影片庫服務、
- * feed 預熱各環節，一律先剔除命中這些 channelId 的影片——硬擋，優先於精選白名單加權
- * 與 Invidious isFamilyFriendly 軟過濾。
+ * 小雞老師找影片時，YoutubeVideoProvider 在 search 結果、影片庫服務各環節，
+ * 一律先剔除命中這些 channelId 的影片——硬擋，優先於精選白名單加權。
  *
  * 與 ytlite 差異：ytlite 是 per-user `{uid}_blocked.json`（多租戶）；cecelearn 服務
  * 單一家庭情境，採全域單一清單，不引入登入/per-user。
