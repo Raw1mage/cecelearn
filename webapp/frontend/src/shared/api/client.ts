@@ -304,10 +304,10 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ imageBase64, mimeType }),
     }),
-  searchVideos: (query: string) =>
+  searchVideos: (query: string, topic?: string) =>
     request<A1VideoSearchResponse | A1ErrorResponse>('/a1/videos', {
       method: 'POST',
-      body: JSON.stringify({ query }),
+      body: JSON.stringify(topic ? { query, topic } : { query }),
     }),
   getQuizRanges: () =>
     request<{ ok: boolean; ranges: QuizRange[] }>('/quiz/meta'),

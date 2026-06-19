@@ -50,6 +50,22 @@
       "by": "pkcs12",
       "mode": "promote",
       "reason": "使用者確認 graduate；資料夾已在 /specs/，以 forward promote 進 living（plan_graduate 因無 /plans 草稿源而不適用）"
+    },
+    {
+      "from": "living",
+      "to": "living",
+      "at": "2026-06-19T04:41:30.372Z",
+      "by": "pkcs12",
+      "mode": "amend",
+      "reason": "A1 對話版面比照 opencms 改為輸入框置底＋對話置頂滾動，並以 :has() 視窗鎖高消除頁面捲軸（DD-20）"
+    },
+    {
+      "from": "living",
+      "to": "living",
+      "at": "2026-06-19T04:44:45.893Z",
+      "by": "pkcs12",
+      "mode": "amend",
+      "reason": "故事接龍互動進化：落地 continue_story（DD-19）並修連續性 bug（DD-22 歷史回填）；新增 DD-21/22/23、R9 milestone、proposal 需求8"
     }
   ]
 }

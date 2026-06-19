@@ -81,8 +81,31 @@
 - [x] R8.2 ConversationView MessageIllustration 新增 `offer`（畫給我看鈕）/`capped`（今日用完）渲染 + CSS
 - [x] R8.3 驗證：frontend typecheck EXIT=0；frontend 重啟
 
+## R9. 故事接龍互動進化（continue_story，DD-19 落地 + DD-21/22/23）
+
+> 反饋延伸：「說故事的功能要能互動進化，例如故事接龍。小朋友也能參與其中接著發展劇情。」DD-19 早先宣告 continue_story 但程式碼仍是一次性整篇；本節真正落地接龍，並修好連續性 bug。互動風格經 AskUserQuestion 由使用者選定「真·一句接一句」（DD-21）。
+
+- [x] R9.1 後端 contracts：A1Intent 加 `continue_story`；A1StoryPayload 加 `prompt?`/`done?`；A1ChatRequest.hint 與 DialogueChatProvider.chat 放寬為 `'lookup'|'story'`
+- [x] R9.2 a1ChatShared：tell_story 改「只開場」、新增 continue_story 規則 + few-shot、加 `STORY_HINT`、加「先讀完所有［故事進行中］段落、沿用同一主角往下接」連續性硬規則；INTENT_JSON_SCHEMA enum/story(prompt,done)；ILLUSTRATABLE 加 continue_story；hasRequiredPayload 同 tell_story
+- [x] R9.3 三 provider + server + module 打通 hint='story'：geminiChatProvider（responseSchema enum/story prompt,done + STORY_HINT）、opencodeBareChatProvider（STORY_HINT）、cascadeChatProvider、modules/a1.ts、server.ts 解析
+- [x] R9.4 前端 client 型別鏡像：continue_story、story prompt/done、chat hint 放寬
+- [x] R9.5 useConversation：storyActive 狀態 + storyActiveRef、接龍中自動帶 hint=story、回應後依 intent/done 進出接龍、`endStory()`；`enrichForModel` 送出歷史回填故事本體（DD-22）；接龍回合略過 SESSION_AUTO_LIMIT（DD-23）
+- [x] R9.6 渲染：buildTutorSpeech 唸段落+交棒語；TurnContent 接龍故事卡（徽章/交棒語/收尾）；A1Page「接龍中」bar + 結束故事鈕 + placeholder；ConversationView 接龍 intent label；styles.css 接龍樣式
+- [x] R9.7 RCA 修連續性（DD-22）：根因後端歷史只送 m.text、故事段落在 m.story 沒送 → 每句重開；修法 enrichForModel 回填 + prompt 硬規則
+- [x] R9.8 驗證：backend+frontend tsc --noEmit EXIT=0；frontend vite build 通過；對 live cascade 後端實走五回合接龍，主角/劇情連續、收尾 done=true
+
+## R10. 找影片改走自架 Invidious（借鏡 ytlite）+ 本地影片快取庫
+
+> 反饋：「引入 ytlite 的搜尋技術來解決 cecelearn 的找影片需求，並創建本地的影片快取資料庫。」find_video 原走 YouTube Data API v3（每日配額），改借鏡同機 ytlite 的做法打自架 Invidious（零配額）；Data API 降為後備。影片庫 VideoBank 做成本地快取資料庫，常見主題漸漸免外部請求。安全＝精選頻道優先 + 非精選頻道 Invidious isFamilyFriendly 過濾。
+
+- [x] R10.1 新增 `providers/invidiousClient.ts`：自架 Invidious `/api/v1/search`（region=TW, type=video）回 A1VideoItem[]、`/api/v1/channels/{id}` isFamilyFriendly 查詢（24h 快取）；失敗回 null（上層保守處理）
+- [x] R10.2 `config/env.ts`：新增 `invidiousApiUrl`（`INVIDIOUS_API_URL`，預設 `http://localhost:1215` 指同機 ytlite）；空字串＝停用、改走 Data API
+- [x] R10.3 `youtubeVideoProvider.ts`：搜尋來源改 Invidious 為主、Data API 後備；新增 familyFilter（精選放行 + 非精選平行查 isFamilyFriendly + 唯一 channelId 快取）；先查庫夠就免搜、搜回寫回庫
+- [x] R10.4 `providers/videoBank.ts`：本地影片快取庫（`data/videobank.json`）依主題分類累積、videoId 去重持久化、size/get/accumulate/summary；server.ts wiring + a1.videoBankSummary 端點
+- [x] R10.5 驗證：`bun run build`（tsc）EXIT=0；恐龍/太陽系新主題實走 Invidious 20 支→寫回庫（★樂樂TV 排第一）、二次同主題 bank_hit 1ms 零外部請求；Data API 配額用罄正好證明已不依賴
+
 ## 4. 收尾 — 文件與驗收
 
 - [x] 4.1 更新 `specs/architecture.md` + `spec.md`：A1 feature/spec 改為小雞對話型、draw intent、inline stream、echo guard、生圖成本閘與 chat/illustrate endpoint 描述
-- [!] 4.2 event_record 收尾：Key Decisions / Verification / Remaining（specbase MCP 已 lazy-load，但目前 tool call surface 未暴露可直接呼叫的 `spec_record_event`；需工具可用後補記）
+- [x] 4.2 event_record 收尾：故事接龍 continue_story 落地 + 連續性 RCA 已記入 sqlite 事件層（scope=a1_dialogue_tutor，2026-06-19）；DD-21/22/23 已記入 design.md
 - [!] 4.3 跑 spec.md Acceptance Checks 全項；plan promote 至 verified（backend/frontend typecheck 通過；chat make_sentence/draw 通過；Nano Banana illustrate 目前回 `ILLUSTRATE_EMPTY`/rate-limit，暫不 promote verified）

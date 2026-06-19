@@ -58,10 +58,16 @@
 
 ### 找影片＋兒童知識型頻道庫
 
-找影片走 YouTube Data API v3（`safeSearch=strict` + `videoEmbeddable`，6-9 歲安全鐵則）。後端維護一份「經挑選、適齡」的頻道庫（`data/channels.json`，如樂樂TV、十萬個為什麼、成語任務）：小朋友的問題命中庫內頻道主題時，**先在該精選頻道內搜尋**（命中即用，省 API 配額），否則退一般搜尋；精選結果標 ⭐ 排最前。需在 GEMINI key 同一 GCP 專案啟用 YouTube Data API v3，或設 `YOUTUBE_API_KEY`。
+找影片的搜尋來源以**自架 Invidious 為主**（借鏡同機的 `ytlite`，`INVIDIOUS_API_URL` 預設 `http://localhost:1215`），**零 YouTube Data API 配額**；YouTube Data API v3（`YOUTUBE_API_KEY`）降為 Invidious 不可用時的後備。播放仍用真實 videoId 走 YouTube iframe，只換搜尋這層。
 
-- 列出頻道庫（檢索）：`GET /api/a1/channels`
-- 新增頻道入庫（管理，channelId 去重、寫回 JSON）：`POST /api/a1/channels {"channelId","title?","topics?","note?"}`
+兒童安全採「**精選優先＋家庭友善過濾**」：精選頻道（頻道庫）一律放行並排最前，非精選頻道用 Invidious 的頻道 `isFamilyFriendly` 把關（查不到則保守剔除）。
+
+再加兩層庫漸漸把外部請求壓低：
+
+1. **影片庫**（`data/videobank.json`）：找影片**先查庫**，某主題已累積 >= 5 支就直接服務、**不打 API**（毫秒回）；不足才搜尋並把結果**分門別類寫回庫**。常見主題多半搜一次就夠、之後免 API。後台檢索 `GET /api/a1/videobank`。
+2. **兒童知識型頻道庫**（`data/channels.json`，如樂樂TV、十萬個為什麼、成語任務）：搜尋時命中庫內頻道主題就**先在該精選頻道內搜尋**，精選結果標 ⭐ 排最前。管理 `GET /api/a1/channels`、`POST /api/a1/channels {channelId,…}`。
+
+播放窗支援**連續看**：一次回多支相關影片，用 ◀ ▶ 在同窗內切換（不重打 API），切換自動播放、麥克風隨播放狀態自動暫停／恢復。
 
 ---
 

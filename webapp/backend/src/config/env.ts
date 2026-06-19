@@ -41,8 +41,10 @@ export type BackendEnv = {
   chatProvider: ChatProviderMode
   /** chatProvider='bare'|'cascade' 時必填，否則 loadEnv fail-fast */
   bareChat?: BareChatEnv
-  /** 找影片（YouTube Data API v3）金鑰；空字串＝功能停用（前端會收到 kid-friendly 訊息） */
+  /** 找影片（YouTube Data API v3）金鑰；空字串＝不啟用 Data API 後備（主要走 Invidious） */
   youtubeApiKey: string
+  /** 找影片主要來源：自架 Invidious 的 base URL（零 YouTube 配額）。空字串＝停用、改走 Data API */
+  invidiousApiUrl: string
 }
 
 export function loadEnv(): BackendEnv {
@@ -114,6 +116,12 @@ export function loadEnv(): BackendEnv {
     process.env.YOUTUBE_API_KEY || geminiApiKeys[0] || ''
   ).trim()
 
+  // 找影片主要來源：自架 Invidious（零 YouTube 配額）。預設指向同機 ytlite 的 Invidious。
+  // 設為空字串可停用 Invidious、改走 Data API。
+  const invidiousApiUrl = (
+    process.env.INVIDIOUS_API_URL ?? 'http://localhost:1215'
+  ).trim()
+
   return {
     port: Number(process.env.PORT || 3014),
     nodeEnv: process.env.NODE_ENV || 'development',
@@ -124,5 +132,6 @@ export function loadEnv(): BackendEnv {
     chatProvider,
     bareChat,
     youtubeApiKey,
+    invidiousApiUrl,
   }
 }

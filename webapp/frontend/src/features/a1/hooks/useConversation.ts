@@ -331,7 +331,7 @@ export function useConversation() {
     setVideos((cur) => ({ ...cur, [msgId]: { mode: 'loading' } }))
     bumpDailyKey(VIDEO_DAILY_KEY)
     try {
-      const res = await apiClient.searchVideos(query)
+      const res = await apiClient.searchVideos(query, topic)
       if (!res.ok) {
         setVideos((cur) => ({ ...cur, [msgId]: { mode: 'error', message: res.message } }))
         return

@@ -11,6 +11,9 @@
   · 播放窗用 YouTube IFrame Player API（nocookie host），**自適應容器寬度**、16:9；不顯示相關影片連結，避免分散注意力。
   · **影片播放時自動暫停麥克風**（不讓影片聲音被當成小朋友說話、亂觸發小雞老師），暫停/播完後若先前麥克風是開著的就自動開回。
   · **兒童知識型頻道庫**（`data/channels.json` + `ChildChannelLibrary`）：維護一份經挑選、適合 6-9 歲的 YouTube 頻道清單（種子：樂樂TV、十萬個為什麼、FCCSD 成語任務、小豬佩奇中文官方）。query 命中庫內頻道主題時，先對該精選頻道做鎖頻道搜尋（命中即用，省配額），否則退一般 safeSearch；精選結果標 ⭐ 並排最前。管理／檢索 API：`GET /api/a1/channels`（列出）、`POST /api/a1/channels`（入庫，channelId 去重、寫回 JSON）。
+  · **影片庫（持久累積，漸漸不需要 API）**（`data/videobank.json` + `VideoBank`）：找影片先查影片庫，某主題已累積 >= 5 支就直接服務、**完全不打 YouTube API**（毫秒回）；不足才搜尋並把結果分門別類**寫回庫**（依主題去重累積）。常見主題多半搜一次就跨過門檻，之後永遠免 API；YouTube key 失效時也能用庫內既有影片續命。後台檢索：`GET /api/a1/videobank`（各主題與數量）。
+  · **連續看相關影片**：後端一次回多支相關影片（精選優先），播放窗加 ◀ 上一部／下一部 ▶＋進度（N/M），在同一個窗內 `loadVideoById` 切換、**不重打 API**；切到下一支會自動播放，麥克風隨播放狀態自動暫停／恢復。
+  · **搜尋來源改用自架 Invidious**（借鏡 `ytlite`，`InvidiousClient` + `INVIDIOUS_API_URL`，預設同機 1215）：找影片改打 Invidious 的 `/api/v1/search`，**零 YouTube Data API 配額**；YouTube Data API 降為 Invidious 不可用時的後備。安全採「精選優先＋家庭友善過濾」：精選頻道一律放行並排最前，非精選頻道用 Invidious 頻道 `isFamilyFriendly` 把關（查不到則保守剔除）。搭配影片庫——新主題打 Invidious 一次、寫回庫，之後同主題直接從庫毫秒服務。
 - **小家教講解能力**（`explain` intent）：對小朋友唸/打出的題目做「題目 → 一步步講解 → 答案」。涵蓋英文題/單字/句子、數學應用題與概念；純算式仍走直式動畫。
 - **拍照讀題（OCR）**：對著考卷拍照 → Gemini 2.5 Flash 多模態辨識題目原文 → 餵進講解流程。前端相機鈕、自動縮圖（最長邊 1280 / JPEG）後上傳。
 - **英文發音 / 跟讀練習**：英文題附帶關鍵單字（單字＋中文意思），卡片下方可 🔊 聽（en-US 朗讀）、🎤 跟讀（獨立 en-US 單發辨識）並比對，過了灑花計分。

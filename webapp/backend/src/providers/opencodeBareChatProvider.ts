@@ -112,6 +112,33 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
     )
   }
 
+  /**
+   * 一次性 bare session 收尾：用完即刪，避免堆積在 daemon 的 session store
+   * （userhome 下，會外洩成 pkcs12 這個 project 的可見 session list）。
+   * best-effort——刪不掉只 log，不影響已回給小朋友的內容（這是服務端中介資料，
+   * 非天條 #11 的功能性 fallback）。
+   */
+  private async disposeSession(sessionId: string): Promise<void> {
+    try {
+      const res = await socketRequest(
+        this.cfg.socketPath,
+        'DELETE',
+        `/api/v2/session/${sessionId}`,
+        undefined,
+        this.cfg.timeoutMs,
+      )
+      if (res.status !== 200) {
+        log('a1.chat.bare.session_dispose', { sessionId, ok: false, status: res.status })
+      }
+    } catch (error) {
+      log('a1.chat.bare.session_dispose', {
+        sessionId,
+        ok: false,
+        detail: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
   async chat(
     messages: A1ChatMessage[],
     hint?: 'lookup' | 'story',
@@ -136,6 +163,8 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
       '\n\n【輸出格式｜務必遵守】直接輸出「一個嚴格的 JSON 物件」：所有鍵與字串值都用雙引號；' +
       '不要用 StructuredOutput(...) 之類的函式語法、不要 markdown 標題、不要任何解釋文字，只回 JSON 本體。'
 
+    // 一次性 bare session 的 id；finally 統一收尾刪除（避免堆積成 userhome project session）
+    let sessionId: string | undefined
     try {
       // 1) 開 bare session
       const created = await socketRequest(
@@ -145,7 +174,7 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
         { title: 'cecelearn-小雞老師' },
         this.cfg.timeoutMs,
       )
-      const sessionId = (created.json as { id?: string } | undefined)?.id
+      sessionId = (created.json as { id?: string } | undefined)?.id
       if (created.status !== 200 || !sessionId) {
         log('a1.chat.bare.error', {
           code: 'CHAT_BARE_UNAVAILABLE',
@@ -259,6 +288,10 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
         error: 'CHAT_BARE_UNAVAILABLE',
         message: '小雞老師連線怪怪的，再說一次好嗎？',
       }
+    } finally {
+      // 用完即刪這個一次性 bare session，避免堆積成 userhome 的可見 project session。
+      // 即使 create 成功但後續步驟失敗也要刪（sessionId 已落地）。
+      if (sessionId) await this.disposeSession(sessionId)
     }
   }
 }

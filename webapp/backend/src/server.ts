@@ -15,6 +15,7 @@ import { GeminiVisionProvider } from './providers/geminiVisionProvider.js'
 import { YoutubeVideoProvider } from './providers/youtubeVideoProvider.js'
 import { ChildChannelLibrary } from './providers/childChannelLibrary.js'
 import { VideoBank } from './providers/videoBank.js'
+import { InvidiousClient } from './providers/invidiousClient.js'
 import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
@@ -69,12 +70,13 @@ function buildChatProvider(): DialogueChatProvider {
 
 const channelLibrary = new ChildChannelLibrary()
 const videoBank = new VideoBank()
+const invidious = env.invidiousApiUrl ? new InvidiousClient(env.invidiousApiUrl) : undefined
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
   buildImageProvider(),
   new GeminiVisionProvider(env.geminiApiKeys),
-  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank),
+  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank, invidious),
   channelLibrary,
   videoBank,
 )

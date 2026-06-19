@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { type VideoState } from '../hooks/useConversation'
 
 /**
@@ -8,7 +8,8 @@ import { type VideoState } from '../hooks/useConversation'
  *   播完」事件，好在播放時暫停麥克風、播完再自動開回（不然影片聲音會被小雞老師聽到、
  *   亂觸發辨識）。
  * - 自適應容器寬度（不再鎖死 480px）。
- * - 不顯示候選／相關影片連結，避免分散小朋友注意力。
+ * - 連續看：後端一次回多支「相關影片」（精選優先），這裡用 ◀ ▶ 在同一個播放窗內前後切換
+ *   （loadVideoById，不重打 API）——小朋友看完一支可以接著看下一支相關的。
  *
  * 安全：影片本身已由後端 safeSearch=strict + videoEmbeddable 過濾過；用 nocookie host。
  */
@@ -54,16 +55,27 @@ export function VideoPlayer({
   onPlayingChange?: (playing: boolean) => void
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null)
-  // onPlayingChange 放 ref，effect 只依 videoId，避免父層重渲染害 player 一直重建。
+  const playerRef = useRef<any>(null)
+  // onPlayingChange 放 ref，effect 只依結果集，避免父層重渲染害 player 一直重建。
   const cbRef = useRef(onPlayingChange)
   cbRef.current = onPlayingChange
 
-  const videoId = state?.mode === 'results' ? state.items[0]?.videoId : undefined
+  const [index, setIndex] = useState(0)
+  const indexRef = useRef(0)
+  indexRef.current = index
+  const [ready, setReady] = useState(false)
+
+  const items = state?.mode === 'results' ? state.items : []
+  // 結果集的識別字：換一批新影片（新搜尋）才重建 player；同一批內切換用 loadVideoById。
+  const setKey = items.map((i) => i.videoId).join(',')
 
   useEffect(() => {
-    if (!videoId || !hostRef.current) return
+    if (!setKey || !hostRef.current) return
+    const ids = setKey.split(',')
+    setIndex(0)
+    indexRef.current = 0
+    setReady(false)
     let cancelled = false
-    let player: any = null
     let lastPlaying: boolean | null = null
     const notify = (playing: boolean) => {
       if (lastPlaying === playing) return
@@ -76,13 +88,16 @@ export function VideoPlayer({
       // YT.Player 會把這個 mount 節點「換成」iframe；放一個子節點供它替換。
       const mount = document.createElement('div')
       hostRef.current.appendChild(mount)
-      player = new YT.Player(mount, {
-        videoId,
+      playerRef.current = new YT.Player(mount, {
+        videoId: ids[indexRef.current] ?? ids[0],
         width: '100%',
         height: '100%',
         playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
         host: 'https://www.youtube-nocookie.com',
         events: {
+          onReady: () => {
+            if (!cancelled) setReady(true)
+          },
           onStateChange: (e: any) => {
             const S = YT.PlayerState
             if (e.data === S.PLAYING) notify(true)
@@ -94,16 +109,31 @@ export function VideoPlayer({
 
     return () => {
       cancelled = true
-      // 卸載／換片：確保把麥克風還回去（不然停在「播放中→麥克風關」狀態）
+      // 卸載／換批：確保把麥克風還回去（不然停在「播放中→麥克風關」狀態）
       notify(false)
       try {
-        player?.destroy?.()
+        playerRef.current?.destroy?.()
       } catch {
         /* ok */
       }
+      playerRef.current = null
       if (hostRef.current) hostRef.current.innerHTML = ''
     }
-  }, [videoId])
+  }, [setKey])
+
+  /** 切到第 next 支：同一個播放窗載入新影片（自動播放），不重打 API。 */
+  function go(next: number) {
+    if (next < 0 || next >= items.length) return
+    setIndex(next)
+    const p = playerRef.current
+    if (p?.loadVideoById) {
+      try {
+        p.loadVideoById(items[next].videoId)
+      } catch {
+        /* ok */
+      }
+    }
+  }
 
   if (!state) return null
 
@@ -134,9 +164,8 @@ export function VideoPlayer({
   }
 
   // results
-  const items = state.items
   if (items.length === 0) return null
-  const active = items[0]
+  const active = items[Math.min(index, items.length - 1)]
 
   return (
     <div className="a1-inline-video a1-inline-video--player">
@@ -149,6 +178,29 @@ export function VideoPlayer({
         )}
         {active.title}
       </p>
+      {items.length > 1 && (
+        <div className="a1-video-nav">
+          <button
+            type="button"
+            className="a1-action-btn"
+            onClick={() => go(index - 1)}
+            disabled={!ready || index <= 0}
+          >
+            ◀ 上一部
+          </button>
+          <span className="a1-video-counter">
+            {index + 1} / {items.length}
+          </span>
+          <button
+            type="button"
+            className="a1-action-btn"
+            onClick={() => go(index + 1)}
+            disabled={!ready || index >= items.length - 1}
+          >
+            下一部 ▶
+          </button>
+        </div>
+      )}
     </div>
   )
 }

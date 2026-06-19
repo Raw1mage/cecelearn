@@ -6,21 +6,23 @@ import type {
 } from '../contracts/providers.js'
 import type { ChildChannelLibrary } from './childChannelLibrary.js'
 import type { VideoBank } from './videoBank.js'
+import type { InvidiousClient } from './invidiousClient.js'
 
 /**
- * 找影片 provider —— 小朋友問知識，小雞老師到 YouTube 找適齡影片，
- * 前端 inline 開成小播放窗。
+ * 找影片 provider —— 小朋友問知識，小雞老師找適齡影片，前端 inline 開成小播放窗。
  *
- * 用 YouTube Data API v3 的 search.list；針對 6-9 歲小朋友，安全鐵則：
- *  - safeSearch=strict（過濾不適齡內容）
- *  - videoEmbeddable=true（只回可內嵌的影片，前端 iframe 才放得出來）
- *  - type=video、regionCode=TW、relevanceLanguage=zh-Hant（在地、繁中優先）
+ * 搜尋來源（借鏡 ytlite）：**自架 Invidious 為主**（/api/v1/search，零 YouTube Data API
+ * 配額）；Invidious 不可用且有 YOUTUBE_API_KEY 時，退回 Data API search.list（safeSearch=
+ * strict）當後備。播放仍用真實 videoId 走 YouTube iframe，所以只換「搜尋」這層。
  *
- * 兒童知識型頻道庫（選填）：命中庫內 active 頻道的結果標記 curated 並穩定排到最前——
- * 讓小朋友優先看到可信來源（前端只播第一支，等於優先播精選頻道）。
+ * 兒童安全（精選優先＋家庭友善過濾）：
+ *  - 精選優先：命中兒童知識型頻道庫（active）的結果標 curated 並穩定排到最前。
+ *  - 家庭友善：Invidious 無 safeSearch 參數，改用頻道層級 isFamilyFriendly 過濾——精選頻道
+ *    一律放行（已人工核可），非精選頻道只在確認 family-friendly 時保留（查不到則保守剔除）。
  *
- * fail-fast（DD-8 no-silent-fallback）：沒 key、API 沒開、或搜不到，
- * 都回 ErrorResponse 帶 kid-friendly 訊息，不亂塞假結果。
+ * 影片庫：先查庫（夠多就免搜），搜回的好結果寫回庫分門別類累積——常見主題漸漸免外部請求。
+ *
+ * fail-fast（DD-8）：搜不到回 kid-friendly ErrorResponse，不亂塞假結果。
  */
 
 const SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search'
@@ -73,17 +75,21 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   private apiKey: string
   private library?: ChildChannelLibrary
   private bank?: VideoBank
+  private invidious?: InvidiousClient
 
-  constructor(apiKey = '', library?: ChildChannelLibrary, bank?: VideoBank) {
+  constructor(
+    apiKey = '',
+    library?: ChildChannelLibrary,
+    bank?: VideoBank,
+    invidious?: InvidiousClient,
+  ) {
     this.apiKey = apiKey.trim()
     this.library = library
     this.bank = bank
+    this.invidious = invidious
+    const src = invidious ? 'invidious' : this.apiKey ? 'youtube-api' : 'bank-only'
     const extras = [library && 'channel library', bank && 'video bank'].filter(Boolean).join(' + ')
-    if (this.apiKey) {
-      console.log(`[YoutubeVideoProvider] enabled${extras ? ` (+${extras})` : ''}`)
-    } else {
-      console.log(`[YoutubeVideoProvider] no API key${bank ? ' (video bank only)' : ' (disabled)'}`)
-    }
+    console.log(`[YoutubeVideoProvider] source=${src}${extras ? ` (+${extras})` : ''}`)
   }
 
   /** serve 時用頻道庫即時重算 curated 旗標，並穩定把精選排前。 */
@@ -114,66 +120,88 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       return { ok: true, query: q, items }
     }
 
-    // 2) 庫內不足 → 打 YouTube API 搜尋（沒 key 時退而求其次：庫內有多少給多少）。
-    if (!this.apiKey) {
+    // 2) 庫內不足 → 搜尋。來源：Invidious 為主（零配額），不可用才退 Data API。
+    let raw: A1VideoItem[] | null = null
+    let usedSource = ''
+    if (this.invidious) {
+      raw = await this.invidious.search(q)
+      if (raw) usedSource = 'invidious'
+    }
+    let viaYoutubeApi = false
+    if (!raw && this.apiKey) {
+      const r = await this.runQuery(q) // Data API 後備（safeSearch=strict）
+      if ('items' in r) {
+        raw = r.items
+        usedSource = 'youtube-api'
+        viaYoutubeApi = true
+      }
+    }
+
+    // 都搜不到 → 退而求其次給庫內既有；再不行回 kid-friendly 錯誤。
+    if (!raw || raw.length === 0) {
       if (this.bank && this.bank.size(category) > 0) {
         const items = this.flagAndSort(this.bank.get(category) as A1VideoItem[])
         log('a1.video.bank_only', { category, count: items.length })
         return { ok: true, query: q, items }
       }
-      return { ok: false, error: 'VIDEO_NOT_CONFIGURED', message: '找影片功能還在準備中喔！' }
+      if (!this.invidious && !this.apiKey) {
+        return { ok: false, error: 'VIDEO_NOT_CONFIGURED', message: '找影片功能還在準備中喔！' }
+      }
+      return { ok: false, error: 'VIDEO_UPSTREAM', message: '我現在找不到影片耶，等一下再試試看好嗎？' }
     }
 
-    // 頻道庫加權（quota 友善：前端只播第一支，故精選命中就不必再打一般搜尋）：
-    //  1) query 命中庫內 active 頻道主題 → 先對「最佳精選頻道」做鎖頻道搜尋。有結果就用它
-    //     （第一支即精選頻道內容），只花 1 次配額。
-    //  2) 沒命中、或精選頻道對這題沒料 → 退一般 safeSearch 搜尋。
-    // 一般結果裡本身屬精選頻道者，runQuery 已標 curated，最後穩定排前。
-    const matched = this.library?.matchActiveByText(q) ?? []
-    const topChannelId = matched[0]?.channelId
+    // 3) 家庭友善過濾：精選頻道一律放行；非精選頻道只在 Invidious 確認 family-friendly 時保留。
+    //    （Data API 後備自帶 safeSearch=strict，且 Invidious 不在線上，故跳過此過濾。）
+    const safe = viaYoutubeApi ? raw : await this.familyFilter(raw)
 
-    let curated: A1VideoItem[] = []
-    if (topChannelId) {
-      const r = await this.runQuery(q, topChannelId)
-      if ('items' in r) curated = r.items
-    }
+    // 4) 精選旗標＋穩定排前。
+    const items = this.flagAndSort(safe)
 
-    let generalItems: A1VideoItem[] = []
-    let generalError: A1ErrorResponse | null = null
-    if (curated.length === 0) {
-      const general = await this.runQuery(q)
-      if ('items' in general) generalItems = general.items
-      else generalError = general.error
-    }
-
-    if (curated.length === 0 && generalError) return generalError
-
-    const seen = new Set<string>()
-    const merged: A1VideoItem[] = []
-    for (const it of [...curated, ...generalItems]) {
-      if (seen.has(it.videoId)) continue
-      seen.add(it.videoId)
-      merged.push(it)
-    }
-    merged.sort((a, b) => Number(b.curated) - Number(a.curated)) // 精選穩定排前
-
-    log('a1.video.merged', {
+    log('a1.video.search', {
       query: q,
-      total: merged.length,
-      curated: merged.filter((x) => x.curated).length,
-      viaChannel: topChannelId ?? null,
+      source: usedSource,
+      raw: raw.length,
+      kept: items.length,
+      curated: items.filter((x) => x.curated).length,
       ms: Date.now() - start,
     })
 
-    if (merged.length === 0) {
+    if (items.length === 0) {
       return { ok: false, error: 'VIDEO_EMPTY', message: '我找不到適合的影片耶，換個說法再問問看？' }
     }
 
-    // 寫回影片庫：把這次的好結果分門別類累積進該主題（去重持久化）。
-    // 下次同主題就能直接從庫服務、不再打 API。
-    this.bank?.accumulate(category, topic?.trim() || q, q, merged)
+    // 5) 寫回影片庫：分門別類累積（去重持久化）→ 下次同主題免搜尋。
+    this.bank?.accumulate(category, topic?.trim() || q, q, items)
 
-    return { ok: true, query: q, items: merged }
+    return { ok: true, query: q, items }
+  }
+
+  /**
+   * 家庭友善過濾（精選優先＋家庭友善）：
+   *  - 精選頻道（庫內 active）：信任、放行。
+   *  - 非精選頻道：查 Invidious 頻道 isFamilyFriendly，true 才留；false / 查不到一律剔除（保守）。
+   * 以唯一 channelId 平行查詢＋快取，控制對 Invidious 的請求數。
+   */
+  private async familyFilter(items: A1VideoItem[]): Promise<A1VideoItem[]> {
+    if (!this.invidious) return items
+    const curatedIds = this.library?.activeIds()
+    const nonCurated = [
+      ...new Set(
+        items
+          .map((it) => it.channelId)
+          .filter((cid) => cid && !(curatedIds ? curatedIds.has(cid) : false)),
+      ),
+    ]
+    const verdicts = new Map<string, boolean | null>()
+    await Promise.all(
+      nonCurated.map(async (cid) => {
+        verdicts.set(cid, await this.invidious!.isChannelFamilyFriendly(cid))
+      }),
+    )
+    return items.filter((it) => {
+      if (curatedIds?.has(it.channelId)) return true
+      return verdicts.get(it.channelId) === true
+    })
   }
 
   /**
