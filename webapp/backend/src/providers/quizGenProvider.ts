@@ -56,6 +56,7 @@ function toServe(q: GenItem, subject: string): QuizServeItem {
     answer: q.answer,
     steps: q.explain.steps,
   }
+  if (q.acceptableAnswers?.length) out.acceptableAnswers = q.acceptableAnswers
   if (q.choices?.length) out.choices = q.choices
   if (q.explain.viz) out.viz = q.explain.viz as QuizServeItem['viz']
   return out

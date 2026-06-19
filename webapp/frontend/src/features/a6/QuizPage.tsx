@@ -35,16 +35,29 @@ function norm(s: string): string {
   return s.trim().replace(/\s+/g, '').replace(/[。.。！!？?]$/, '')
 }
 
-/** 批改：選擇題嚴格比對；填空數值容忍格式；造詞/跟讀為開放練習，作答即過。 */
-function judge(item: QuizServeItem, given: string): boolean {
-  if (item.type === 'choice') return given === item.answer
-  if (item.type === 'make_word' || item.type === 'read_aloud') return given.trim().length > 0
+/** 單一候選答案比對：正規化字串相等，或兩邊都是數值且相等。 */
+function matchesOne(given: string, candidate: string): boolean {
   const a = norm(given)
-  const b = norm(item.answer)
+  const b = norm(candidate)
   if (a && a === b) return true
   const na = Number(a)
   const nb = Number(b)
   return Number.isFinite(na) && Number.isFinite(nb) && na === nb
+}
+
+/**
+ * 批改：選擇題嚴格比對；造詞/跟讀為開放練習，作答即過；
+ * 填空題比對「出題 AI 給的所有等價正確寫法」（acceptableAnswers，含單位變體與換算），
+ * 命中任一即算對——例如「3.2公尺」「320公分」「3200mm」「3.2」都接受（DD-26）。
+ */
+function judge(item: QuizServeItem, given: string): boolean {
+  if (item.type === 'choice') return given === item.answer
+  if (item.type === 'make_word' || item.type === 'read_aloud') return given.trim().length > 0
+  // 比對池：acceptableAnswers（若有）∪ answer。去空白去重。
+  const pool = [item.answer, ...(item.acceptableAnswers ?? [])]
+    .map((s) => s.trim())
+    .filter(Boolean)
+  return pool.some((candidate) => matchesOne(given, candidate))
 }
 
 export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {

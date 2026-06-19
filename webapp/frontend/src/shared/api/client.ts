@@ -199,6 +199,8 @@ export type QuizServeItem = {
   type: 'fill' | 'choice' | 'make_word' | 'read_aloud'
   stem: string
   answer: string
+  /** 所有應判定為正確的等價寫法（含單位變體、換算）；判題比對命中任一即算對（出題 AI 生）。 */
+  acceptableAnswers?: string[]
   choices?: string[]
   steps: string[]
   viz?: A1MathViz

@@ -124,6 +124,15 @@
 - [-] ~~R11.C2 前端快捷 chip 列：videoTopics state + .a1-topic-chips 列~~ 移除：主題桶名取自頻道標籤＝主題不明確（英文/生活）、重複（成語兩組）；找影片改全靠對話觸發（DD-34）
 - [-] ~~R11.C3 驗證~~ 重驗於 DD-34：frontend tsc -b EXIT=0 + vite build EXIT=0
 
+## R12. 語音互動 + 學科判題使用者反饋修正（DD-35/36/37）
+
+> 反饋三項：(1) 語音稍一停頓就送出、話來不及講完 (2) 重點是「隨時中斷來傾聽」——小雞朗讀中能被插話打斷 (3) 填空答「3.2公尺」被判錯（標準答案「3.2」）。
+
+- [x] R12.1 語音停頓即送 → 靜默寬限窗+片段累積（DD-35）：A1Page onresult 不再 isFinal 即送，改累積 pendingTranscriptRef + armCommitTimer(SILENCE_COMMIT_MS=2500)，停夠久才 commitPending 整段送；超長(>200)直送；停止/切換路徑全部 discardPending（onerror/cleanup/overlay/toggle/video）
+- [x] R12.2 隨時插話打斷小雞 barge-in（DD-36）：朗讀中辨識結果用 isLikelySelfEcho 區分回音（丟棄）vs 插話（cancelSpeech 停朗讀 + childHasFloor 取得發言權續累積）；suppressRestartOnBargeIn 防自我修復 abort 洗掉插話；childHasFloor 在 commit/discard 重置
+- [x] R12.3 填空判題等價答案清單（DD-37）：後端生題契約加 acceptableAnswers（quizFramework GenItem/schema/prompt/genForKp、quizBankProvider BankItem/QuizServeItem/serve、quizGenProvider toServe）；前端 client.ts 鏡像；QuizPage judge 比對 [answer, ...acceptableAnswers] 命中任一即對（3.2公尺/320公分/3200mm/3.2 皆對，錯單位仍錯）
+- [x] R12.4 驗證：backend+frontend tsc --noEmit EXIT=0；後端重啟 health 200；DD-35/36/37 記入 design.md、event log 三筆寫入 sqlite（scope=a1_dialogue_tutor）。語音 barge-in 與等價判題待使用者真機實測
+
 ## 4. 收尾 — 文件與驗收
 
 - [x] 4.1 更新 `specs/architecture.md` + `spec.md`：A1 feature/spec 改為小雞對話型、draw intent、inline stream、echo guard、生圖成本閘與 chat/illustrate endpoint 描述

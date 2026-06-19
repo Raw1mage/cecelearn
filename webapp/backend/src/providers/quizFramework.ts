@@ -38,6 +38,9 @@ export type GenItem = {
   type: QuizItemType
   stem: string
   answer: string
+  /** 所有應判定為正確的等價寫法（含單位變體、換算），由出題 AI 生題時一併產出。
+   *  判題比對 [answer, ...acceptableAnswers] 任一命中即算對。空＝只比 answer。 */
+  acceptableAnswers?: string[]
   choices?: string[]
   explain: { steps: string[]; viz?: MathVizSpec }
   source: string
@@ -94,6 +97,7 @@ export function buildResponseSchema(allowedTypes: QuizItemType[], wantViz: boole
     type: { type: 'STRING', enum: allowedTypes },
     stem: { type: 'STRING' },
     answer: { type: 'STRING' },
+    acceptableAnswers: { type: 'ARRAY', items: { type: 'STRING' } },
     choices: { type: 'ARRAY', items: { type: 'STRING' } },
     steps: { type: 'ARRAY', items: { type: 'STRING' } },
   }
@@ -144,6 +148,11 @@ export function buildPrompt(kp: KpInfo, strand: StrandInfo, plan: Plan, count: n
     `請出 ${count} 題互不重複的題目，type 從 [${plan.allowedTypes.join(', ')}] 選最合適的。\n` +
     `${plan.guidance}\n` +
     `若 type=choice：choices 給 3–4 個選項且必須包含正解，answer 等於正解選項文字。\n` +
+    `若 type=fill：除了 answer（最標準寫法），還要給 acceptableAnswers——「所有應判定為正確的等價答案」` +
+    `陣列，把同一個正確答案的各種合理寫法都列出來，讓判題不會因為格式不同而誤判。包含：` +
+    `帶單位與不帶單位（如「3.2公尺」「3.2」）、單位換算後的等值寫法（如「320公分」「3200毫米」「3200mm」）、` +
+    `中英文單位（公尺/m、公分/cm）、分數與小數互換（如「1/2」「0.5」）等。answer 本身也要在這個陣列裡。` +
+    `只列「真正正確」的寫法，不要把錯的單位或錯的數值放進去。choice/make_word/read_aloud 題不需要 acceptableAnswers。\n` +
     `每題都要有 steps（講解步驟，至少 1 步，口語、適齡、可被朗讀）。` +
     vizLine
   )
@@ -314,15 +323,23 @@ export async function genForKp(
   let vizStripped = 0
   const items = rawItems.slice(0, count).map((raw, i) => {
     const it = raw as Record<string, unknown>
+    const answer = String(it.answer ?? '').trim()
     const q: GenItem = {
       qId: `${kp.kpId}#${nonce}${i + 1}`,
       kpId: kp.kpId,
       type: it.type as QuizItemType,
       stem: String(it.stem || '').trim(),
-      answer: String(it.answer ?? '').trim(),
+      answer,
       explain: { steps: ((it.steps as unknown[]) || []).map((s) => String(s).trim()).filter(Boolean) },
       source: stamp,
       reviewed: false,
+    }
+    // 等價答案清單（填空題）：AI 給的所有應判對寫法，去空白去重、確保含 answer 本身。
+    if (it.type === 'fill' && Array.isArray(it.acceptableAnswers)) {
+      const list = (it.acceptableAnswers as unknown[]).map((a) => String(a).trim()).filter(Boolean)
+      if (answer) list.push(answer)
+      const uniq = [...new Set(list)]
+      if (uniq.length > 0) q.acceptableAnswers = uniq
     }
     if (it.type === 'choice' && Array.isArray(it.choices)) q.choices = (it.choices as unknown[]).map(String)
     if (wantViz) {

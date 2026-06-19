@@ -100,7 +100,14 @@ export function A1Page() {
   const triggeredRef = useRef(false);
   const recRunningRef = useRef(false);
   const vadActiveRef = useRef(false);
+  // 累積送出（DD-24）：辨識的 final 片段先累積進 pendingTranscriptRef、不立即送；
+  // 啟動 commitTimerRef 的「靜默寬限窗」，逾時（小朋友真的停夠久）才整段送出。
+  // 句中停頓不再被瀏覽器 VAD 的 isFinal 誤判成「講完了」而提早送半句。
+  const pendingTranscriptRef = useRef("");
+  const commitTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lookupRef = useRef<(value: string) => Promise<void>>(null!);
+  // 丟棄累積中的語音段（外力打斷時呼叫，由語音核心 useEffect 注入實作）。
+  const discardPendingRef = useRef<() => void>(() => {});
   const startListeningFlowRef = useRef<() => void>(() => {});
   const stopVadRef = useRef<() => void>(() => {});
   // 跟讀借用主辨識（DD-跟讀）：pending 借用狀態 + 借用入口。
@@ -140,8 +147,47 @@ export function A1Page() {
     let restartTimer: ReturnType<typeof setTimeout> | undefined;
     let watchdogTimer: ReturnType<typeof setInterval> | undefined;
     let lastAliveAt = Date.now();
+    // Barge-in（DD-25）：因小朋友插話而 cancelSpeech() 時設 true，讓「朗讀結束→重啟辨識」
+    // 的自我修復跳過這一次——辨識器此刻正活著捕捉小朋友的話，不可被 abort 重啟洗掉。
+    let suppressRestartOnBargeIn = false;
+    // 小朋友已搶得發言權（barge-in 後到本段送出/丟棄之間）：echo 軟閘暫時不丟棄辨識結果，
+    // 讓插話後的後續語音能即時流入累積（小雞已被 cancelSpeech 停掉，沒有自己的聲音可回授）。
+    let childHasFloor = false;
     let removeSpeechEndListener: (() => void) | undefined;
     const VAD_THRESHOLD = 0.015;
+    // 靜默寬限窗（DD-24）：收到 final 後再等這麼久沒有新語音，才把累積的整段話送出。
+    // 小朋友句中停頓思考時，瀏覽器 VAD 會吐 isFinal；只要寬限窗內又開口（interim/final）
+    // 就重置計時、繼續累積，不會把半句話提早送出。給足夠長讓孩子把話講完。
+    const SILENCE_COMMIT_MS = 2500;
+
+    // 把累積的整段話送出（小朋友真的停夠久了）。清空緩衝、上觸發鎖、導向對話送出。
+    function commitPending() {
+      commitTimerRef.current = undefined;
+      const full = pendingTranscriptRef.current.trim();
+      pendingTranscriptRef.current = "";
+      // 本段結束：交還發言權，下一輪重新評估 echo 軟閘（barge-in 狀態不殘留）。
+      childHasFloor = false;
+      if (!full || triggeredRef.current) return;
+      triggeredRef.current = true;
+      void lookupRef.current(full);
+    }
+
+    // 重置靜默寬限計時：每次偵測到新語音（interim 或 final）就呼叫，延後送出。
+    function armCommitTimer() {
+      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+      commitTimerRef.current = setTimeout(commitPending, SILENCE_COMMIT_MS);
+    }
+
+    // 丟棄累積中的這段話（外力打斷：停麥克風 / 開 overlay / 播影片 / 跟讀借用 / 送出後）。
+    function discardPending() {
+      if (commitTimerRef.current) {
+        clearTimeout(commitTimerRef.current);
+        commitTimerRef.current = undefined;
+      }
+      pendingTranscriptRef.current = "";
+      childHasFloor = false;
+    }
+    discardPendingRef.current = discardPending;
 
     const recognition = new Recognition();
     const isSamsungManualMode =
@@ -394,6 +440,7 @@ export function A1Page() {
       recRunningRef.current = false;
       wantListeningRef.current = false;
       stopVad();
+      discardPending();
       setListening(false);
       setStatus(`語音辨識失敗：${event.error}`);
     };
@@ -424,25 +471,56 @@ export function A1Page() {
       }
 
       // 自由對話模式（DD-10 v2）：不需喚醒詞。
-      // interim 即時回填輸入框（小朋友看得到「聽到什麼」），final 才送出。
+      // Barge-in 隨時插話（DD-25）：小雞朗讀中，若辨識到的「不是」小雞自己的回音
+      // （isLikelySelfEcho 不中），就視為小朋友插話 → 立刻 cancelSpeech() 停止朗讀、
+      // 取得發言權（childHasFloor），讓這段及後續語音照常累積。這就是「隨時中斷來傾聽」。
+      // 反之若是回音（小雞自己的話被麥克風收回）就丟棄，維持 echo 防迴圈。
+      // 累積送出（DD-24）：interim 即時回填輸入框、重置靜默寬限計時；final 累積、續計時，
+      // 等真的停夠久（SILENCE_COMMIT_MS）才整段送，句中停頓不被誤判成講完。
+
+      // 判定這段辨識是否為小雞自己的回音（朗讀中或尾窗內才需判，且尚未取得發言權時）。
+      const duringGuard = isWithinSpeechGuard();
+      if (duringGuard && !childHasFloor) {
+        if (isLikelySelfEcho(transcript)) {
+          // 是小雞自己的話被收回 → 丟棄，不動已累積真實語音。
+          setQuery(pendingTranscriptRef.current.trim());
+          return;
+        }
+        // 不是回音 → 小朋友插話了：停掉小雞朗讀、取得發言權，這段話照常處理。
+        suppressRestartOnBargeIn = true;
+        cancelSpeech();
+        childHasFloor = true;
+      }
+
       if (!latest.isFinal) {
-        // 朗讀中/尾窗內的 interim 多半是自我回音，不回填，免得框裡跳出小雞自己的話。
-        if (!isWithinSpeechGuard()) setQuery(transcript);
+        // 已取得發言權後，interim 一律照常累積（小雞已停、不會再有自己的回音）。
+        const preview = (pendingTranscriptRef.current + transcript).trim();
+        setQuery(preview);
+        if (preview) armCommitTimer();
         return;
       }
       if (!transcript) return;
 
-      // echo 軟閘（DD-11）：小雞朗讀時/尾窗內，或文字高度吻合最近朗讀內容時，
-      // 丟棄該結果擋掉自我迴圈。麥克風不暫停（保住全雙工）。
-      if (isWithinSpeechGuard() || isLikelySelfEcho(transcript)) {
-        // 這次結果是回音 → 連同框裡殘留的 interim 一起清掉，不要留小雞自己的話。
-        setQuery("");
+      // echo 軟閘（DD-11）：尚未取得發言權、又落在朗讀尾窗或文字吻合最近朗讀 → 丟棄回音。
+      // childHasFloor 為 true 時略過此閘——小朋友已插話、有權繼續講完，不再當回音擋掉。
+      if (!childHasFloor && (duringGuard || isLikelySelfEcho(transcript))) {
+        setQuery(pendingTranscriptRef.current.trim());
         return;
       }
 
-      // 話講完 → 即時送出（送出端會清空輸入框）。
-      triggeredRef.current = true;
-      void lookupRef.current(transcript);
+      // 收到一個 final 片段：累積、續上寬限計時，但「不」立即送出。
+      // 小朋友可能只是句中換氣；只有寬限窗內都沒有新語音，commitPending 才會送整段。
+      // 片段間補空白避免黏字（中文也無妨，送出端會 trim）。
+      pendingTranscriptRef.current =
+        (pendingTranscriptRef.current + " " + transcript).trim();
+      // 超長保護：累積過長直接送出，不再等（避免無限累積）。
+      if (pendingTranscriptRef.current.length > 200) {
+        if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+        commitPending();
+        return;
+      }
+      setQuery(pendingTranscriptRef.current);
+      armCommitTimer();
     };
 
     recognitionRef.current = recognition;
@@ -546,6 +624,7 @@ export function A1Page() {
       wasListeningBeforeOverlayRef.current = wantListeningRef.current;
       wantListeningRef.current = false;
       triggeredRef.current = false;
+      discardPendingRef.current();
       if (!samsungManualModeRef.current) stopVadRef.current();
       try {
         recognitionRef.current?.abort();
@@ -626,6 +705,7 @@ export function A1Page() {
       wantListeningRef.current = false;
       if (!samsungManualModeRef.current) stopVadRef.current();
       triggeredRef.current = false;
+      discardPendingRef.current();
       try {
         recognitionRef.current.abort();
       } catch {
@@ -655,6 +735,7 @@ export function A1Page() {
         wantListeningRef.current = false;
         if (!samsungManualModeRef.current) stopVadRef.current();
         triggeredRef.current = false;
+        discardPendingRef.current();
         try {
           recognitionRef.current?.abort();
         } catch {
