@@ -87,6 +87,8 @@ export function A1Page() {
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
+  // 可點主題索引（DD-28）：動態取自影片庫已累積主題，點了直接送 find_video（庫足量則毫秒服務）。
+  const [videoTopics, setVideoTopics] = useState<string[]>([]);
   const [speechReady, setSpeechReady] = useState(false);
   const [listening, setListening] = useState(false);
   const [ttsOn, setTtsOn] = useState(isTtsEnabled());
@@ -571,10 +573,38 @@ export function A1Page() {
     return () => clearInterval(id);
   }, []);
 
+  // 可點主題索引（DD-28）：載入時取一次影片庫已累積主題，做成快捷 chip。
+  // 取庫存量 ≥1 的主題，依累積量排序（summary 後端已排序），取前 8 個避免太長。
+  useEffect(() => {
+    let alive = true;
+    void apiClient
+      .videoBankSummary()
+      .then((res) => {
+        if (!alive || !res.ok) return;
+        setVideoTopics(
+          res.topics
+            .filter((t) => t.count > 0)
+            .slice(0, 8)
+            .map((t) => t.label),
+        );
+      })
+      .catch(() => {
+        /* 影片庫未就緒時不顯示主題 chip，不擋功能 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   /** Kill switch：強制中止小雞老師的語音輸出（朗讀打斷不了的逃生口）。 */
   function stopSpeaking() {
     cancelSpeech();
     setSpeaking(false);
+  }
+
+  /** 點主題 chip：直接送一句「我想看○○的影片」進對話 → find_video（庫足量則毫秒服務）。 */
+  function handleTopicChip(topic: string) {
+    void sendTurnFromSpeech(`我想看${topic}的影片`);
   }
 
   // 辨識結果下游：sendTurn 包裝（DD-10：lookupRef 改指向對話送出）
@@ -814,6 +844,22 @@ export function A1Page() {
                 </button>
               )}
             </div>
+          {videoTopics.length > 0 && (
+            <div className="a1-topic-chips">
+              <span className="a1-topic-chips__label">🎬 想看什麼？</span>
+              {videoTopics.map((topic) => (
+                <button
+                  type="button"
+                  key={topic}
+                  className="a1-topic-chip"
+                  onClick={() => handleTopicChip(topic)}
+                  disabled={busy}
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="a1-quick-chips">
             <button
               type="button"

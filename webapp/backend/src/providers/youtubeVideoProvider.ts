@@ -7,6 +7,7 @@ import type {
 import type { ChildChannelLibrary } from './childChannelLibrary.js'
 import type { VideoBank } from './videoBank.js'
 import type { InvidiousClient } from './invidiousClient.js'
+import type { Blocklist } from './blocklist.js'
 
 /**
  * 找影片 provider —— 小朋友問知識，小雞老師找適齡影片，前端 inline 開成小播放窗。
@@ -76,26 +77,35 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   private library?: ChildChannelLibrary
   private bank?: VideoBank
   private invidious?: InvidiousClient
+  private blocklist?: Blocklist
 
   constructor(
     apiKey = '',
     library?: ChildChannelLibrary,
     bank?: VideoBank,
     invidious?: InvidiousClient,
+    blocklist?: Blocklist,
   ) {
     this.apiKey = apiKey.trim()
     this.library = library
     this.bank = bank
     this.invidious = invidious
+    this.blocklist = blocklist
     const src = invidious ? 'invidious' : this.apiKey ? 'youtube-api' : 'bank-only'
-    const extras = [library && 'channel library', bank && 'video bank'].filter(Boolean).join(' + ')
+    const extras = [library && 'channel library', bank && 'video bank', blocklist && 'blocklist']
+      .filter(Boolean)
+      .join(' + ')
     console.log(`[YoutubeVideoProvider] source=${src}${extras ? ` (+${extras})` : ''}`)
   }
 
-  /** serve 時用頻道庫即時重算 curated 旗標，並穩定把精選排前。 */
+  /**
+   * serve 時用頻道庫即時重算 curated 旗標，並穩定把精選排前。
+   * 先硬擋家長黑名單（DD-26）：命中黑名單的頻道一律剔除，優先於白名單加權。
+   */
   private flagAndSort(items: A1VideoItem[]): A1VideoItem[] {
+    const safe = this.blocklist ? this.blocklist.filter(items) : items
     const curatedIds = this.library?.activeIds()
-    const flagged = items.map((it) => ({
+    const flagged = safe.map((it) => ({
       ...it,
       curated: curatedIds ? curatedIds.has(it.channelId) : false,
     }))
@@ -174,6 +184,66 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     this.bank?.accumulate(category, topic?.trim() || q, q, items)
 
     return { ok: true, query: q, items }
+  }
+
+  /**
+   * Feed 預熱（借鏡 ytlite 的 latestVideos 聚合，DD-27）：
+   * 遍歷頻道庫 active 頻道 → Invidious channelLatestVideos → 黑名單硬擋 → 依該頻道的
+   * topics 寫回 VideoBank。讓常見主題在小朋友還沒問之前就先備好「精選頻道的最新片」。
+   *
+   * 手動觸發（無排程）：POST /api/a1/prewarm。回各主題新增數摘要。
+   * 精選頻道本身已人工核可，預熱時不再跑 isFamilyFriendly（只硬擋黑名單）。
+   *
+   * 註：需要 Invidious 的頻道端點可解析 latestVideos（≥2026.06 修好頻道 parser）；
+   * 若該端點回空（parse-error / 舊版），prewarm 自然回 channels:0，不崩、不亂塞。
+   */
+  async prewarm(): Promise<{
+    ok: boolean
+    channels: number
+    topics: Array<{ topic: string; added: number }>
+    error?: string
+  }> {
+    if (!this.invidious) {
+      return { ok: false, channels: 0, topics: [], error: 'PREWARM_NO_INVIDIOUS' }
+    }
+    if (!this.library || !this.bank) {
+      return { ok: false, channels: 0, topics: [], error: 'PREWARM_NOT_CONFIGURED' }
+    }
+    const start = Date.now()
+    const active = this.library.list().filter((c) => c.status === 'active' && c.channelId)
+    // 累計各主題新增數（一個頻道可掛多個 topic，逐 topic 寫回庫）。
+    const addedByTopic = new Map<string, number>()
+    let channelsHit = 0
+
+    await Promise.all(
+      active.map(async (ch) => {
+        const vids = await this.invidious!.channelLatestVideos(ch.channelId as string)
+        if (!vids || vids.length === 0) return
+        channelsHit += 1
+        const safe = this.blocklist ? this.blocklist.filter(vids) : vids
+        if (safe.length === 0) return
+        // 沒掛 topic 的頻道，用標題當主題，至少進得了庫。
+        const topics = ch.topics.length > 0 ? ch.topics : [ch.title]
+        for (const topic of topics) {
+          const before = this.bank!.size(topic)
+          this.bank!.accumulate(topic, topic, `prewarm:${ch.title}`, safe)
+          const delta = this.bank!.size(topic) - before
+          if (delta > 0) addedByTopic.set(topic, (addedByTopic.get(topic) ?? 0) + delta)
+        }
+      }),
+    )
+
+    const topics = [...addedByTopic.entries()]
+      .map(([topic, added]) => ({ topic, added }))
+      .sort((a, b) => b.added - a.added)
+    log('a1.video.prewarm', {
+      mode: 'channel-latest',
+      channels: channelsHit,
+      topics: topics.length,
+      added: topics.reduce((n, t) => n + t.added, 0),
+      ms: Date.now() - start,
+    })
+    return { ok: true, channels: channelsHit, topics }
   }
 
   /**

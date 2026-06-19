@@ -66,6 +66,46 @@ export class InvidiousClient {
   }
 
   /**
+   * 取某頻道的最新影片（feed 預熱用，借鏡 ytlite 的 latestVideos 聚合）。
+   * 打 /api/v1/channels/{id} 取 latestVideos → A1VideoItem[]；失敗回 null。
+   * curated 固定 false（上層 flagAndSort 會用頻道庫即時重算）。
+   */
+  async channelLatestVideos(channelId: string): Promise<A1VideoItem[] | null> {
+    if (!channelId) return null
+    try {
+      const res = await fetch(`${this.base}/api/v1/channels/${channelId}`, {
+        signal: AbortSignal.timeout(12000),
+      })
+      if (!res.ok) {
+        log('a1.video.invidious_channel_error', { channelId, status: res.status })
+        return null
+      }
+      const data = (await res.json()) as {
+        author?: string
+        authorId?: string
+        latestVideos?: RawSearchItem[]
+      }
+      const list = Array.isArray(data.latestVideos) ? data.latestVideos : []
+      return list
+        .filter((x) => x && x.videoId && x.title)
+        .map((x) => ({
+          videoId: x.videoId as string,
+          title: x.title as string,
+          channelId: x.authorId ?? data.authorId ?? channelId,
+          channelTitle: x.author ?? data.author ?? '',
+          thumbnail: `https://i.ytimg.com/vi/${x.videoId}/mqdefault.jpg`,
+          curated: false,
+        }))
+    } catch (err) {
+      log('a1.video.invidious_channel_exception', {
+        channelId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      return null
+    }
+  }
+
+  /**
    * 頻道是否 family-friendly（含 24h 快取）。
    * true/false = 已知；null = 查不到（上層自行決定保守處理）。
    */

@@ -104,6 +104,26 @@
 - [x] R10.4 `providers/videoBank.ts`：本地影片快取庫（`data/videobank.json`）依主題分類累積、videoId 去重持久化、size/get/accumulate/summary；server.ts wiring + a1.videoBankSummary 端點
 - [x] R10.5 驗證：`bun run build`（tsc）EXIT=0；恐龍/太陽系新主題實走 Invidious 20 支→寫回庫（★樂樂TV 排第一）、二次同主題 bank_hit 1ms 零外部請求；Data API 配額用罄正好證明已不依賴
 
+## R11. 借鏡 ytlite 的三能力（不搬 OAuth/登入/per-user）
+
+> 反饋：「和 ytlite 有重疊的部份應該滿多的，主要是影片頻道訂閱管理與列表索引機制。」盤點後：搜尋層（Invidious）DD-24 已共用；訂閱管理/列表索引是概念重疊非可搬程式碼（ytlite per-user OAuth vs cecelearn 全域 curated 白名單）。決策：只借鏡三個 cecelearn 缺的能力，全做成全域/無登入/JSON 檔風格（DD-25）。
+
+### Phase A — 家長黑名單（反向硬擋，DD-26）
+- [ ] R11.A1 新增 `providers/blocklist.ts`：`Blocklist`（`data/blocklist.json`，比照 channelLibrary 讀寫）；has/add/remove/list；contracts 加 `BlockedChannel` 型別
+- [ ] R11.A2 `data/blocklist.json` 種子檔（空清單 + note）；server.ts 注入 Blocklist
+- [ ] R11.A3 youtubeVideoProvider：search 結果、familyFilter、bank serve（bank_hit/bank_only）一律先 filter 掉 blocklist 命中的 channelId（硬擋優先於白名單加權）
+- [ ] R11.A4 `POST /api/a1/block`（action=block/unblock，body channelId/channelName）管理端點 + blocklist 檢索端點
+
+### Phase B — Feed 預熱（手動端點，DD-27）
+- [x] R11.B1 InvidiousClient 新增 `channelLatestVideos(channelId)`：打 `/api/v1/channels/{id}` 取 latestVideos → A1VideoItem[]
+- [x] R11.B2 `POST /api/a1/prewarm`：遍歷 channelLibrary active 頻道 → channelLatestVideos → blocklist 硬擋 → 依頻道 topics 寫回 VideoBank；回各主題新增數摘要
+- [x] R11.B3 驗證：手動打 prewarm 端點 → channels:4、16 主題共 +525 支寫回庫、videobank.json 持久化。**前置 blocker（DD-29）**：原 Invidious 2026.04.09 頻道 parser 解不出 latestVideos（每筆 type:parse-error，ytlite 同端點同症狀），升級 ytlite Invidious 至 2026.06.15-73a1bac 後 parser 修復、頻道影片正常回
+
+### Phase C — 可點主題索引（動態取自 VideoBank，DD-28）
+- [x] R11.C1 前端 client.ts：videoBankSummary 鏡像型別（A1VideoBankTopic/A1VideoBankSummaryResponse）+ videoBankSummary() method；A1Page 載入時 useEffect 打一次取已累積主題（取 count>0、前 8 個）
+- [x] R11.C2 前端快捷 chip 列：videoTopics state + .a1-topic-chips 列，點 chip 送「我想看○○的影片」進對話 → find_video（庫足量毫秒服務）；styles.css 加 .a1-topic-chip 樣式（琥珀色，區別於藍色測驗 chip）
+- [x] R11.C3 驗證：frontend tsc -b EXIT=0 + vite build EXIT=0；backend tsc EXIT=0
+
 ## 4. 收尾 — 文件與驗收
 
 - [x] 4.1 更新 `specs/architecture.md` + `spec.md`：A1 feature/spec 改為小雞對話型、draw intent、inline stream、echo guard、生圖成本閘與 chat/illustrate endpoint 描述

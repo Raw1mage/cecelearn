@@ -134,6 +134,32 @@ export type ChannelAddResponse = {
   channel: CuratedChannel
 }
 
+/** 家長黑名單的一筆封鎖頻道（反向硬擋；借鏡 ytlite blocklist，全域無登入）。 */
+export type BlockedChannel = {
+  channelId: string
+  channelName: string   // 顯示用，可空
+  addedAt: string       // YYYY-MM-DD
+}
+
+/** 封鎖/解封管理請求。action=block 需 channelId；unblock 同。 */
+export type BlockActionRequest = {
+  action: 'block' | 'unblock'
+  channelId: string
+  channelName?: string
+}
+
+export type BlockListResponse = {
+  ok: true
+  channels: BlockedChannel[]
+}
+
+export type BlockActionResponse = {
+  ok: true
+  action: 'block' | 'unblock'
+  channelId: string
+  channels: BlockedChannel[]
+}
+
 export type A1SentencePayload = {
   targetWord: string
   sentences: string[]   // 可造多句（預設 1，上限 5）
@@ -260,8 +286,22 @@ export interface QuestionVisionProvider {
   ): Promise<A1ReadQuestionResponse | A1ErrorResponse>
 }
 
+/** Feed 預熱回應：各精選頻道最新片寫回影片庫的摘要（借鏡 ytlite latestVideos 聚合）。 */
+export type A1PrewarmResponse = {
+  ok: true
+  channels: number   // 實際抓到最新片的頻道數
+  topics: Array<{ topic: string; added: number }>   // 各主題新增影片數（去重後）
+}
+
 export interface VideoSearchProvider {
   search(query: string, topic?: string): Promise<A1VideoSearchResponse | A1ErrorResponse>
+  /** 手動 feed 預熱：遍歷精選頻道最新片寫回影片庫。實作可選。 */
+  prewarm?(): Promise<{
+    ok: boolean
+    channels: number
+    topics: Array<{ topic: string; added: number }>
+    error?: string
+  }>
 }
 
 /* A5 — Dictation Practice */

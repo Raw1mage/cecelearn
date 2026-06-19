@@ -335,6 +335,13 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-quick-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.85rem; border-radius: 999px; border: 1px solid rgba(139,170,255,0.3); background: rgba(59,130,255,0.12); color: #eef4ff; font-size: 0.9rem; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
 .a1-quick-chip:hover { background: rgba(59,130,255,0.28); border-color: rgba(139,170,255,0.5); }
 
+/* A1 — 可點主題索引（DD-28）：影片庫已累積主題，點了直接找影片 */
+.a1-topic-chips { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.a1-topic-chips__label { color: #fbbf24; font-weight: 700; font-size: 0.85rem; margin-right: 0.15rem; }
+.a1-topic-chip { display: inline-flex; align-items: center; padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid rgba(251,191,36,0.32); background: rgba(251,191,36,0.1); color: #fde68a; font-size: 0.88rem; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.a1-topic-chip:hover:not(:disabled) { background: rgba(251,191,36,0.24); border-color: rgba(251,191,36,0.55); }
+.a1-topic-chip:disabled { opacity: 0.45; cursor: default; }
+
 /* A1 — 全螢幕測驗 overlay 容器（DD-2/R3：複用 A5/A2 元件，fixed 蓋滿視窗） */
 .a1-quiz-overlay { position: fixed; inset: 0; z-index: 1000; background: #0a0f1e; display: flex; flex-direction: column; }
 .a1-quiz-overlay__close { position: absolute; top: max(0.6rem, env(safe-area-inset-top)); right: max(0.6rem, env(safe-area-inset-right)); z-index: 1002; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 1.1rem; cursor: pointer; transition: background 0.15s; }

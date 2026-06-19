@@ -6,6 +6,8 @@ import type {
   A1LookupResponse,
   A1ReadQuestionResponse,
   A1VideoSearchResponse,
+  BlockActionResponse,
+  BlockListResponse,
   ChannelAddRequest,
   ChannelAddResponse,
   ChannelListResponse,
@@ -17,6 +19,7 @@ import type {
 } from '../contracts/providers.js'
 import type { ChildChannelLibrary } from '../providers/childChannelLibrary.js'
 import type { VideoBank } from '../providers/videoBank.js'
+import type { Blocklist } from '../providers/blocklist.js'
 
 export function createA1Module(
   provider: WordLookupProvider,
@@ -26,6 +29,7 @@ export function createA1Module(
   videoProvider?: VideoSearchProvider,
   channelLibrary?: ChildChannelLibrary,
   videoBank?: VideoBank,
+  blocklist?: Blocklist,
 ) {
   return {
     lookup(query: string): Promise<A1LookupResponse> {
@@ -118,6 +122,53 @@ export function createA1Module(
         return { ok: false as const, error: 'BANK_NOT_CONFIGURED', message: '影片庫還沒準備好。' }
       }
       return { ok: true as const, topics: videoBank.summary() }
+    },
+    async prewarm() {
+      if (!videoProvider || typeof videoProvider.prewarm !== 'function') {
+        return { ok: false as const, error: 'PREWARM_NOT_CONFIGURED', message: 'feed 預熱還沒準備好。' }
+      }
+      const result = await videoProvider.prewarm()
+      if (!result.ok) {
+        return {
+          ok: false as const,
+          error: result.error || 'PREWARM_FAILED',
+          message: 'feed 預熱失敗（請確認自架 Invidious 在線上）。',
+        }
+      }
+      return { ok: true as const, channels: result.channels, topics: result.topics }
+    },
+    listBlocked(): BlockListResponse | A1ErrorResponse {
+      if (!blocklist) {
+        return { ok: false, error: 'BLOCKLIST_NOT_CONFIGURED', message: '黑名單還沒準備好。' }
+      }
+      return { ok: true, channels: blocklist.list() }
+    },
+    blockChannel(
+      action: 'block' | 'unblock',
+      channelId: string,
+      channelName?: string,
+    ): BlockActionResponse | A1ErrorResponse {
+      if (!blocklist) {
+        return { ok: false, error: 'BLOCKLIST_NOT_CONFIGURED', message: '黑名單還沒準備好。' }
+      }
+      const cid = (channelId || '').trim()
+      if (!cid) {
+        return { ok: false, error: 'BLOCK_BAD_REQUEST', message: '請提供 channelId。' }
+      }
+      try {
+        if (action === 'block') {
+          blocklist.add(cid, channelName?.trim() || '')
+        } else {
+          blocklist.remove(cid)
+        }
+        return { ok: true, action, channelId: cid, channels: blocklist.list() }
+      } catch (err) {
+        return {
+          ok: false,
+          error: 'BLOCK_PERSIST_FAILED',
+          message: err instanceof Error ? err.message : '寫入黑名單失敗。',
+        }
+      }
     },
   }
 }

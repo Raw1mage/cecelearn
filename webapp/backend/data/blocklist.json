@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "note": "家長黑名單：反向硬擋頻道。小雞老師找影片時，命中這些 channelId 的影片一律剔除（硬擋，優先於精選白名單加權與 isFamilyFriendly 軟過濾）。新增請走 POST /api/a1/block（action=block/unblock），或直接編此檔。資料由系統自動寫入。",
+  "channels": []
+}

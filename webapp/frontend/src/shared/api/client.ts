@@ -109,6 +109,19 @@ export type A1VideoSearchResponse = {
   items: A1VideoItem[]
 }
 
+/** 影片庫各主題摘要（前端可點主題索引用，DD-28） */
+export type A1VideoBankTopic = {
+  topic: string
+  label: string
+  count: number
+  updatedAt: string
+}
+
+export type A1VideoBankSummaryResponse = {
+  ok: true
+  topics: A1VideoBankTopic[]
+}
+
 /** 英文跟讀練習單字（subject=english 時附帶） */
 export type A1EnglishWord = {
   word: string
@@ -309,6 +322,8 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(topic ? { query, topic } : { query }),
     }),
+  videoBankSummary: () =>
+    request<A1VideoBankSummaryResponse | A1ErrorResponse>('/a1/videobank'),
   getQuizRanges: () =>
     request<{ ok: boolean; ranges: QuizRange[] }>('/quiz/meta'),
   fetchQuiz: (opts: { subject?: string; grade?: string; count: number }) => {

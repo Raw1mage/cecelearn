@@ -16,6 +16,7 @@ import { YoutubeVideoProvider } from './providers/youtubeVideoProvider.js'
 import { ChildChannelLibrary } from './providers/childChannelLibrary.js'
 import { VideoBank } from './providers/videoBank.js'
 import { InvidiousClient } from './providers/invidiousClient.js'
+import { Blocklist } from './providers/blocklist.js'
 import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
@@ -71,14 +72,16 @@ function buildChatProvider(): DialogueChatProvider {
 const channelLibrary = new ChildChannelLibrary()
 const videoBank = new VideoBank()
 const invidious = env.invidiousApiUrl ? new InvidiousClient(env.invidiousApiUrl) : undefined
+const blocklist = new Blocklist()
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
   buildImageProvider(),
   new GeminiVisionProvider(env.geminiApiKeys),
-  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank, invidious),
+  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank, invidious, blocklist),
   channelLibrary,
   videoBank,
+  blocklist,
 )
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
@@ -243,6 +246,13 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  // Feed 預熱（管理）：遍歷精選頻道最新片寫回影片庫（借鏡 ytlite latestVideos 聚合）
+  if (url === '/api/a1/prewarm' && method === 'POST') {
+    const result = await a1.prewarm()
+    send(result.ok ? 200 : 500, result)
+    return
+  }
+
   // 兒童知識型頻道庫：列出（檢索）
   if (url === '/api/a1/channels' && method === 'GET') {
     const result = a1.listChannels()
@@ -262,6 +272,29 @@ const server = createServer(async (request, response) => {
     }
     const result = a1.addChannel(payload)
     send(result.ok ? 200 : result.error === 'CHANNEL_BAD_REQUEST' ? 400 : 500, result, raw)
+    return
+  }
+
+  // 家長黑名單：列出（檢索）
+  if (url === '/api/a1/block' && method === 'GET') {
+    const result = a1.listBlocked()
+    send(result.ok ? 200 : 500, result)
+    return
+  }
+
+  // 家長黑名單：封鎖/解封（管理）。body: {action: 'block'|'unblock', channelId, channelName?}
+  if (url === '/api/a1/block' && method === 'POST') {
+    const raw = await readBody(request)
+    let payload: import('./contracts/providers.js').BlockActionRequest
+    try {
+      payload = JSON.parse(raw || '{}')
+    } catch {
+      send(400, { ok: false, error: 'BLOCK_BAD_REQUEST', message: '請提供 action 與 channelId。' }, raw)
+      return
+    }
+    const action = payload.action === 'unblock' ? 'unblock' : 'block'
+    const result = a1.blockChannel(action, payload.channelId || '', payload.channelName)
+    send(result.ok ? 200 : result.error === 'BLOCK_BAD_REQUEST' ? 400 : 500, result, raw)
     return
   }
 
