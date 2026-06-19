@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "state": "implementing",
+  "state": "living",
   "profile": [],
   "history": [
     {
@@ -34,6 +34,22 @@
       "by": "pkcs12",
       "mode": "promote",
       "reason": "進入實作,從 M0 前置驗證 + M1 後端對話層開始"
+    },
+    {
+      "from": "implementing",
+      "to": "verified",
+      "at": "2026-06-19T04:29:55.083Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "本 session 能力擴充（explain/OCR/英文跟讀/Imagen情境圖/SVG數學圖解/find_video/故事接龍/學科測驗）已實作並驗證：backend+frontend typecheck EXIT=0、curl 各 intent 路由綠、Playwright 截圖確認端到端流程；tasks 45/45。"
+    },
+    {
+      "from": "verified",
+      "to": "living",
+      "at": "2026-06-19T04:30:26.584Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "使用者確認 graduate；資料夾已在 /specs/，以 forward promote 進 living（plan_graduate 因無 /plans 草稿源而不適用）"
     }
   ]
 }
