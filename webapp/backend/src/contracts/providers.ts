@@ -63,7 +63,7 @@ export type A1EnglishWord = {
  * - kind='groups'：乘除法分組。groups 組數，per 每組數量，result 結果。
  */
 export type A1MathViz = {
-  kind: 'count' | 'groups'
+  kind: 'count' | 'groups' | 'tally'
   icon?: string       // emoji（🍎🍬🍕…），預設 🔵
   total?: number
   operation?: 'add' | 'sub'
@@ -72,6 +72,7 @@ export type A1MathViz = {
   per?: number
   result?: number
   equation?: string   // 如 "8 - 3 = 5"
+  count?: number      // tally：要平鋪幾個 icon（數數量題，圖即題目，不顯示算式/答案）
 }
 
 /** 小家教講解（唸/打出的題目）：英文題、數學應用題、概念解釋。純算式仍走 solve_arithmetic。 */

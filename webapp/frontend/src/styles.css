@@ -291,6 +291,19 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-en-result { flex: 1 1 100%; font-size: 0.82rem; color: #cbd5e1; min-height: 1rem; }
 .a1-en-row--correct .a1-en-result { color: #6ee7b7; font-weight: 700; }
 
+/* A6 — 跟讀題「照著唸」指示（read_aloud）：講白要幹嘛，別讓小朋友以為要回答 */
+.a6-readaloud-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.7rem;
+  background: rgba(125, 211, 252, 0.16);
+  border: 1.5px solid rgba(125, 211, 252, 0.5);
+  color: #cbe9ff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
 /* A1 — inline illustration (per-message，歷史保留，不洗掉) */
 .a1-inline-illustration { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
 .a1-inline-illustration--loading { flex-direction: row; align-items: center; gap: 0.6rem; }

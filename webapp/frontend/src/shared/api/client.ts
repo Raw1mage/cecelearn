@@ -130,7 +130,7 @@ export type A1EnglishWord = {
 
 /** 數學圖解的確定性視覺規格（前端用 SVG 照畫） */
 export type A1MathViz = {
-  kind: 'count' | 'groups'
+  kind: 'count' | 'groups' | 'tally'
   icon?: string
   total?: number
   operation?: 'add' | 'sub'
@@ -139,6 +139,9 @@ export type A1MathViz = {
   per?: number
   result?: number
   equation?: string
+  count?: number   // tally：平鋪幾個 icon（數數量題，圖即題目，不顯示算式/答案）
+  iconUrl?: string // tally/name：單元物件插畫 API path（相對 apiBaseUrl）；有此圖則平鋪此圖、無則退 emoji
+  iconKey?: string // 單元物件鍵（名詞），不直接渲染
 }
 
 /** 小家教講解 payload（唸/打出的題目：英文題、數學應用題、概念） */

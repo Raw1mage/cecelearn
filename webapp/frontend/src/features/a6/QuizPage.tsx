@@ -259,6 +259,16 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
             </button>
           </div>
 
+          {/* 數數量題（tally）：圖即題目，必須在作答前顯示 */}
+          {item.viz?.kind === 'tally' && <MathDiagram viz={item.viz} />}
+
+          {/* 跟讀題（read_aloud）指示：講白「照著唸」，避免小朋友以為要回答/翻譯。 */}
+          {item.type === 'read_aloud' && !submitted && (
+            <p className="a6-readaloud-hint">
+              🗣️ 這題是「照著唸」：先按 🔊 聽老師唸一次，再按 🎤 跟著把上面的句子唸出來就好，不用回答問題喔！
+            </p>
+          )}
+
           {/* 作答區 */}
           {item.type === 'choice' && item.choices ? (
             <div style={{ display: 'grid', gap: '0.5rem' }}>
@@ -339,7 +349,9 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
                   <span style={{ marginLeft: '0.5rem', fontWeight: 400 }}>正確答案：{item.answer}</span>
                 )}
               </p>
-              {item.viz && <MathDiagram viz={item.viz} />}
+              {/* tally 圖即題目，上方已顯示；解說區不再重畫同一張圖（DD：避免重複＋撐長到要捲動）。
+                  count/groups 是作答後才揭曉的解法圖解，保留。 */}
+              {item.viz && item.viz.kind !== 'tally' && <MathDiagram viz={item.viz} />}
               {item.steps.length > 0 && (
                 <ol style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem', lineHeight: 1.7 }}>
                   {item.steps.map((s, i) => <li key={i}>{s}</li>)}

@@ -11,7 +11,7 @@
 export type QuizItemType = 'fill' | 'choice' | 'make_word' | 'read_aloud'
 
 export type MathVizSpec = {
-  kind: 'count' | 'groups'
+  kind: 'count' | 'groups' | 'tally'
   icon?: string
   total?: number
   operation?: 'add' | 'sub'
@@ -20,6 +20,12 @@ export type MathVizSpec = {
   per?: number
   result?: number
   equation?: string
+  /** tally：純粹要平鋪幾個 icon（數數量題，圖即題目，不顯示算式/答案）。 */
+  count?: number
+  /** tally/name：單元物件插畫 URL（build 預生或 runtime Imagen 生）。前端有此 URL 則平鋪此圖、無則退 emoji icon。 */
+  iconUrl?: string
+  /** 單元物件鍵（= 名詞 singular），供 quizGenProvider 對應 iconUrl，不直接渲染。 */
+  iconKey?: string
 }
 
 export type KpInfo = {
@@ -27,7 +33,8 @@ export type KpInfo = {
   kpName: string
   skill?: string
   difficulty: number
-  vizKind: 'count' | 'groups' | 'none'
+  /** name = 看圖說物件（圖片命名題，確定性生、繞過 Gemini，viz 用 tally 渲染單一 emoji）。 */
+  vizKind: 'count' | 'groups' | 'tally' | 'name' | 'none'
 }
 
 export type StrandInfo = { subject: string; subjectName: string; grade: string }
@@ -184,6 +191,15 @@ export function sanitizeViz(viz: unknown): MathVizSpec | null {
     if (groups * per !== result) return null
     return { kind: 'groups', groups, per, result, equation: v.equation as string | undefined, ...base }
   }
+  if (v.kind === 'tally') {
+    // tally：純平鋪 N 個 icon（數數量題，圖即題目）。只驗 count 為正整數、icon 乾淨。
+    const count = num(v.count)
+    if (Number.isNaN(count) || count < 1 || !Number.isInteger(count)) return null
+    // iconUrl（插畫）/ iconKey（名詞鍵）透傳：build 預生或 runtime Imagen 補的單元物件圖。
+    const iconUrl = typeof v.iconUrl === 'string' && v.iconUrl.trim() ? v.iconUrl.trim() : undefined
+    const iconKey = typeof v.iconKey === 'string' && v.iconKey.trim() ? v.iconKey.trim() : undefined
+    return { kind: 'tally', count, ...base, ...(iconUrl ? { iconUrl } : {}), ...(iconKey ? { iconKey } : {}) }
+  }
   return null
 }
 
@@ -200,6 +216,161 @@ export function validate(q: GenItem, kpIds: Set<string>): string[] {
     else if (!q.choices.includes(q.answer)) errs.push('choices 不含 answer')
   }
   return errs
+}
+
+/* ------------------------------------------------------------------ */
+/*  英文「數數量」題：確定性模板生題（AI 不進正確性迴圈）                 */
+/*  程式選名詞+emoji、選 N、畫 N 個、答案釘死為 N 的英文數字詞。         */
+/*  正確性 100% 靠程式保證——絕不問模型「畫幾個」。                      */
+/* ------------------------------------------------------------------ */
+
+/** 英文數字詞（index = 數量）。0 不用，數量題範圍 1–10。 */
+const NUMBER_WORDS = [
+  'zero', 'one', 'two', 'three', 'four', 'five',
+  'six', 'seven', 'eight', 'nine', 'ten',
+]
+
+/**
+ * 名詞庫：6–9 歲常見、且**每個都有對應 emoji**（emoji-first，無需生圖）。
+ * singular/plural 釘死英文正確複數；emoji 供前端 tally 平鋪。
+ */
+export type NounEntry = { singular: string; plural: string; emoji: string }
+export const NOUN_BANK: NounEntry[] = [
+  { singular: 'pencil', plural: 'pencils', emoji: '✏️' },
+  { singular: 'apple', plural: 'apples', emoji: '🍎' },
+  { singular: 'cat', plural: 'cats', emoji: '🐱' },
+  { singular: 'dog', plural: 'dogs', emoji: '🐶' },
+  { singular: 'ball', plural: 'balls', emoji: '⚽' },
+  { singular: 'book', plural: 'books', emoji: '📕' },
+  { singular: 'star', plural: 'stars', emoji: '⭐' },
+  { singular: 'flower', plural: 'flowers', emoji: '🌸' },
+  { singular: 'fish', plural: 'fish', emoji: '🐟' },
+  { singular: 'car', plural: 'cars', emoji: '🚗' },
+  { singular: 'banana', plural: 'bananas', emoji: '🍌' },
+  { singular: 'balloon', plural: 'balloons', emoji: '🎈' },
+  { singular: 'duck', plural: 'ducks', emoji: '🦆' },
+  { singular: 'strawberry', plural: 'strawberries', emoji: '🍓' },
+  { singular: 'tree', plural: 'trees', emoji: '🌳' },
+  { singular: 'cookie', plural: 'cookies', emoji: '🍪' },
+]
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j]!, a[i]!]
+  }
+  return a
+}
+
+/**
+ * 生 count 題英文數量題（確定性）：
+ *  - 隨機挑名詞 + 數量 N（2–9，複數自然、好湊干擾項）。
+ *  - stem 英文：「How many <plural> are there?」（真的在教英文）。
+ *  - choices 英文數字詞：正解 NUMBER_WORDS[N] + 2 個不重複干擾數字詞，打散。
+ *  - answer 釘死 = NUMBER_WORDS[N]。
+ *  - viz: { kind:'tally', icon, count:N } → 前端平鋪 N 個 emoji（圖即題目，不洩答案）。
+ *  - steps 中文講解（適齡、可朗讀）。
+ * 不呼叫任何模型；count 由程式控制 → 圖裡數量永遠等於答案。
+ */
+export function genTallyItems(
+  kp: KpInfo,
+  _strand: StrandInfo,
+  count: number,
+  nonce = '',
+): GenItem[] {
+  const stamp = `generated:template@${new Date().toISOString()}`
+  const nouns = shuffle(NOUN_BANK)
+  const items: GenItem[] = []
+  for (let i = 0; i < count; i++) {
+    const noun = nouns[i % nouns.length]!
+    const n = 2 + Math.floor(Math.random() * 8) // 2–9
+    const answer = NUMBER_WORDS[n]!
+    // 兩個干擾數字詞（1–10、≠ n、互異）
+    const distractPool = shuffle(
+      Array.from({ length: 10 }, (_, k) => k + 1).filter((k) => k !== n),
+    ).slice(0, 2)
+    const choices = shuffle([n, ...distractPool].map((k) => NUMBER_WORDS[k]!))
+    items.push({
+      qId: `${kp.kpId}#${nonce}t${i + 1}`,
+      kpId: kp.kpId,
+      type: 'choice',
+      stem: `How many ${noun.plural} are there? （有幾${noun.emoji}？數數看，用英文回答）`,
+      answer,
+      choices,
+      explain: {
+        steps: [
+          `我們一起數一數圖裡的 ${noun.singular}（${noun.emoji}）。`,
+          `總共有 ${n} 個，英文數字是「${answer}」。`,
+        ],
+        viz: { kind: 'tally', icon: noun.emoji, count: n, iconKey: noun.singular },
+      },
+      source: stamp,
+      reviewed: false,
+    })
+  }
+  return items
+}
+
+/* ------------------------------------------------------------------ */
+/*  英文「看圖說物件」題：確定性模板生題（AI 不進正確性迴圈）             */
+/*  顯示一個物件 emoji 當圖，答案釘死為該物件英文名詞，繞過 Gemini。      */
+/*  涵蓋 This is a ___. / What is it? / I like ___. 等圖片命名句型。      */
+/* ------------------------------------------------------------------ */
+
+/** 依 KP 句型挑題幹模板（英文題幹 + 中文小提示）。 */
+function nameStemFor(kpId: string, emoji: string): string {
+  if (kpId === 'eng-g3-this-is') return `This is a ___.（看圖${emoji}，這是什麼？選英文單字）`
+  if (kpId === 'eng-g3-i-like') return `I like ___.（看圖${emoji}，用英文說出這個東西）`
+  // eng-g4-what-is 及其他：預設用 What is it?
+  return `What is it?（看圖${emoji}，用英文回答它是什麼）`
+}
+
+/**
+ * 生英文「看圖說物件」題（確定性）：
+ *  - 隨機挑名詞，顯示其 emoji 當圖（viz: tally count=1，前端渲染單一物件）。
+ *  - stem 依 KP 句型（This is / What is it / I like）。
+ *  - choices 英文名詞：正解該名詞 + 2 個不重複干擾名詞，打散。
+ *  - answer 釘死 = 該名詞英文 singular。
+ *  - steps 中文講解（適齡、可朗讀）。
+ * 不呼叫任何模型；圖（emoji）與答案同源於 NOUN_BANK → 圖與答案永遠一致。
+ */
+export function genNameItems(
+  kp: KpInfo,
+  _strand: StrandInfo,
+  count: number,
+  nonce = '',
+): GenItem[] {
+  const stamp = `generated:template@${new Date().toISOString()}`
+  const nouns = shuffle(NOUN_BANK)
+  const items: GenItem[] = []
+  for (let i = 0; i < count; i++) {
+    const noun = nouns[i % nouns.length]!
+    const answer = noun.singular
+    // 兩個干擾名詞（≠ 正解、互異、有 emoji）
+    const distractors = shuffle(NOUN_BANK.filter((x) => x.singular !== answer))
+      .slice(0, 2)
+      .map((x) => x.singular)
+    const choices = shuffle([answer, ...distractors])
+    items.push({
+      qId: `${kp.kpId}#${nonce}n${i + 1}`,
+      kpId: kp.kpId,
+      type: 'choice',
+      stem: nameStemFor(kp.kpId, noun.emoji),
+      answer,
+      choices,
+      explain: {
+        steps: [
+          `圖裡的東西是「${noun.emoji}」。`,
+          `它的英文是「${answer}」。`,
+        ],
+        viz: { kind: 'tally', icon: noun.emoji, count: 1, iconKey: noun.singular },
+      },
+      source: stamp,
+      reviewed: false,
+    })
+  }
+  return items
 }
 
 /* Gemini 呼叫（round-robin + 429 掉接 + 逾時） */

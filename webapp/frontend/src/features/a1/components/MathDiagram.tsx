@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { type A1MathViz } from '../../../shared/api/client'
+import { env } from '../../../shared/config/env'
 import { Lightbox } from './Lightbox'
 
 /**
@@ -119,9 +120,68 @@ function GroupsDiagram({ viz }: { viz: A1MathViz }) {
   )
 }
 
+/**
+ * tally：純粹平鋪 N 個 icon（英文「數數量」題，圖即題目）。
+ * 刻意**不顯示算式、不顯示答案**——小朋友要自己數，數量由 viz.count 釘死（程式保證正確）。
+ */
+/** iconUrl 是相對 apiBaseUrl 的 API path（如 /quiz/icon/cat）；拼成可載入的完整 URL。 */
+function resolveIconUrl(iconUrl: string): string {
+  if (/^(https?:|data:|blob:)/.test(iconUrl)) return iconUrl
+  const base = env.apiBaseUrl.replace(/\/+$/, '')
+  return `${base}${iconUrl.startsWith('/') ? '' : '/'}${iconUrl}`
+}
+
+function TallyDiagram({ viz }: { viz: A1MathViz }) {
+  const icon = viz.icon || '🔵'
+  // 複合生圖：有單元物件插畫 → 平鋪該圖；否則退 emoji floor（確定性地板，非 silent fallback）。
+  const imgSrc = viz.iconUrl ? resolveIconUrl(viz.iconUrl) : null
+  const n = Math.min(MAX_ICONS, Math.max(1, viz.count ?? 1))
+  const cols = Math.min(Math.max(n, 1), 5)
+  const rows = Math.max(1, Math.ceil(n / cols))
+  const gridW = cols * CELL
+  const width = gridW + PAD * 2
+  const height = PAD * 2 + rows * CELL
+  // 插畫尺寸略小於格子，置中於格內
+  const imgSize = CELL - 8
+
+  const cells = []
+  for (let i = 0; i < n; i++) {
+    const cx = PAD + (i % cols) * CELL + CELL / 2
+    const cy = PAD + Math.floor(i / cols) * CELL + CELL / 2
+    cells.push(
+      imgSrc ? (
+        <image
+          key={i}
+          href={imgSrc}
+          x={cx - imgSize / 2}
+          y={cy - imgSize / 2}
+          width={imgSize}
+          height={imgSize}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      ) : (
+        <Icon key={i} x={cx} y={cy} icon={icon} />
+      ),
+    )
+  }
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="a1-math-svg" role="img" aria-label={`${n} 個物件`}>
+      {cells}
+    </svg>
+  )
+}
+
 export function MathDiagram({ viz }: { viz: A1MathViz }) {
   const [zoomed, setZoomed] = useState(false)
-  const body = viz.kind === 'groups' ? <GroupsDiagram viz={viz} /> : <CountDiagram viz={viz} />
+  const body =
+    viz.kind === 'tally' ? (
+      <TallyDiagram viz={viz} />
+    ) : viz.kind === 'groups' ? (
+      <GroupsDiagram viz={viz} />
+    ) : (
+      <CountDiagram viz={viz} />
+    )
   const label = viz.equation || '數學圖解'
   return (
     <div className="a1-math-diagram">

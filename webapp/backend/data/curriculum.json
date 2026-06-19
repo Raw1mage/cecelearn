@@ -323,7 +323,7 @@
           "unitName": "基礎單字",
           "knowledgePoints": [
             { "kpId": "eng-g2-color", "kpName": "顏色單字", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "none" },
-            { "kpId": "eng-g2-number", "kpName": "數字 1–10", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "eng-g2-number", "kpName": "數字 1–10", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "tally" },
             { "kpId": "eng-g2-animal", "kpName": "動物單字", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "none" }
           ]
         }
@@ -339,8 +339,8 @@
           "unitId": "eng-g3-sentence",
           "unitName": "基礎句型",
           "knowledgePoints": [
-            { "kpId": "eng-g3-this-is", "kpName": "This is a ___.", "skill": "2-II-2 使用簡單句型表達", "difficulty": 2, "vizKind": "none" },
-            { "kpId": "eng-g3-i-like", "kpName": "I like ___.", "skill": "2-II-2 使用簡單句型表達", "difficulty": 2, "vizKind": "none" }
+            { "kpId": "eng-g3-this-is", "kpName": "This is a ___.", "skill": "2-II-2 使用簡單句型表達", "difficulty": 2, "vizKind": "name" },
+            { "kpId": "eng-g3-i-like", "kpName": "I like ___.", "skill": "2-II-2 使用簡單句型表達", "difficulty": 2, "vizKind": "name" }
           ]
         },
         {
@@ -362,8 +362,8 @@
           "unitId": "eng-g4-question",
           "unitName": "問答句型",
           "knowledgePoints": [
-            { "kpId": "eng-g4-what-is", "kpName": "What is it? / It is ___.", "skill": "2-II-3 進行簡單問答", "difficulty": 3, "vizKind": "none" },
-            { "kpId": "eng-g4-how-many", "kpName": "How many ___? 數量問答", "skill": "2-II-3 進行簡單問答", "difficulty": 3, "vizKind": "none" }
+            { "kpId": "eng-g4-what-is", "kpName": "What is it? / It is ___.", "skill": "2-II-3 進行簡單問答", "difficulty": 3, "vizKind": "name" },
+            { "kpId": "eng-g4-how-many", "kpName": "How many ___? 數量問答", "skill": "2-II-3 進行簡單問答", "difficulty": 3, "vizKind": "tally" }
           ]
         },
         {

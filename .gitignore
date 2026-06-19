@@ -17,6 +17,11 @@ BUILD/env/
 # specbase event log DB (tool state, not source)
 .specbase/
 
+# GenBank accumulation layer — runtime-generated state, not source
+webapp/backend/data/genbank.sqlite*
+webapp/backend/data/scene-illust/
+webapp/backend/data/videobank.json.imported
+
 # Editor / OS
 .DS_Store
 .vscode/

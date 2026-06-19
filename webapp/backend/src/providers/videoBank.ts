@@ -1,7 +1,8 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { A1VideoItem } from '../contracts/providers.js'
+import type { GenBank } from './genbank.js'
 
 /**
  * 影片庫（persistent video bank）——依主題分門別類，累積「可給小孩看」的影片連結。
@@ -57,82 +58,92 @@ function today(): string {
 }
 
 export class VideoBank {
-  private topics: Record<string, BankTopic> = {}
+  private bank: GenBank
 
-  constructor() {
-    this.reload()
+  /**
+   * @param genBank 統一累積層。影片資料改存 gen_video 表（取代 videobank.json）。
+   * 公開 API（size/get/accumulate/summary）不變，呼叫端無感。
+   */
+  constructor(genBank: GenBank) {
+    this.bank = genBank
+    this.importLegacyJsonOnce()
+    log('a1.videobank.ready', { source: 'genbank' })
   }
 
-  reload(): void {
+  /** 一次性遷移：若舊 videobank.json 還在，import 進 gen_video 後改名為 .imported（保留備份）。 */
+  private importLegacyJsonOnce(): void {
+    const p = dataPath()
+    if (!existsSync(p)) return
     try {
-      const file = JSON.parse(readFileSync(dataPath(), 'utf-8')) as BankFile
-      this.topics = file.topics ?? {}
+      const file = JSON.parse(readFileSync(p, 'utf-8')) as BankFile
+      let imported = 0
+      for (const [key, t] of Object.entries(file.topics ?? {})) {
+        const query = t.queries?.[0] ?? ''
+        for (const v of t.videos) {
+          const isNew = this.bank.insertVideo({
+            topic: key,
+            label: t.label || key,
+            videoId: v.videoId,
+            title: v.title,
+            channelId: v.channelId,
+            channelTitle: v.channelTitle,
+            thumbnail: v.thumbnail,
+            query,
+          })
+          if (isNew) imported += 1
+        }
+      }
+      renameSync(p, `${p}.imported`)
+      log('a1.videobank.migrated', { imported, from: 'videobank.json' })
     } catch (error) {
-      console.warn(
-        '[VideoBank] 載入失敗（找影片改回每次都搜 YouTube）:',
-        error instanceof Error ? error.message : error,
-      )
-      this.topics = {}
+      console.warn('[VideoBank] 舊 JSON 遷移失敗（略過，不影響 SQLite 運作）:', error instanceof Error ? error.message : error)
     }
-    const count = Object.values(this.topics).reduce((n, t) => n + t.videos.length, 0)
-    log('a1.videobank.loaded', { topics: Object.keys(this.topics).length, videos: count })
   }
 
   /** 某主題庫內影片數（沒有回 0）。 */
   size(topic: string): number {
-    return this.topics[keyOf(topic)]?.videos.length ?? 0
+    return this.bank.videoCount(keyOf(topic))
   }
 
   /** 取某主題庫內全部影片（原始順序＝累積順序）。 */
   get(topic: string): BankVideo[] {
-    return this.topics[keyOf(topic)]?.videos ?? []
+    return this.bank.getVideos(keyOf(topic)).map((r) => ({
+      videoId: r.video_id,
+      title: r.title,
+      channelId: r.channel_id,
+      channelTitle: r.channel_title,
+      thumbnail: r.thumbnail,
+      addedAt: r.created_at.slice(0, 10),
+    }))
   }
 
   /**
-   * 把一次搜尋的好結果併入主題（以 videoId 去重，新影片附 addedAt），並寫回檔案。
+   * 把一次搜尋的好結果併入主題（以 videoId 去重）。
    * label：原始主題字（顯示用）；query：這次的搜尋詞（追溯用）。
    */
   accumulate(topic: string, label: string, query: string, items: A1VideoItem[]): void {
     const key = keyOf(topic)
     if (!key || items.length === 0) return
-    const t: BankTopic =
-      this.topics[key] ?? { label: label.trim() || topic, videos: [], queries: [], updatedAt: today() }
-    const seen = new Set(t.videos.map((v) => v.videoId))
     let added = 0
     for (const it of items) {
-      if (!it.videoId || seen.has(it.videoId)) continue
-      seen.add(it.videoId)
-      t.videos.push({
+      if (!it.videoId) continue
+      const isNew = this.bank.insertVideo({
+        topic: key,
+        label: label.trim() || topic,
         videoId: it.videoId,
         title: it.title,
         channelId: it.channelId,
         channelTitle: it.channelTitle,
         thumbnail: it.thumbnail,
-        addedAt: today(),
+        query: query.trim(),
       })
-      added += 1
+      if (isNew) added += 1
     }
-    const q = query.trim()
-    if (q && !t.queries.includes(q)) t.queries.push(q)
-    t.updatedAt = today()
-    this.topics[key] = t
-    if (added > 0) this.persist()
-    log('a1.videobank.accumulate', { topic: key, added, total: t.videos.length })
+    log('a1.videobank.accumulate', { topic: key, added, total: this.bank.videoCount(key) })
   }
 
   /** 各主題摘要（管理/檢索用）。 */
   summary(): Array<{ topic: string; label: string; count: number; updatedAt: string }> {
-    return Object.entries(this.topics)
-      .map(([topic, t]) => ({ topic, label: t.label, count: t.videos.length, updatedAt: t.updatedAt }))
-      .sort((a, b) => b.count - a.count)
-  }
-
-  private persist(): void {
-    const file: BankFile = {
-      version: 1,
-      note: '影片庫：依主題分門別類，累積『可給小孩看』的 YouTube 影片連結。小雞老師找影片時先查這裡，主題已累積足夠就直接服務、不打 YouTube API；不足才搜尋並把好結果寫回此庫。資料由系統自動寫入。',
-      topics: this.topics,
-    }
-    writeFileSync(dataPath(), JSON.stringify(file, null, 2) + '\n', 'utf-8')
+    return this.bank.videoTopics()
   }
 }

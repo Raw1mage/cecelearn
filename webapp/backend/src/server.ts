@@ -24,6 +24,10 @@ import { MoeWordLookupProvider } from './providers/moeProvider.js'
 import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
 import { QuizBankProvider } from './providers/quizBankProvider.js'
 import { QuizGenProvider } from './providers/quizGenProvider.js'
+import { QuizIconProvider } from './providers/quizIconProvider.js'
+import { GenBank, type GenTable } from './providers/genbank.js'
+import { CachedIllustrationProvider } from './providers/cachedIllustrationProvider.js'
+import { createReadStream, existsSync } from 'node:fs'
 import type { A1ChatMessage } from './contracts/providers.js'
 
 const env = loadEnv()
@@ -69,14 +73,17 @@ function buildChatProvider(): DialogueChatProvider {
   return gemini
 }
 
+// 統一 token 產物累積層（SQLite）：題庫 bank-first/rotation、場景插畫快取、影片庫。fail-fast 開不了即拋。
+const genBank = new GenBank()
 const channelLibrary = new ChildChannelLibrary()
-const videoBank = new VideoBank()
+const videoBank = new VideoBank(genBank) // 影片庫內部改用 genBank（API 不變）
 const ytdlp = env.ytDlpPath ? new YtDlpVideoProvider(env.ytDlpPath) : undefined
 const blocklist = new Blocklist()
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
-  buildImageProvider(),
+  // 場景插畫包一層累積快取：命中回庫圖（零 token），未命中生成後回存（契約不變）
+  new CachedIllustrationProvider(buildImageProvider(), genBank),
   new GeminiVisionProvider(env.geminiApiKeys),
   new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary, videoBank, ytdlp, blocklist),
   channelLibrary,
@@ -87,7 +94,9 @@ const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
 const vocabEngine = new VocabQuizEngine(env.geminiApiKeys)
 const quizBank = new QuizBankProvider() // 事實科（自然/社會）事實種子池
-const quizGen = new QuizGenProvider(env.geminiApiKeys, quizBank) // 全科 runtime 動態生
+// 練習題單元物件插畫圖庫（複合生圖）：build 預生 + runtime 用 image provider 補沒有的（天條 #11 已批准）
+const quizIcons = new QuizIconProvider(buildImageProvider())
+const quizGen = new QuizGenProvider(env.geminiApiKeys, quizBank, quizIcons, genBank) // 全科 runtime 動態生 + 題庫累積
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })
@@ -349,6 +358,87 @@ const server = createServer(async (request, response) => {
       semesters: pub && gr ? vocabEngine.getSemesters(pub, gr) : [],
       lessons: pub && gr ? vocabEngine.getLessons(pub, gr, sem ?? undefined) : [],
     })
+    return
+  }
+
+  // 練習題單元物件插畫：以名詞鍵取圖（複合生圖圖庫）。名詞須命中 NOUN_BANK（filePathFor 對未知名詞回 null）→ 防路徑穿越。
+  if (url.startsWith('/api/quiz/icon/') && method === 'GET') {
+    const noun = decodeURIComponent(url.slice('/api/quiz/icon/'.length).split('?')[0] ?? '')
+    const filePath = /^[a-z]+$/.test(noun) ? quizIcons.filePathFor(noun) : null
+    if (!filePath) {
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ ok: false, error: 'ICON_NOT_FOUND' }))
+      return
+    }
+    const ext = filePath.slice(filePath.lastIndexOf('.') + 1).toLowerCase()
+    const ct = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+    response.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'public, max-age=86400' })
+    createReadStream(filePath).pipe(response)
+    return
+  }
+
+  // 場景插畫快取圖：依 gen_image id 取檔（累積層 kind=scene/quiz-icon）。id 須為純數字 → 防穿越。
+  if (url.startsWith('/api/genbank/img/') && method === 'GET') {
+    const idStr = url.slice('/api/genbank/img/'.length).split('?')[0] ?? ''
+    const id = /^\d+$/.test(idStr) ? Number(idStr) : NaN
+    const row = Number.isNaN(id) ? null : genBank.imageById(id)
+    if (!row) {
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ ok: false, error: 'IMG_NOT_FOUND' }))
+      return
+    }
+    const abs = resolve(process.cwd(), 'data', row.file_path)
+    const dataDir = resolve(process.cwd(), 'data')
+    if (!abs.startsWith(dataDir) || !existsSync(abs)) {
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ ok: false, error: 'IMG_FILE_MISSING' }))
+      return
+    }
+    const ext = abs.slice(abs.lastIndexOf('.') + 1).toLowerCase()
+    const ct = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+    response.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'public, max-age=86400' })
+    createReadStream(abs).pipe(response)
+    return
+  }
+
+  // 統一後台：累積層各類統計
+  if (url === '/api/genbank/summary' && method === 'GET') {
+    send(200, { ok: true, summary: genBank.summary(), videoTopics: genBank.videoTopics() })
+    return
+  }
+
+  // 統一後台：分類分頁列表。?type=quiz|image|video&category=&page=&pageSize=
+  if (url.startsWith('/api/genbank/list') && method === 'GET') {
+    const params = new URL(url, 'http://localhost').searchParams
+    const typeParam = params.get('type') ?? 'quiz'
+    const tableMap: Record<string, GenTable> = { quiz: 'gen_quiz', image: 'gen_image', video: 'gen_video' }
+    const table = tableMap[typeParam]
+    if (!table) {
+      send(400, { ok: false, error: 'BAD_TYPE', message: 'type 須為 quiz|image|video' })
+      return
+    }
+    const result = genBank.list(table, {
+      category: params.get('category') ?? undefined,
+      page: Number(params.get('page')) || 0,
+      pageSize: Number(params.get('pageSize')) || 50,
+    })
+    send(200, { ok: true, type: typeParam, ...result })
+    return
+  }
+
+  // 統一後台：刪一筆。DELETE /api/genbank/:type/:id
+  if (url.startsWith('/api/genbank/') && method === 'DELETE') {
+    const parts = url.slice('/api/genbank/'.length).split('?')[0]?.split('/') ?? []
+    const typeParam = parts[0] ?? ''
+    const id = /^\d+$/.test(parts[1] ?? '') ? Number(parts[1]) : NaN
+    const tableMap: Record<string, GenTable> = { quiz: 'gen_quiz', image: 'gen_image', video: 'gen_video' }
+    const table = tableMap[typeParam]
+    if (!table || Number.isNaN(id)) {
+      send(400, { ok: false, error: 'BAD_REQUEST', message: '需要 /api/genbank/:type/:id（type=quiz|image|video, id=數字）' })
+      return
+    }
+    const removed = genBank.remove(table, id)
+    send(removed ? 200 : 404, { ok: removed, removed })
     return
   }
 

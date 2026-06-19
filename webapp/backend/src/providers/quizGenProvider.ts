@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 import {
   MECHANICAL_SUBJECTS,
   genForKp,
+  genTallyItems,
+  genNameItems,
   reposeFact,
   validate,
   type GenItem,
@@ -11,6 +13,8 @@ import {
   type StrandInfo,
 } from './quizFramework.js'
 import { QuizBankProvider, type QuizServeItem } from './quizBankProvider.js'
+import { QuizIconProvider } from './quizIconProvider.js'
+import { GenBank, type QuizRow } from './genbank.js'
 
 /**
  * QuizGenProvider —— 全科 runtime 動態生題。沒有死題庫。
@@ -62,18 +66,40 @@ function toServe(q: GenItem, subject: string): QuizServeItem {
   return out
 }
 
+/** 累積層 QuizRow → 前端 QuizServeItem（攤平 JSON 欄位）。 */
+function rowToServe(r: QuizRow): QuizServeItem {
+  const out: QuizServeItem = {
+    id: r.q_id,
+    subject: r.subject,
+    type: r.type as QuizServeItem['type'],
+    stem: r.stem,
+    answer: r.answer,
+    steps: r.steps ? (JSON.parse(r.steps) as string[]) : [],
+  }
+  if (r.acceptable_answers) out.acceptableAnswers = JSON.parse(r.acceptable_answers) as string[]
+  if (r.choices) out.choices = JSON.parse(r.choices) as string[]
+  if (r.viz) out.viz = JSON.parse(r.viz) as QuizServeItem['viz']
+  return out
+}
+
 let reqSeq = 0
 
 export class QuizGenProvider {
   private apiKeys: string[]
   private quizBank: QuizBankProvider // 事實種子池
+  private iconProvider?: QuizIconProvider // 單元物件插畫圖庫（複合生圖）
+  private genBank?: GenBank // 統一 token 產物累積層（題庫 bank-first/rotation）
   private strands = new Map<string, StrandInfo & { kps: KpInfo[] }>() // 機制科 key: subject|grade
   private subjectName = new Map<string, string>()
   private kpIds = new Set<string>()
+  /** 機制科 bank-first 門檻：庫存 >= 此數才純從庫抽、不呼 Gemini。 */
+  private static readonly BANK_FIRST_MIN = 30
 
-  constructor(apiKeys: string[], quizBank: QuizBankProvider) {
+  constructor(apiKeys: string[], quizBank: QuizBankProvider, iconProvider?: QuizIconProvider, genBank?: GenBank) {
     this.apiKeys = apiKeys
     this.quizBank = quizBank
+    this.iconProvider = iconProvider
+    this.genBank = genBank
     const cur = loadCurriculum()
     for (const s of cur?.strands ?? []) {
       this.subjectName.set(s.subject, s.subjectName)
@@ -102,10 +128,31 @@ export class QuizGenProvider {
     if (MECHANICAL_SUBJECTS.has(subject)) {
       const strand = this.strands.get(`${subject}|${grade}`)
       if (!strand || strand.kps.length === 0) return []
+
+      // bank-first：庫存足夠就純從累積層抽（rotation by reuse_count），零 token。
+      if (this.genBank && this.genBank.quizCount(subject, grade) >= QuizGenProvider.BANK_FIRST_MIN) {
+        const rows = this.genBank.drawQuiz(subject, grade, count)
+        if (rows.length >= count) {
+          this.genBank.bumpQuizReuse(rows.map((r) => r.id))
+          const served = rows.map((r) => rowToServe(r))
+          return await this.enrichIcons(served)
+        }
+        // 庫存數字夠但實抽不足（極端）→ 落到生成路徑補
+      }
+
+      // 生成路徑：確定性模板（tally/name，零 token）或 Gemini（其他）；生完回存累積層。
       const assign = distribute(strand.kps, count)
       const batches = await Promise.all(
         [...assign.entries()].map(async ([kp, n]) => {
           try {
+            // 數數量題（vizKind=tally）走確定性模板，不呼叫 Gemini——數量由程式保證 = 答案。
+            if (kp.vizKind === 'tally') {
+              return genTallyItems(kp, strand, n, nonce).filter((q) => validate(q, this.kpIds).length === 0)
+            }
+            // 看圖說物件題（vizKind=name）走確定性模板——圖(emoji)與答案同源，永遠一致。
+            if (kp.vizKind === 'name') {
+              return genNameItems(kp, strand, n, nonce).filter((q) => validate(q, this.kpIds).length === 0)
+            }
             const { items } = await genForKp(this.apiKeys, kp, strand, n, nonce)
             return items.filter((q) => validate(q, this.kpIds).length === 0)
           } catch (e) {
@@ -114,7 +161,10 @@ export class QuizGenProvider {
           }
         }),
       )
-      return batches.flat().map((q) => toServe(q, subject))
+      const items = batches.flat()
+      this.writeBackQuiz(items, subject, grade) // 累積：生成物回存供再利用（dedupe by stem）
+      const served = items.map((q) => toServe(q, subject))
+      return await this.enrichIcons(served)
     }
 
     // 事實科：取種子 → 重新包裝（釘答案）→ 失敗退回原種子題
@@ -127,5 +177,59 @@ export class QuizGenProvider {
         return re ? toServe(re, subject) : seed
       }),
     )
+  }
+
+  /**
+   * 補單元物件插畫：對 viz 帶 iconKey 的題（tally/name），向 iconProvider 取 iconUrl 掛上去。
+   * 取得失敗（無圖庫、生圖失敗）→ 不掛 iconUrl，前端退 emoji floor（既有確定性渲染，非 silent fallback）。
+   * 數量正確性與圖無關——always 由 viz.count 程式 tile 保證。
+   */
+  private async enrichIcons(items: QuizServeItem[]): Promise<QuizServeItem[]> {
+    if (!this.iconProvider) return items
+    await Promise.all(
+      items.map(async (item) => {
+        const viz = item.viz as { iconKey?: string; iconUrl?: string } | undefined
+        if (!viz?.iconKey || viz.iconUrl) return
+        try {
+          const url = await this.iconProvider!.iconUrlFor(viz.iconKey)
+          if (url) viz.iconUrl = url
+        } catch (e) {
+          console.warn(`[QuizGen] icon 取得失敗 (${viz.iconKey}):`, e instanceof Error ? e.message : e)
+        }
+      }),
+    )
+    return items
+  }
+
+  /**
+   * 把剛生成的機制科題回存累積層（dedupe by stem，已存在則跳過）。
+   * 不阻塞回應——回存失敗只 log。viz 不存 iconUrl（runtime 解析，避免 URL 過期），只存題本身。
+   */
+  private writeBackQuiz(items: GenItem[], subject: string, grade: string): void {
+    if (!this.genBank || items.length === 0) return
+    try {
+      for (const q of items) {
+        // 回存 viz 時剝掉 iconUrl（runtime 動態解析），保留 iconKey/結構
+        let viz = q.explain.viz as Record<string, unknown> | undefined
+        if (viz && 'iconUrl' in viz) { const { iconUrl: _drop, ...rest } = viz; viz = rest }
+        this.genBank.insertQuiz({
+          qId: q.qId,
+          subject,
+          grade,
+          kpId: q.kpId,
+          type: q.type,
+          stem: q.stem,
+          answer: q.answer,
+          acceptableAnswers: q.acceptableAnswers,
+          choices: q.choices,
+          steps: q.explain.steps,
+          viz,
+          sourceModel: q.source,
+          reviewed: q.reviewed,
+        })
+      }
+    } catch (e) {
+      console.warn('[QuizGen] 題庫回存失敗:', e instanceof Error ? e.message : e)
+    }
   }
 }
