@@ -60,11 +60,12 @@
 
 找影片的搜尋來源以**自架 Invidious 為主**（借鏡同機的 `ytlite`，`INVIDIOUS_API_URL` 預設 `http://localhost:1215`），**零 YouTube Data API 配額**；YouTube Data API v3（`YOUTUBE_API_KEY`）降為 Invidious 不可用時的後備。播放仍用真實 videoId 走 YouTube iframe，只換搜尋這層。
 
-> **⚠️ 跨機運行期依賴（明示化）**：cecelearn **借用同機 [`ytlite`](../ytlite) 專案已在跑的 Invidious docker**（不自帶一份 infra）。預設 `http://localhost:1215` 指向 ytlite 的 Invidious 對外 port。代價：
-> - ytlite 的 Invidious 容器要在**同機跑著**；停了的話找影片 **fail-soft** 退 Data API（若有 key）或影片庫既有內容，**不崩**。
-> - **feed 預熱**（`POST /api/a1/prewarm`，抓精選頻道最新片）需 Invidious **≥2026.06**（頻道 parser 修復後才解得出 `latestVideos`）；舊版會回 `channels:0`。
-> - 後端啟動時會 probe Invidious 一次，連不到只 log warn（見 `server.ts` startup health probe）。
-> - 要讓 cecelearn **自足**：把 `INVIDIOUS_API_URL` 指向自己的 Invidious；設空字串＝停用、純走 Data API。
+> **⚠️ 共用 Invidious 層（明示化依賴）**：cecelearn 找影片連到**獨立共用 Invidious 層**（`/home/pkcs12/projects/invidious-shared`，`db + companion + engine` 三容器，誰都不擁有）——cecelearn 與 [`ytlite`](../ytlite) **共用同一份**、各自不自帶 infra。預設 `http://localhost:1215` 指向共用層的對外 port。代價：
+> - 共用 Invidious 層要在**同機跑著**；停了的話找影片 **fail-soft** 退 Data API（若有 key）或影片庫既有內容，**不崩**。
+> - **feed 預熱**（`POST /api/a1/prewarm`，抓精選頻道最新片）需 Invidious **≥2026.06**（頻道 parser 修復後才解得出 `latestVideos`）；共用層已 pin `2026.06.15`。
+> - 後端啟動時會 probe Invidious 一次,連不到只 log warn（見 `server.ts` startup health probe）。
+> - 共用層起停：`cd /home/pkcs12/projects/invidious-shared && docker compose up -d`。
+> - 要讓 cecelearn **完全自足**：把 `INVIDIOUS_API_URL` 指向自己專屬的 Invidious；設空字串＝停用、純走 Data API。
 
 兒童安全採「**精選優先＋家庭友善過濾**」：精選頻道（頻道庫）一律放行並排最前，非精選頻道用 Invidious 的頻道 `isFamilyFriendly` 把關（查不到則保守剔除）。
 

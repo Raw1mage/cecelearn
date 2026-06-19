@@ -118,12 +118,14 @@ export function loadEnv(): BackendEnv {
 
   // 找影片主要來源：自架 Invidious（零 YouTube 配額）。
   //
-  // 跨機運行期依賴（DD-30，明示化）：預設 http://localhost:1215 指向**同機 ytlite 專案**
-  // 已在跑的 Invidious docker 對外 port——cecelearn 借用它、不自帶一份 infra。代價是找影片
-  // 活在 ytlite 的運行假設裡：(1) ytlite 的 Invidious 容器要在同機跑著；(2) feed 預熱需
-  // Invidious ≥2026.06（頻道 parser）。連不到時 server 啟動會 log warn（見 server.ts
-  // health probe），找影片 fail-soft 退 Data API（若有 YOUTUBE_API_KEY）或影片庫既有內容。
-  // 要讓 cecelearn 自足，改設 INVIDIOUS_API_URL 指向自己的 Invidious；設空字串＝停用、走 Data API。
+  // 跨服務運行期依賴（DD-31，supersede DD-30）：預設 http://localhost:1215 指向**獨立共用
+  // Invidious 層**（/home/pkcs12/projects/invidious-shared，db+companion+engine 三容器，
+  // 誰都不擁有）——cecelearn 與 ytlite 共用同一份、各自不自帶 infra。代價是找影片依賴此共用
+  // 層在跑：(1) 共用 Invidious 要在同機跑著（host port 1215）；(2) feed 預熱需 Invidious
+  // ≥2026.06（頻道 parser，共用層已 pin 2026.06.15）。連不到時 server 啟動會 log warn
+  // （見 server.ts health probe），找影片 fail-soft 退 Data API（若有 YOUTUBE_API_KEY）
+  // 或影片庫既有內容。要完全自足，改設 INVIDIOUS_API_URL 指向自己專屬的 Invidious；
+  // 設空字串＝停用、走 Data API。
   const invidiousApiUrl = (
     process.env.INVIDIOUS_API_URL ?? 'http://localhost:1215'
   ).trim()
