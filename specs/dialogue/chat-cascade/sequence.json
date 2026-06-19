@@ -1,0 +1,34 @@
+[
+  {
+    "id": "P1",
+    "name": "Cascade happy path — Claude bare 回完整 payload",
+    "componentRef": ["A1", "A2", "A3"],
+    "messages": [
+      { "id": "MSG1", "from": "Frontend", "to": "Backend /a1/chat", "label": "POST messages (e.g.「講一隻貓的故事」)" },
+      { "id": "MSG2", "from": "Backend /a1/chat", "to": "CascadeChatProvider", "label": "chat(messages, hint)" },
+      { "id": "MSG3", "from": "CascadeChatProvider", "to": "OpencodeBareChatProvider", "label": "primary.chat()" },
+      { "id": "MSG4", "from": "OpencodeBareChatProvider", "to": "opencode daemon", "label": "POST /api/v2/session (unix socket)" },
+      { "id": "MSG5", "from": "OpencodeBareChatProvider", "to": "opencode daemon", "label": "POST /session/{id}/message {agent:bare, system, json_schema, model pin, transcript}" },
+      { "id": "MSG6", "from": "opencode daemon", "to": "OpencodeBareChatProvider", "label": "軟性結構化文字（fence / StructuredOutput(...) / story 字串）" },
+      { "id": "MSG7", "from": "OpencodeBareChatProvider", "to": "a1ChatShared", "label": "extractStructuredJson → buildA1Response（正規化 + 完整性驗證）" },
+      { "id": "MSG8", "from": "OpencodeBareChatProvider", "to": "CascadeChatProvider", "label": "A1ChatResponse(ok) tier=claude-bare" },
+      { "id": "MSG9", "from": "CascadeChatProvider", "to": "Backend /a1/chat", "label": "log outcome=ok；回應" },
+      { "id": "MSG10", "from": "Backend /a1/chat", "to": "Frontend", "label": "A1ChatResponse → 渲染完整故事" }
+    ]
+  },
+  {
+    "id": "P2",
+    "name": "Fallthrough — Claude 不可用或救不回 → Gemini 備援",
+    "componentRef": ["A1", "A3"],
+    "messages": [
+      { "id": "MSG1", "from": "CascadeChatProvider", "to": "OpencodeBareChatProvider", "label": "primary.chat()" },
+      { "id": "MSG2", "from": "OpencodeBareChatProvider", "to": "opencode daemon", "label": "socket 連不上 / daemon 錯 / 抽不到合法 JSON" },
+      { "id": "MSG3", "from": "OpencodeBareChatProvider", "to": "CascadeChatProvider", "label": "A1ErrorResponse CHAT_BARE_*（FALLTHROUGH）" },
+      { "id": "MSG4", "from": "CascadeChatProvider", "to": "GeminiChatProvider", "label": "log fallthrough → secondary.chat()" },
+      { "id": "MSG5", "from": "GeminiChatProvider", "to": "Gemini API", "label": "generateContent + responseSchema（硬強制）" },
+      { "id": "MSG6", "from": "GeminiChatProvider", "to": "a1ChatShared", "label": "buildA1Response（同一 parse 邏輯）" },
+      { "id": "MSG7", "from": "GeminiChatProvider", "to": "CascadeChatProvider", "label": "A1ChatResponse(ok) 同形狀" },
+      { "id": "MSG8", "from": "CascadeChatProvider", "to": "Backend /a1/chat", "label": "log tier=gemini outcome=ok；回應" }
+    ]
+  }
+]

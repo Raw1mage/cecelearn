@@ -1,0 +1,13 @@
+[
+  { "id": "TV1", "name": "簡單 intent 走 Claude", "given": "CHAT_PROVIDER=cascade、「我要練習聽寫」", "when": "chat", "then": "intent=start_dictation, ok, tier=claude-bare, outcome=ok", "status": "pass" },
+  { "id": "TV2", "name": "lookup rich payload", "given": "「蘋果的蘋」", "when": "Claude 軟性結構化回（含 fence/StructuredOutput 偽語法）", "then": "intent=lookup, lookup.words 非空, ok（經抽取+修復+驗證）", "status": "pass" },
+  { "id": "TV3", "name": "make_sentence rich payload", "given": "「用蘋果造句」", "when": "chat", "then": "intent=make_sentence, sentence.sentences 非空", "status": "pass" },
+  { "id": "TV4", "name": "solve_arithmetic payload", "given": "「3 乘 7 怎麼算」", "when": "chat", "then": "intent=solve_arithmetic, arithmetic={a:3,b:7,operation:*}", "status": "pass" },
+  { "id": "TV5", "name": "story 形狀正規化（修空泡泡）", "given": "「講一隻貓的故事」連打 5 次", "when": "Claude 偶爾把 story 回成純字串", "then": "5/5 story 為物件且 story.story 非空（normalize 後）", "status": "pass" },
+  { "id": "TV6", "name": "Claude 不可用 → Gemini 備援", "given": "bare socket 連不上（broken socket）", "when": "cascade chat", "then": "log outcome=fallthrough → Gemini 回同形狀", "status": "pass" },
+  { "id": "TV7", "name": "結構化救不回 → 掉接", "given": "Claude 回無合法 JSON / payload 不完整", "when": "cascade chat", "then": "CHAT_BARE_NO_JSON（FALLTHROUGH）→ Gemini", "status": "pass" },
+  { "id": "TV8", "name": "BAD_REQUEST 不掉接", "given": "空 messages", "when": "cascade chat", "then": "CHAT_BAD_REQUEST，不掉接 Gemini，直接回 typed error", "status": "pass" },
+  { "id": "TV9", "name": "預設不退化", "given": "未設 CHAT_PROVIDER（gemini）", "when": "chat", "then": "純 Gemini，輸出形狀與改動前一致", "status": "pass" },
+  { "id": "TV10", "name": "設定 fail-fast", "given": "CHAT_PROVIDER=cascade 但缺 GEMINI_API_KEYS（或缺 socket）", "when": "loadEnv", "then": "拋錯，不默默變單 tier", "status": "pass" },
+  { "id": "TV11", "name": "端到端 UI", "given": "cecelearn UI 送「講一隻貓的故事」", "when": "gateway → backend → cascade → Claude", "then": "故事卡渲染完整文字（無空泡泡），無錯誤", "status": "pass" }
+]

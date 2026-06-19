@@ -1,0 +1,21 @@
+{
+  "diagram_title": "Run Dialogue Chat Cascade",
+  "node_reference": "A0",
+  "activities": [
+    { "id": "A1", "title": "Build And Send Bare Session", "description": "渲染對話歷史成 transcript，經同機 unix socket 開 opencode bare session 並送帶 system+json_schema+釘帳號的訊息", "decomposition": null },
+    { "id": "A2", "title": "Parse And Normalize Output", "description": "抽結構化 JSON（fence/括號/整段+寬鬆修復），正規化形狀偏差（story/sentence 字串→物件），驗 payload 完整性", "decomposition": null },
+    { "id": "A3", "title": "Cascade Decide And Fallback", "description": "primary 成功即回；可用性失敗（CHAT_BARE_*）才掉接 Gemini；BAD_REQUEST 不掉接；回同一 A1ChatResponse 形狀", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "AR1", "source": "EXTERNAL", "target": "A1:input", "label": "對話訊息 messages[]", "type": "input" },
+    { "id": "AR2", "source": "EXTERNAL", "target": "A1:control", "label": "CHAT_PROVIDER 模式 + 釘帳號設定", "type": "control" },
+    { "id": "AR3", "source": "EXTERNAL", "target": "A2:control", "label": "INTENT_JSON_SCHEMA + payload 完整性規則", "type": "control" },
+    { "id": "AR4", "source": "EXTERNAL", "target": "A3:control", "label": "FALLTHROUGH_CODES（天條 #11 界線）", "type": "control" },
+    { "id": "AR5", "source": "A1:output", "target": "A2:input", "label": "bare 回的軟性結構化文字", "type": "output" },
+    { "id": "AR6", "source": "A2:output", "target": "A3:input", "label": "A1ChatResponse 或 CHAT_BARE_* 錯誤", "type": "output" },
+    { "id": "AR7", "source": "A3:output", "target": "EXTERNAL", "label": "A1ChatResponse（主或備，同形狀）", "type": "output" },
+    { "id": "AR8", "source": "EXTERNAL", "target": "A1:mechanism", "label": "opencode daemon bare session（Claude 訂閱）", "type": "mechanism" },
+    { "id": "AR9", "source": "EXTERNAL", "target": "A2:mechanism", "label": "a1ChatShared parse/normalize", "type": "mechanism" },
+    { "id": "AR10", "source": "EXTERNAL", "target": "A3:mechanism", "label": "GeminiChatProvider（備援 tier）", "type": "mechanism" }
+  ]
+}

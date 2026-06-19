@@ -39,3 +39,7 @@
 - [x] 6.5 UI 實測「講一隻貓的故事」完整故事 / 「蘋果的蘋」查字（AC6）
 - [x] 6.6 上線：BUILD/env CHAT_PROVIDER=cascade（gitignored，本機）+ restart backend；commit `d186390`
 - [x] 6.7 event_record 收尾（start / decide / built 三筆）
+
+## 7. 延後（未來最佳化，非本案範圍）
+
+- [~] 7.1 每頁 bare session 重用：後端記 sessionID、每輪只送新 turn、daemon 熱累積歷史（取代目前每輪渲染完整歷史成單一 prompt）。**延後**，非本案範圍（DD-9）

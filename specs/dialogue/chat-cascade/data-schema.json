@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dialogue_chat-cascade data contracts",
+  "description": "cecelearn 後端對話 provider 級聯（Claude bare → Gemini）的契約。對應 design.md DD-1..DD-9。",
+  "definitions": {
+    "ChatProviderMode": {
+      "type": "string",
+      "enum": ["gemini", "bare", "cascade"],
+      "description": "env CHAT_PROVIDER；預設 gemini（不改既有行為）。DD-8"
+    },
+    "BareChatEnv": {
+      "type": "object",
+      "description": "bare/cascade 模式的連線與帳號（loadEnv fail-fast）。DD-3/DD-4/DD-8",
+      "properties": {
+        "socketPath": { "type": "string", "description": "OPENCODE_DAEMON_SOCKET 或 $XDG_RUNTIME_DIR/opencode/daemon.sock" },
+        "providerId": { "type": "string", "description": "預設 claude-cli" },
+        "modelID": { "type": "string", "description": "預設 claude-opus-4-8" },
+        "accountId": { "type": "string", "description": "釘 Claude 訂閱帳號；不走 rotation（DD-4）" }
+      },
+      "required": ["socketPath", "providerId", "modelID"],
+      "additionalProperties": false
+    },
+    "BareMessageRequest": {
+      "type": "object",
+      "description": "送 opencode bare session 一輪（POST /api/v2/session/{id}/message）。對應 opencode specs/daemon/bare-chat-session。",
+      "properties": {
+        "agent": { "type": "string", "enum": ["bare"] },
+        "system": { "type": "string", "description": "小雞老師 SYSTEM_PROMPT（唯一注入的 system 層）" },
+        "format": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["json_schema"] },
+            "schema": { "type": "object", "description": "INTENT_JSON_SCHEMA（標準 dialect）" }
+          },
+          "required": ["type", "schema"]
+        },
+        "model": { "$ref": "#/definitions/BareChatEnv" },
+        "parts": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "type": { "const": "text" }, "text": { "type": "string" } }, "required": ["type", "text"] },
+          "description": "單一 text part；後端把完整對話歷史渲染成 transcript（DD-9）"
+        }
+      },
+      "required": ["agent", "system", "parts"]
+    },
+    "A1Intent": {
+      "type": "string",
+      "enum": ["lookup", "make_words", "make_sentence", "tell_story", "draw", "solve_arithmetic", "start_dictation", "start_idiom", "chat", "unclear"]
+    },
+    "A1ChatResponse": {
+      "type": "object",
+      "description": "主備兩路徑回的同一形狀（DD-7）。payload 隨 intent 而定，經完整性驗證（DD-6）。",
+      "properties": {
+        "ok": { "const": true },
+        "intent": { "$ref": "#/definitions/A1Intent" },
+        "reply": { "type": "string" },
+        "illustratable": { "type": "boolean" },
+        "lookup": { "type": "object" },
+        "sentence": { "type": "object", "description": "{targetWord, sentences[]}；字串形狀會被正規化成物件（DD-5）" },
+        "story": { "type": "object", "description": "{topic, story}；字串形狀會被正規化成物件（DD-5，修空泡泡 bug）" },
+        "draw": { "type": "object" },
+        "arithmetic": { "type": "object" }
+      },
+      "required": ["ok", "intent", "reply"]
+    },
+    "ChatErrorCode": {
+      "type": "string",
+      "enum": ["CHAT_BARE_UNAVAILABLE", "CHAT_BARE_ERROR", "CHAT_BARE_NO_JSON", "CHAT_BAD_REQUEST", "CHAT_NOT_CONFIGURED", "CHAT_UPSTREAM_ERROR", "CHAT_EMPTY_REPLY", "CHAT_PARSE_ERROR"],
+      "description": "FALLTHROUGH_CODES = 全部除 CHAT_BAD_REQUEST（使用者輸入問題不掉接）。DD-7"
+    },
+    "A1ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "ok": { "const": false },
+        "error": { "$ref": "#/definitions/ChatErrorCode" },
+        "message": { "type": "string", "description": "兒童友善訊息" }
+      },
+      "required": ["ok", "error", "message"]
+    }
+  }
+}

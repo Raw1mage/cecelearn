@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "state": "living",
+  "profile": [],
+  "history": [
+    {
+      "from": null,
+      "to": "proposed",
+      "at": "2026-06-19T04:37:17.968Z",
+      "by": "pkcs12",
+      "mode": "new",
+      "reason": "initial spec created via plan-init.ts"
+    },
+    {
+      "from": "proposed",
+      "to": "designed",
+      "at": "2026-06-19T04:43:31.356Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "proposal(+Impact)/design/spec(Purpose+Requirement/Scenario)/idef0/grafcet/sequence/data-schema authored for the completed, committed chat-cascade client"
+    },
+    {
+      "from": "designed",
+      "to": "planned",
+      "at": "2026-06-19T04:46:24.296Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "handoff (Stop Gates In Force + Execution-Ready Checklist) + errors (Error Catalogue) headings fixed"
+    },
+    {
+      "from": "planned",
+      "to": "implementing",
+      "at": "2026-06-19T04:46:28.462Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "implementation complete and committed (d186390)"
+    },
+    {
+      "from": "implementing",
+      "to": "verified",
+      "at": "2026-06-19T04:46:41.504Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "all in-scope tasks done + verified (tsc, direct bare all intents, cascade fallthrough, shape-normalize 5/5, e2e gateway tier=claude-bare, UI story render); committed d186390. Deferred session-reuse marked [~] (out of scope, DD-9)."
+    },
+    {
+      "from": "verified",
+      "to": "living",
+      "at": "2026-06-19T04:47:12.279Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "User-instructed documentation/wrap-up of this session's feature build. Verified + committed (d186390); pairs with opencode specs/daemon/bare-chat-session."
+    }
+  ]
+}
