@@ -104,12 +104,22 @@ export function TurnContent({ message }: TurnContentProps) {
     )
   }
 
-  if (intent === 'tell_story' && story) {
+  if ((intent === 'tell_story' || intent === 'continue_story') && story) {
     return (
       <div className="a1-turn-content a1-turn-content--story">
         <article className="a1-story-card">
-          {story.topic && <h4 className="a1-story-topic">{story.topic}</h4>}
+          {story.topic && (
+            <h4 className="a1-story-topic">
+              {story.topic}
+              <span className="a1-story-relay-badge">故事接龍</span>
+            </h4>
+          )}
           <p className="a1-story-text">{story.story}</p>
+          {story.done ? (
+            <p className="a1-story-handback a1-story-handback--done">故事說完囉，好棒！🎉</p>
+          ) : (
+            story.prompt && <p className="a1-story-handback">{story.prompt}</p>
+          )}
         </article>
       </div>
     )

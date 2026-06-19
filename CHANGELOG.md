@@ -7,6 +7,10 @@
 小家教升級：把小雞老師從「窄命令機器人」擴成能真正講解英文、數學題目的家教，並把生圖策略改成可靠的雙軌。
 
 ### 新增 Added
+- **找影片**（`find_video` intent）：小朋友問知識或好奇某件事（如「我想看恐龍的影片」「放一段太陽系的影片」），小雞老師把好奇正規化成適齡搜尋詞，到 YouTube 找影片，直接在對話串流開成 inline 小播放窗。後端 `YoutubeVideoProvider` 走 YouTube Data API v3，安全鐵則 `safeSearch=strict` + `videoEmbeddable=true`；剛建的 key 傳播期暫態錯誤（`API key expired`/5xx）同層重試；每日搜尋上限防 quota，無 key／API 未啟用時 fail-fast 給 kid-friendly 提示。新增 `YOUTUBE_API_KEY`（未設沿用第一把 Gemini key）。
+  · 播放窗用 YouTube IFrame Player API（nocookie host），**自適應容器寬度**、16:9；不顯示相關影片連結，避免分散注意力。
+  · **影片播放時自動暫停麥克風**（不讓影片聲音被當成小朋友說話、亂觸發小雞老師），暫停/播完後若先前麥克風是開著的就自動開回。
+  · **兒童知識型頻道庫**（`data/channels.json` + `ChildChannelLibrary`）：維護一份經挑選、適合 6-9 歲的 YouTube 頻道清單（種子：樂樂TV、十萬個為什麼、FCCSD 成語任務、小豬佩奇中文官方）。query 命中庫內頻道主題時，先對該精選頻道做鎖頻道搜尋（命中即用，省配額），否則退一般 safeSearch；精選結果標 ⭐ 並排最前。管理／檢索 API：`GET /api/a1/channels`（列出）、`POST /api/a1/channels`（入庫，channelId 去重、寫回 JSON）。
 - **小家教講解能力**（`explain` intent）：對小朋友唸/打出的題目做「題目 → 一步步講解 → 答案」。涵蓋英文題/單字/句子、數學應用題與概念；純算式仍走直式動畫。
 - **拍照讀題（OCR）**：對著考卷拍照 → Gemini 2.5 Flash 多模態辨識題目原文 → 餵進講解流程。前端相機鈕、自動縮圖（最長邊 1280 / JPEG）後上傳。
 - **英文發音 / 跟讀練習**：英文題附帶關鍵單字（單字＋中文意思），卡片下方可 🔊 聽（en-US 朗讀）、🎤 跟讀（獨立 en-US 單發辨識）並比對，過了灑花計分。

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "TV1",
+    "requirement": "機制科 runtime 即時生題",
+    "input": { "type": "http", "method": "GET", "path": "/api/quiz?subject=math&grade=2年級&count=2" },
+    "expected": { "ok": true, "items_len": 2, "items_are_generated": true, "no_static_bank_read": true }
+  },
+  {
+    "id": "TV2",
+    "requirement": "機制科連抽兩次內容不同",
+    "input": { "type": "http_twice", "path": "/api/quiz?subject=math&grade=2年級&count=3" },
+    "expected": { "stems_differ_across_runs": true }
+  },
+  {
+    "id": "TV3",
+    "requirement": "數學圖解永不畫錯（viz 算式一致）",
+    "input": { "type": "viz_check", "kind": "groups" },
+    "expected": { "invariant": "groups*per===result" }
+  },
+  {
+    "id": "TV4",
+    "requirement": "數學圖解永不畫錯（count 不變式）",
+    "input": { "type": "viz_check", "kind": "count" },
+    "expected": { "invariant": "result===operation==='add'?total+operand:total-operand" }
+  },
+  {
+    "id": "TV5",
+    "requirement": "事實科釘答案",
+    "input": { "type": "http", "path": "/api/quiz?subject=science&grade=4年級&count=2" },
+    "expected": { "ok": true, "answer_equals_some_seed_answer": true, "choices_include_answer": true }
+  },
+  {
+    "id": "TV6",
+    "requirement": "事實科變化包裝",
+    "input": { "type": "http_twice", "path": "/api/quiz?subject=science&grade=4年級&count=2" },
+    "expected": { "choices_or_stem_may_vary": true }
+  },
+  {
+    "id": "TV7",
+    "requirement": "重包裝失敗退回種子",
+    "input": { "type": "repose_reject", "model_answer_neq_seed": true },
+    "expected": { "served": "seed_original_item", "never_wrong_answer": true }
+  },
+  {
+    "id": "TV8",
+    "requirement": "meta 涵蓋全科全級",
+    "input": { "type": "http", "path": "/api/quiz/meta" },
+    "expected": { "ranges_len": 26, "subjects": ["chinese", "math", "english", "science", "social"] }
+  }
+]

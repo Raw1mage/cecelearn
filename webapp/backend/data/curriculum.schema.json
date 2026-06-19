@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cecelearn 全科課綱題庫資料契約",
+  "description": "兩層設計：(1) 課綱骨架 curriculum — 版權乾淨，來源為 108 課綱能力指標 / 課本目錄；(2) 題目 quizItem — 由生圖/對話 cascade 生成，帶 provenance，永不存放第三方題庫原文。沿用 vocabulary.json 的 grade/version 與 a1 的 explain.viz 規格。",
+  "definitions": {
+    "Subject": {
+      "type": "string",
+      "enum": ["chinese", "math", "english", "science", "social"],
+      "description": "封閉科目集；初期落地 chinese/math/english（對齊 README 三科），science/social 預留"
+    },
+    "VizKind": {
+      "type": "string",
+      "enum": ["count", "groups", "none"],
+      "description": "對應前端確定性 SVG 圖解規格：count=加減數東西/打叉標底，groups=乘除分組，none=無圖解"
+    },
+    "KnowledgePoint": {
+      "type": "object",
+      "description": "課綱最小教學單位；題目都掛在 kpId 上",
+      "properties": {
+        "kpId": { "type": "string", "description": "穩定鍵，如 math-g3-mul-2x1-nocarry" },
+        "kpName": { "type": "string", "description": "白話名稱，如『兩位數乘一位數（不進位）』" },
+        "skill": { "type": "string", "description": "對應 108 課綱能力指標描述，可引課綱條號" },
+        "difficulty": { "type": "integer", "minimum": 1, "maximum": 3, "description": "1=入門 2=熟練 3=挑戰" },
+        "vizKind": { "$ref": "#/definitions/VizKind" }
+      },
+      "required": ["kpId", "kpName", "difficulty", "vizKind"],
+      "additionalProperties": false
+    },
+    "Unit": {
+      "type": "object",
+      "description": "課本單元；對應一課或一個主題",
+      "properties": {
+        "unitId": { "type": "string" },
+        "unitName": { "type": "string", "description": "如『乘法』『時間與日期』" },
+        "knowledgePoints": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/KnowledgePoint" },
+          "minItems": 1
+        }
+      },
+      "required": ["unitId", "unitName", "knowledgePoints"],
+      "additionalProperties": false
+    },
+    "CurriculumStrand": {
+      "type": "object",
+      "description": "一個（科目 × 年級 × 版本）的單元集合；grade/version 沿用 vocabulary.json 寫法",
+      "properties": {
+        "subject": { "$ref": "#/definitions/Subject" },
+        "subjectName": { "type": "string", "description": "白話科名，如『數學』" },
+        "grade": { "type": "string", "description": "沿用 vocabulary.json，如『3年級』" },
+        "version": { "type": "string", "description": "沿用 vocabulary.json，如『康軒版』；數學/英文若無版本差異可填『通用』" },
+        "units": { "type": "array", "items": { "$ref": "#/definitions/Unit" }, "minItems": 1 }
+      },
+      "required": ["subject", "subjectName", "grade", "version", "units"],
+      "additionalProperties": false
+    },
+    "Curriculum": {
+      "type": "object",
+      "description": "curriculum.json 根；純骨架，無任何第三方題目原文",
+      "properties": {
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "description": "骨架來源宣告，如 '108課綱能力指標 + 康軒課本目錄'，供稽核版權乾淨性" },
+        "strands": { "type": "array", "items": { "$ref": "#/definitions/CurriculumStrand" } }
+      },
+      "required": ["generatedAt", "source", "strands"],
+      "additionalProperties": false
+    },
+    "QuizItem": {
+      "type": "object",
+      "description": "生成題目；綁定 kpId，帶 provenance。永不直接複製第三方題庫；source 必須是 generated:* 或 authored:*（人工原創）",
+      "properties": {
+        "qId": { "type": "string" },
+        "kpId": { "type": "string", "description": "指向 KnowledgePoint.kpId" },
+        "type": {
+          "type": "string",
+          "enum": ["fill", "choice", "make_word", "read_aloud"],
+          "description": "fill=填空 choice=選擇 make_word=造詞造句 read_aloud=英文跟讀"
+        },
+        "stem": { "type": "string", "description": "題幹（純中文不夾英文，英文題例外）" },
+        "answer": { "type": "string", "description": "標準答案" },
+        "choices": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "type=choice 時提供，含正解的選項陣列"
+        },
+        "explain": {
+          "type": "object",
+          "description": "講解；沿用 a1 explain 規格（步驟 + 可選 SVG viz）",
+          "properties": {
+            "steps": { "type": "array", "items": { "type": "string" } },
+            "viz": { "type": "object", "description": "前端確定性 SVG 規格（count / groups）；vizKind=none 時省略" }
+          },
+          "required": ["steps"],
+          "additionalProperties": true
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^(generated|authored):",
+          "description": "provenance：generated:<model>@<iso8601> 或 authored:<人>@<date>。不接受任何第三方題庫原文。"
+        },
+        "reviewed": { "type": "boolean", "description": "是否經人工審過，預設 false" }
+      },
+      "required": ["qId", "kpId", "type", "stem", "answer", "explain", "source"],
+      "additionalProperties": false
+    }
+  }
+}

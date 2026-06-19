@@ -53,7 +53,7 @@ export class CascadeChatProvider implements DialogueChatProvider {
 
   async chat(
     messages: A1ChatMessage[],
-    hint?: 'lookup',
+    hint?: 'lookup' | 'story',
   ): Promise<A1ChatResponse | A1ErrorResponse> {
     const start = Date.now()
 

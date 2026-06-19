@@ -8,6 +8,7 @@ import type {
 import {
   SYSTEM_PROMPT,
   LOOKUP_HINT,
+  STORY_HINT,
   INTENT_JSON_SCHEMA,
   buildA1Response,
   extractStructuredJson,
@@ -113,7 +114,7 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
 
   async chat(
     messages: A1ChatMessage[],
-    hint?: 'lookup',
+    hint?: 'lookup' | 'story',
   ): Promise<A1ChatResponse | A1ErrorResponse> {
     const start = Date.now()
 
@@ -128,7 +129,7 @@ export class OpencodeBareChatProvider implements DialogueChatProvider {
       .join('\n')
     const promptText =
       `以下是與小朋友的對話紀錄，請判斷「最後一句小朋友說的話」的意圖並依規則回應：\n\n${transcript}` +
-      (hint === 'lookup' ? LOOKUP_HINT : '') +
+      (hint === 'lookup' ? LOOKUP_HINT : hint === 'story' ? STORY_HINT : '') +
       // claude-cli 軟性結構化：daemon 注入「請用 StructuredOutput 工具」會讓模型演成
       // StructuredOutput({...}) 偽函式語法（key 未加引號），無法 parse。明確覆蓋：直接
       // 輸出嚴格 JSON。（解析端另有寬鬆修復作後備）

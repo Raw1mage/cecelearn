@@ -1,0 +1,24 @@
+{
+  "diagram_title": "Generate Quiz Items at Runtime",
+  "node_reference": "A0",
+  "activities": [
+    { "id": "A1", "title": "Route by Subject Class", "description": "依 subject 分流：MECHANICAL_SUBJECTS（國/數/英）走動態生；其餘（自然/社會）走事實種子重包裝（DD-2）", "decomposition": null },
+    { "id": "A2", "title": "Generate Mechanical Items", "description": "從 curriculum 抽 KP、distribute count、genForKp 叫 Gemini 生、sanitizeViz 安全網把關、validate 自驗（DD-1/DD-4/DD-7）", "decomposition": null },
+    { "id": "A3", "title": "Repose Fact Items", "description": "從種子池取已確認事實，reposeFact 重出選擇題、釘答案、驗選項；不過退回種子原題（DD-3/DD-8）", "decomposition": null },
+    { "id": "A4", "title": "Flatten to QuizServeItem", "description": "把 GenItem 攤平 explain 成前端友善 QuizServeItem（stem/answer/choices/steps/viz）回傳", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "AR1", "source": "EXTERNAL", "target": "A1:input", "label": "GET /api/quiz（subject·grade·count）", "type": "input" },
+    { "id": "AR2", "source": "A1:output", "target": "A2:control", "label": "機制科分流", "type": "control" },
+    { "id": "AR3", "source": "A1:output", "target": "A3:control", "label": "事實科分流", "type": "control" },
+    { "id": "AR4", "source": "EXTERNAL", "target": "A2:mechanism", "label": "curriculum.json 知識點骨架", "type": "mechanism" },
+    { "id": "AR5", "source": "EXTERNAL", "target": "A3:mechanism", "label": "quizbank.json 事實種子池", "type": "mechanism" },
+    { "id": "AR6", "source": "EXTERNAL", "target": "A2:mechanism", "label": "quizFramework + Gemini 2.5 Flash", "type": "mechanism" },
+    { "id": "AR7", "source": "EXTERNAL", "target": "A3:mechanism", "label": "quizFramework.reposeFact + Gemini", "type": "mechanism" },
+    { "id": "AR8", "source": "EXTERNAL", "target": "A2:control", "label": "viz 不變式（count/groups 算式一致）", "type": "control" },
+    { "id": "AR9", "source": "EXTERNAL", "target": "A3:control", "label": "釘答案＝種子答案", "type": "control" },
+    { "id": "AR10", "source": "A2:output", "target": "A4:input", "label": "驗過的機制科 GenItem", "type": "output" },
+    { "id": "AR11", "source": "A3:output", "target": "A4:input", "label": "重包裝題 或 退回的種子題", "type": "output" },
+    { "id": "AR12", "source": "A4:output", "target": "EXTERNAL", "label": "QuizServeItem[]", "type": "output" }
+  ]
+}

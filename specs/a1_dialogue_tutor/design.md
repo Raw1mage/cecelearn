@@ -124,3 +124,4 @@ features/a1/
 - `webapp/backend/src/providers/quizGenProvider.ts` — `QuizGenProvider / QuizBankProvider` — 學科測驗題庫：QuizBankProvider 事實種子池(data/quizbank.json) + QuizGenProvider runtime 動態生；/api/quiz、/api/quiz/meta
 - `webapp/frontend/src/features/a6/QuizPage.tsx` — `QuizPage` — 多題答題 overlay 模組（setup→逐題作答→批改→成績回流）；start_quiz 觸發，沿用 onClose/onComplete 契約
 - `webapp/frontend/src/features/a1/components/MathDiagram.tsx` — `MathDiagram` — 數學確定性 SVG 圖解（count 加減打紅叉/標綠底、groups 乘除分組），照 explain.viz 畫，永不畫錯；另 EnglishPractice.tsx 為英文跟讀
+- `webapp/frontend/src/features/a1/components/Lightbox.tsx` — `Lightbox` — 情境插畫與數學 SVG 共用的全螢幕放大浮層；portal 掛 body，點背景/✕/Esc 關閉並回原畫面，開啟時鎖背景捲動

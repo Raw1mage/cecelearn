@@ -12,11 +12,15 @@ import { GeminiImageProvider } from './providers/geminiImageProvider.js'
 import { VertexImageProvider } from './providers/vertexImageProvider.js'
 import { CascadeImageProvider } from './providers/cascadeImageProvider.js'
 import { GeminiVisionProvider } from './providers/geminiVisionProvider.js'
+import { YoutubeVideoProvider } from './providers/youtubeVideoProvider.js'
+import { ChildChannelLibrary } from './providers/childChannelLibrary.js'
 import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
 import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
+import { QuizBankProvider } from './providers/quizBankProvider.js'
+import { QuizGenProvider } from './providers/quizGenProvider.js'
 import type { A1ChatMessage } from './contracts/providers.js'
 
 const env = loadEnv()
@@ -62,15 +66,20 @@ function buildChatProvider(): DialogueChatProvider {
   return gemini
 }
 
+const channelLibrary = new ChildChannelLibrary()
 const a1 = createA1Module(
   new MoeWordLookupProvider(env.geminiApiKeys),
   buildChatProvider(),
   buildImageProvider(),
   new GeminiVisionProvider(env.geminiApiKeys),
+  new YoutubeVideoProvider(env.youtubeApiKey, channelLibrary),
+  channelLibrary,
 )
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
 const vocabEngine = new VocabQuizEngine(env.geminiApiKeys)
+const quizBank = new QuizBankProvider() // 事實科（自然/社會）事實種子池
+const quizGen = new QuizGenProvider(env.geminiApiKeys, quizBank) // 全科 runtime 動態生
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })
@@ -147,11 +156,14 @@ const server = createServer(async (request, response) => {
   if (url === '/api/a1/chat' && method === 'POST') {
     const raw = await readBody(request)
     let messages: A1ChatMessage[] = []
-    let hint: 'lookup' | undefined
+    let hint: 'lookup' | 'story' | undefined
     try {
-      const payload = JSON.parse(raw || '{}') as { messages?: A1ChatMessage[]; hint?: 'lookup' }
+      const payload = JSON.parse(raw || '{}') as {
+        messages?: A1ChatMessage[]
+        hint?: 'lookup' | 'story'
+      }
       if (Array.isArray(payload.messages)) messages = payload.messages
-      if (payload.hint === 'lookup') hint = 'lookup'
+      if (payload.hint === 'lookup' || payload.hint === 'story') hint = payload.hint
     } catch {
       send(400, { ok: false, error: 'CHAT_BAD_REQUEST', message: '我沒聽清楚耶，再說一次好嗎？' }, raw)
       return
@@ -199,6 +211,43 @@ const server = createServer(async (request, response) => {
     const result = await a1.readQuestion(imageBase64, mimeType)
     // 不把整張 base64 寫進 request.log（會塞爆）：以占位字串記錄
     send(result.ok ? 200 : 502, result, '[image]')
+    return
+  }
+
+  if (url === '/api/a1/videos' && method === 'POST') {
+    const raw = await readBody(request)
+    let query = ''
+    try {
+      const payload = JSON.parse(raw || '{}') as { query?: string }
+      if (typeof payload.query === 'string') query = payload.query
+    } catch {
+      send(400, { ok: false, error: 'VIDEO_BAD_REQUEST', message: '我還不知道要找什麼影片耶。' }, raw)
+      return
+    }
+    const result = await a1.searchVideos(query)
+    send(result.ok ? 200 : 502, result, raw)
+    return
+  }
+
+  // 兒童知識型頻道庫：列出（檢索）
+  if (url === '/api/a1/channels' && method === 'GET') {
+    const result = a1.listChannels()
+    send(result.ok ? 200 : 500, result)
+    return
+  }
+
+  // 兒童知識型頻道庫：新增入庫（管理）。body: {channelId, title?, handle?, topics?, note?}
+  if (url === '/api/a1/channels' && method === 'POST') {
+    const raw = await readBody(request)
+    let payload: import('./contracts/providers.js').ChannelAddRequest
+    try {
+      payload = JSON.parse(raw || '{}')
+    } catch {
+      send(400, { ok: false, error: 'CHANNEL_BAD_REQUEST', message: '請提供 channelId。' }, raw)
+      return
+    }
+    const result = a1.addChannel(payload)
+    send(result.ok ? 200 : result.error === 'CHANNEL_BAD_REQUEST' ? 400 : 500, result, raw)
     return
   }
 
@@ -260,6 +309,23 @@ const server = createServer(async (request, response) => {
       semesters: pub && gr ? vocabEngine.getSemesters(pub, gr) : [],
       lessons: pub && gr ? vocabEngine.getLessons(pub, gr, sem ?? undefined) : [],
     })
+    return
+  }
+
+  // 出題範圍：全科 runtime 動態生（機制科從知識點、事實科從種子池）
+  if (url === '/api/quiz/meta' && method === 'GET') {
+    send(200, { ok: true, ranges: quizGen.meta() })
+    return
+  }
+
+  // 出題：全科都走動態生（機制科即時生、事實科重包裝種子）
+  if (url?.startsWith('/api/quiz') && method === 'GET') {
+    const params = new URL(url, 'http://localhost').searchParams
+    const subject = params.get('subject') ?? ''
+    const grade = params.get('grade') ?? ''
+    const count = Math.min(20, Math.max(1, Number(params.get('count')) || 5))
+    const items = await quizGen.generate(subject, grade, count)
+    send(200, { ok: true, items })
     return
   }
 

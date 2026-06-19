@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { type A1EnglishWord } from '../../../shared/api/client'
 import { speakEnglish } from '../../../shared/speech/tts'
 import { recognizeOnce } from '../../../shared/speech/recognizeOnce'
+import { useSpeechCapture } from '../speechCapture'
 import { celebrate } from '../../../shared/celebrate'
 import { useScore } from '../../../shared/ScoreContext'
 
@@ -29,6 +30,8 @@ type RowState = 'idle' | 'listening' | 'correct' | 'retry' | 'error'
 
 function WordRow({ item }: { item: A1EnglishWord }) {
   const { addScore } = useScore()
+  // 跟讀借用「原本的聽音」（A1 主辨識）；不在 Provider 內時退回獨立辨識。
+  const capture = useSpeechCapture()
   const [state, setState] = useState<RowState>('idle')
   const [heard, setHeard] = useState('')
 
@@ -36,7 +39,11 @@ function WordRow({ item }: { item: A1EnglishWord }) {
     setState('listening')
     setHeard('')
     try {
-      const transcript = await recognizeOnce('en-US')
+      // 按下「跟讀」→ 直接借用主辨識聽一句（避免與常駐中文辨識搶麥克風），
+      // 結果再導進下面的 matches() 判斷路徑。
+      const transcript = capture
+        ? await capture.captureOnce({ lang: 'en-US' })
+        : await recognizeOnce('en-US')
       setHeard(transcript)
       if (matches(transcript, item.word)) {
         setState('correct')

@@ -72,16 +72,41 @@ export type A1Intent =
   | 'make_words'
   | 'make_sentence'
   | 'tell_story'
+  | 'continue_story'
   | 'draw'
   | 'solve_arithmetic'
   | 'explain'
+  | 'find_video'
   | 'start_dictation'
   | 'start_idiom'
+  | 'start_quiz'
   | 'chat'
   | 'unclear'
 
 export type A1DrawPayload = {
   subject: string
+}
+
+/** 找影片：小雞老師把好奇正規化成的搜尋詞 */
+export type A1VideoPayload = {
+  query: string
+  topic?: string
+}
+
+/** YouTube 搜尋結果單則（前端 inline 嵌入播放窗） */
+export type A1VideoItem = {
+  videoId: string
+  title: string
+  channelId: string
+  channelTitle: string
+  thumbnail: string
+  curated?: boolean   // 來自兒童知識型頻道庫（精選）
+}
+
+export type A1VideoSearchResponse = {
+  ok: true
+  query: string
+  items: A1VideoItem[]
 }
 
 /** 英文跟讀練習單字（subject=english 時附帶） */
@@ -121,7 +146,12 @@ export type A1SentencePayload = {
 
 export type A1StoryPayload = {
   topic: string
+  /** 接龍：這一輪的故事段落（開場一兩句，或老師接的一句），非整篇故事。 */
   story: string
+  /** 接龍：把棒子交回小朋友、邀他接下去的一句話（done=true 時為空/省略）。 */
+  prompt?: string
+  /** 接龍：故事是否已收尾。true＝這是結尾、不再等小朋友接。 */
+  done?: boolean
 }
 
 export type A1ArithmeticPayload = {
@@ -139,7 +169,7 @@ export type A1LookupPayload = {
 }
 
 /** overlay 測驗種類；對應 useConversation 的 activeOverlay 狀態（DD-4） */
-export type QuizMode = 'dictation' | 'idiom'
+export type QuizMode = 'dictation' | 'idiom' | 'quiz'
 
 /** 測驗完成回流對話的成績總結（DD-6） */
 export type QuizSummary = {
@@ -147,6 +177,26 @@ export type QuizSummary = {
   correct: number
   total: number
   maxCombo?: number   // 最高連擊（聽寫專用，成語可省略）
+}
+
+/** 學科練習單題（出題 overlay 用；鏡像 backend QuizServeItem，攤平 explain） */
+export type QuizServeItem = {
+  id: string
+  subject: string
+  type: 'fill' | 'choice' | 'make_word' | 'read_aloud'
+  stem: string
+  answer: string
+  choices?: string[]
+  steps: string[]
+  viz?: A1MathViz
+}
+
+/** 學科練習可選範圍（哪些科目×年級有題目） */
+export type QuizRange = {
+  subject: string
+  subjectName: string
+  grade: string
+  count: number
 }
 
 export type A1ChatMessage = {
@@ -162,6 +212,7 @@ export type A1ChatMessage = {
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
   explain?: A1ExplainPayload
+  video?: A1VideoPayload
   // 測驗完成回流的成績總結卡（DD-6）；只有 tutor 訊息會帶
   quizSummary?: QuizSummary
 }
@@ -176,6 +227,7 @@ export type A1ChatResponse = {
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
   explain?: A1ExplainPayload
+  video?: A1VideoPayload
   illustratable?: boolean
 }
 
@@ -233,7 +285,7 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ char, index, wordType }),
     }),
-  chat: (messages: A1ChatMessage[], hint?: 'lookup') =>
+  chat: (messages: A1ChatMessage[], hint?: 'lookup' | 'story') =>
     request<A1ChatResponse | A1ErrorResponse>('/a1/chat', {
       method: 'POST',
       body: JSON.stringify(hint ? { messages, hint } : { messages }),
@@ -252,4 +304,18 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ imageBase64, mimeType }),
     }),
+  searchVideos: (query: string) =>
+    request<A1VideoSearchResponse | A1ErrorResponse>('/a1/videos', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    }),
+  getQuizRanges: () =>
+    request<{ ok: boolean; ranges: QuizRange[] }>('/quiz/meta'),
+  fetchQuiz: (opts: { subject?: string; grade?: string; count: number }) => {
+    const params = new URLSearchParams()
+    if (opts.subject) params.set('subject', opts.subject)
+    if (opts.grade) params.set('grade', opts.grade)
+    params.set('count', String(opts.count))
+    return request<{ ok: boolean; items: QuizServeItem[] }>(`/quiz?${params}`)
+  },
 }

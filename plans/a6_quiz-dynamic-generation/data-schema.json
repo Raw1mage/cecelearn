@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "a6_quiz-dynamic-generation data contracts",
+  "definitions": {
+    "QuizItemType": {
+      "type": "string",
+      "enum": ["fill", "choice", "make_word", "read_aloud"],
+      "description": "題型；事實科重包裝固定產 choice"
+    },
+    "MathVizSpec": {
+      "type": "object",
+      "description": "數學圖解確定性規格；經 sanitizeViz 釘住不變式（DD-4）",
+      "properties": {
+        "kind": { "type": "string", "enum": ["count", "groups"] },
+        "icon": { "type": "string", "description": "單一 emoji；文字描述一律丟棄" },
+        "total": { "type": "number" },
+        "operation": { "type": "string", "enum": ["add", "sub"] },
+        "operand": { "type": "number" },
+        "groups": { "type": "number" },
+        "per": { "type": "number" },
+        "result": { "type": "number", "description": "count: =total±operand；groups: =groups×per" },
+        "equation": { "type": "string" }
+      },
+      "required": ["kind"]
+    },
+    "FactSeed": {
+      "type": "object",
+      "description": "事實種子（reposeFact 的釘答案來源）",
+      "properties": {
+        "stem": { "type": "string", "description": "題目核心/已確認事實" },
+        "answer": { "type": "string", "description": "已確認正確答案；重包裝時正解必須等於此值（DD-3）" }
+      },
+      "required": ["stem", "answer"]
+    },
+    "QuizServeItem": {
+      "type": "object",
+      "description": "回前端的單題（攤平 explain）。GET /api/quiz 回 { ok, items: QuizServeItem[] }",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "type": { "$ref": "#/definitions/QuizItemType" },
+        "stem": { "type": "string" },
+        "answer": { "type": "string" },
+        "choices": { "type": "array", "items": { "type": "string" }, "description": "type=choice 才有，含正解" },
+        "steps": { "type": "array", "items": { "type": "string" }, "description": "講解步驟" },
+        "viz": { "$ref": "#/definitions/MathVizSpec", "description": "數學題可圖像化時附；經安全網把關" }
+      },
+      "required": ["id", "subject", "type", "stem", "answer", "steps"]
+    },
+    "QuizRange": {
+      "type": "object",
+      "description": "GET /api/quiz/meta 回 { ok, ranges: QuizRange[] }；機制科＋事實科合併（DD-6）",
+      "properties": {
+        "subject": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "grade": { "type": "string" },
+        "count": { "type": "integer", "description": "機制科＝可抽知識點數；事實科＝種子數" }
+      },
+      "required": ["subject", "subjectName", "grade", "count"]
+    }
+  }
+}

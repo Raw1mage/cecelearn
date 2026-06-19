@@ -1,0 +1,18 @@
+{
+  "diagram_title": "Answer Quiz Fill-in by Voice",
+  "node_reference": "A0",
+  "activities": [
+    { "id": "A1", "title": "Select Recognition Language", "description": "依題目科目選辨識語言：english→en-US，其餘→cmn-Hant-TW（DD-4）", "decomposition": null },
+    { "id": "A2", "title": "Capture One Utterance", "description": "借用 A1 主辨識 captureOnce；不在 Provider 內時退回 recognizeOnce（DD-3）", "decomposition": null },
+    { "id": "A3", "title": "Fill Answer Input", "description": "辨識文字回填輸入框供修改，失敗則設 micHint 提示（DD-2/DD-5）", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "AR1", "source": "EXTERNAL", "target": "A1:input", "label": "孩子按下麥克風鈕（非選擇題）", "type": "input" },
+    { "id": "AR2", "source": "EXTERNAL", "target": "A1:control", "label": "item.subject 科目", "type": "control" },
+    { "id": "AR3", "source": "A1:output", "target": "A2:control", "label": "辨識語言 (en-US / cmn-Hant-TW)", "type": "control" },
+    { "id": "AR4", "source": "EXTERNAL", "target": "A2:input", "label": "孩子的口說語音", "type": "input" },
+    { "id": "AR5", "source": "A2:output", "target": "A3:input", "label": "辨識文字 或 失敗", "type": "output" },
+    { "id": "AR6", "source": "A3:output", "target": "EXTERNAL", "label": "回填的答案輸入框 / 提示語", "type": "output" },
+    { "id": "AR7", "source": "EXTERNAL", "target": "A2:mechanism", "label": "useSpeechCapture / recognizeOnce (Web Speech API)", "type": "mechanism" }
+  ]
+}

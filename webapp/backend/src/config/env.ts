@@ -41,6 +41,8 @@ export type BackendEnv = {
   chatProvider: ChatProviderMode
   /** chatProvider='bare'|'cascade' 時必填，否則 loadEnv fail-fast */
   bareChat?: BareChatEnv
+  /** 找影片（YouTube Data API v3）金鑰；空字串＝功能停用（前端會收到 kid-friendly 訊息） */
+  youtubeApiKey: string
 }
 
 export function loadEnv(): BackendEnv {
@@ -106,6 +108,12 @@ export function loadEnv(): BackendEnv {
     throw new Error('CHAT_PROVIDER=cascade 但缺 GEMINI_API_KEYS（Gemini 備援 tier 無法啟用）')
   }
 
+  // 找影片：專用 YOUTUBE_API_KEY；沒設就沿用第一把 Gemini key（同一 GCP 專案，
+  // 在該專案啟用 YouTube Data API v3 即可共用）。兩者皆無 → 功能停用、不報錯。
+  const youtubeApiKey = (
+    process.env.YOUTUBE_API_KEY || geminiApiKeys[0] || ''
+  ).trim()
+
   return {
     port: Number(process.env.PORT || 3014),
     nodeEnv: process.env.NODE_ENV || 'development',
@@ -115,5 +123,6 @@ export function loadEnv(): BackendEnv {
     vertexImage,
     chatProvider,
     bareChat,
+    youtubeApiKey,
   }
 }

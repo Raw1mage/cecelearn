@@ -18,6 +18,7 @@
 | 畫圖 | 「畫一隻貓」 | AI 情境插圖（Imagen 4） |
 | 算術 | 「3 乘 7 怎麼算」 | 直式動畫教學 |
 | **小家教講解** | 「This is a cat 是什麼意思」「小明有 5 顆糖給弟弟 2 顆…」 | 題目→步驟→答案；英文題附跟讀、數學題附 SVG 圖解 |
+| **找影片** | 「我想看恐龍的影片」「放一段太陽系的影片」 | YouTube 找適齡知識影片 → 對話串流內嵌小播放窗 |
 | **拍照讀題** | 對考卷拍照 | Gemini 視覺辨識題目 → 餵進講解 |
 | **英文跟讀** | 英文題附帶單字 | 🔊 聽 + 🎤 跟讀比對、過了灑花計分 |
 | 聽寫 / 成語 | 「我要練聽寫」「來玩成語」 | 全螢幕測驗 overlay |
@@ -54,6 +55,13 @@
 ### 對話借 Claude 訂閱
 
 後端不直接呼叫 Anthropic API，而是經同機 `opencode` daemon 的 unix socket 開一個一次性 `bare` session，**借 Claude OAuth 訂閱**跑意圖分類（model 釘 `claude-opus-4-8`）。失敗才掉接 Gemini（硬強制 responseSchema）。
+
+### 找影片＋兒童知識型頻道庫
+
+找影片走 YouTube Data API v3（`safeSearch=strict` + `videoEmbeddable`，6-9 歲安全鐵則）。後端維護一份「經挑選、適齡」的頻道庫（`data/channels.json`，如樂樂TV、十萬個為什麼、成語任務）：小朋友的問題命中庫內頻道主題時，**先在該精選頻道內搜尋**（命中即用，省 API 配額），否則退一般搜尋；精選結果標 ⭐ 排最前。需在 GEMINI key 同一 GCP 專案啟用 YouTube Data API v3，或設 `YOUTUBE_API_KEY`。
+
+- 列出頻道庫（檢索）：`GET /api/a1/channels`
+- 新增頻道入庫（管理，channelId 去重、寫回 JSON）：`POST /api/a1/channels {"channelId","title?","topics?","note?"}`
 
 ---
 

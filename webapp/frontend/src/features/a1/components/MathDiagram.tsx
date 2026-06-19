@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { type A1MathViz } from '../../../shared/api/client'
+import { Lightbox } from './Lightbox'
 
 /**
  * 確定性數學圖解（SVG）：照 explain.viz 規格畫，100% 正確，不靠生圖模型。
@@ -118,6 +120,23 @@ function GroupsDiagram({ viz }: { viz: A1MathViz }) {
 }
 
 export function MathDiagram({ viz }: { viz: A1MathViz }) {
+  const [zoomed, setZoomed] = useState(false)
   const body = viz.kind === 'groups' ? <GroupsDiagram viz={viz} /> : <CountDiagram viz={viz} />
-  return <div className="a1-math-diagram">{body}</div>
+  const label = viz.equation || '數學圖解'
+  return (
+    <div className="a1-math-diagram">
+      <button
+        type="button"
+        className="a1-zoomable"
+        onClick={() => setZoomed(true)}
+        aria-label={`放大看「${label}」`}
+        title="點一下放大"
+      >
+        {body}
+      </button>
+      <Lightbox open={zoomed} onClose={() => setZoomed(false)} label={label}>
+        {body}
+      </Lightbox>
+    </div>
+  )
 }

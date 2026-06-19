@@ -1,0 +1,28 @@
+[
+  {
+    "id": "P1",
+    "name": "語音作答成功回填",
+    "componentRef": ["A0"],
+    "messages": [
+      { "id": "MSG1", "from": "User", "to": "QuizPage", "label": "按下麥克風鈕（fill/make_word/read_aloud）" },
+      { "id": "MSG2", "from": "QuizPage", "to": "QuizPage", "label": "setListening(true) + 依 item.subject 選 lang" },
+      { "id": "MSG3", "from": "QuizPage", "to": "useSpeechCapture", "label": "captureOnce({lang})（借用 A1 主辨識）" },
+      { "id": "MSG4", "from": "User", "to": "SpeechRecognition", "label": "口說答案" },
+      { "id": "MSG5", "from": "useSpeechCapture", "to": "QuizPage", "label": "辨識 transcript" },
+      { "id": "MSG6", "from": "QuizPage", "to": "input field", "label": "setInput(transcript) + setListening(false)" },
+      { "id": "MSG7", "from": "User", "to": "QuizPage", "label": "（可改後）按送出答案 → submit() 讀 input" }
+    ]
+  },
+  {
+    "id": "P2",
+    "name": "無 Provider 退路與辨識失敗",
+    "componentRef": ["A0"],
+    "messages": [
+      { "id": "MSG1", "from": "User", "to": "QuizPage", "label": "按下麥克風鈕" },
+      { "id": "MSG2", "from": "QuizPage", "to": "recognizeOnce", "label": "capture 為 null → recognizeOnce(lang)" },
+      { "id": "MSG3", "from": "recognizeOnce", "to": "QuizPage", "label": "reject 或空字串" },
+      { "id": "MSG4", "from": "QuizPage", "to": "micHint", "label": "setMicHint(提示語) + setListening(false)" },
+      { "id": "MSG5", "from": "QuizPage", "to": "input field", "label": "輸入框維持可打字（fail-soft）" }
+    ]
+  }
+]

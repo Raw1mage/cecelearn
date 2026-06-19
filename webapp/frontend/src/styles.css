@@ -141,12 +141,27 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a3-note-line--current { color: #93c5fd; font-weight: 600; }
 /* A1 — input with inline mic + search icons */
 .a1-input-wrap { position: relative; display: flex; align-items: center; flex: 1; min-width: 0; }
-.a1-query-input { width: 100%; padding-right: 9rem; }
-.a1-mic-btn, .a1-search-btn, .a1-camera-btn { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.7rem; background: transparent; color: #9bc1ff; cursor: pointer; transition: background 0.15s, color 0.15s; }
-.a1-camera-btn { right: 5.6rem; }
-.a1-mic-btn { right: 3rem; }
-.a1-search-btn { right: 0.4rem; }
-.a1-mic-btn:hover, .a1-search-btn:hover, .a1-camera-btn:hover { background: rgba(117,167,255,0.18); }
+.a1-query-input { width: 100%; padding-right: 11.4rem; }
+/* 聆聽中：整個輸入框背景以呼吸燈效果（藍綠色）緩慢明滅，取代文字提示。 */
+.a1-input-wrap--listening .a1-query-input {
+  animation: a1-listen-breath 2.4s ease-in-out infinite;
+  border-color: rgba(94, 234, 212, 0.5);
+}
+@keyframes a1-listen-breath {
+  0%, 100% { background: rgba(10, 17, 31, 0.88); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
+  50% { background: rgba(13, 45, 52, 0.95); box-shadow: 0 0 14px 3px rgba(45, 212, 191, 0.35); }
+}
+.a1-mic-btn, .a1-stop-btn, .a1-camera-btn { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 0; border-radius: 0.7rem; background: transparent; color: #9bc1ff; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.a1-camera-btn { right: 8.2rem; }
+.a1-mic-btn { right: 5.6rem; }
+.a1-stop-btn { right: 3rem; color: #6b7a99; }
+.a1-mic-btn:hover, .a1-stop-btn:hover, .a1-camera-btn:hover { background: rgba(117,167,255,0.18); }
+/* 朗讀開關併入輸入列同一條 icon 軌道（最右槽），不再與 kill switch 疊在一起搶點擊 */
+.a1-input-wrap .a1-action-btn { position: absolute; top: 50%; right: 0.4rem; transform: translateY(-50%); width: 2.4rem; height: 2.4rem; border-radius: 0.7rem; background: transparent; color: #9bc1ff; }
+.a1-input-wrap .a1-action-btn:hover { background: rgba(117,167,255,0.18); }
+.a1-input-wrap .a1-action-btn--active { background: #3b82ff; color: #fff; }
+/* kill switch：靜止時低調灰；小雞老師朗讀時轉紅並脈動，提示「按我就閉嘴」。 */
+.a1-stop-btn--active { background: #dc2626 !important; color: #fff !important; animation: a1-pulse 1.2s infinite; }
 .a1-mic-btn--active { background: #dc2626 !important; color: #fff !important; animation: a1-pulse 1.2s infinite; }
 .a1-camera-btn--active { background: #34d399 !important; color: #fff !important; animation: a1-pulse 1.2s infinite; }
 .a1-mic-btn:disabled, .a1-camera-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -197,9 +212,18 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-conv-msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 100%; }
 .a1-conv-msg--user { align-items: flex-end; }
 .a1-conv-msg--tutor { align-items: flex-start; }
+.a1-conv-head { display: flex; align-items: center; gap: 0.4rem; }
 .a1-conv-role { font-size: 0.72rem; color: #9bc1ff; font-weight: 600; }
+/* 每則小雞老師 bubble 的 重播/停止 鈕：低調的小圓鈕，正在播時轉藍脈動。 */
+.a1-bubble-speak { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 50%; background: rgba(139,170,255,0.12); color: #9bc1ff; font-size: 0.8rem; line-height: 1; cursor: pointer; transition: background 0.15s; }
+.a1-bubble-speak:hover { background: rgba(139,170,255,0.28); }
+.a1-bubble-speak--playing { background: #3b82ff; color: #fff; animation: a1-pulse 1.2s infinite; }
 .a1-conv-body { display: flex; flex-direction: column; gap: 0.5rem; max-width: 92%; }
 .a1-conv-msg--user .a1-conv-body { align-items: flex-end; }
+/* 含影片的回合：訊息本體撐到對話欄全寬（影片自適應變寬），但文字泡泡仍貼左、不被拉長 */
+.a1-conv-msg--media { align-items: stretch; }
+.a1-conv-msg--media .a1-conv-body { max-width: 100%; width: 100%; }
+.a1-conv-msg--media .a1-conv-text { align-self: flex-start; max-width: 92%; }
 .a1-conv-text { margin: 0; padding: 0.6rem 0.9rem; border-radius: 1rem; line-height: 1.5; word-break: break-word; }
 .a1-conv-msg--user .a1-conv-text { background: rgba(59,130,255,0.22); color: #eef4ff; border-bottom-right-radius: 0.3rem; }
 .a1-conv-msg--tutor .a1-conv-text { background: rgba(7,12,24,0.6); color: #eef4ff; border: 1px solid rgba(139,170,255,0.16); border-bottom-left-radius: 0.3rem; }
@@ -215,8 +239,16 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-sentence-card::before { content: counter(sentence); flex: 0 0 auto; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; border-radius: 50%; background: rgba(59,130,255,0.4); color: #fff; font-size: 0.8rem; font-weight: 700; }
 .a1-sentence-text { margin: 0; line-height: 1.6; font-size: 1.05rem; color: #eef4ff; }
 .a1-story-card { padding: 0.9rem 1rem; border-radius: 0.9rem; background: rgba(250,204,21,0.1); border: 1px solid rgba(250,204,21,0.25); }
-.a1-story-topic { margin: 0 0 0.4rem; color: #fbbf24; }
+.a1-story-topic { margin: 0 0 0.4rem; color: #fbbf24; display: flex; align-items: center; gap: 0.5rem; }
+.a1-story-relay-badge { font-size: 0.7rem; font-weight: 700; color: #fde68a; background: rgba(250,204,21,0.18); border: 1px solid rgba(250,204,21,0.4); border-radius: 999px; padding: 0.1rem 0.55rem; }
 .a1-story-text { margin: 0; line-height: 1.7; color: #eef4ff; }
+.a1-story-handback { margin: 0.6rem 0 0; padding-top: 0.55rem; border-top: 1px dashed rgba(250,204,21,0.3); line-height: 1.6; color: #fcd34d; font-weight: 600; }
+.a1-story-handback--done { color: #86efac; border-top-color: rgba(134,239,172,0.3); }
+.a1-story-relay-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.7rem; background: rgba(250,204,21,0.12); border: 1px solid rgba(250,204,21,0.3); }
+.a1-story-relay-bar__label { color: #fcd34d; font-weight: 700; font-size: 0.92rem; }
+.a1-story-relay-bar__end { flex: 0 0 auto; border: 1px solid rgba(250,204,21,0.45); background: transparent; color: #fde68a; border-radius: 0.6rem; padding: 0.3rem 0.8rem; font-weight: 600; cursor: pointer; }
+.a1-story-relay-bar__end:hover:not(:disabled) { background: rgba(250,204,21,0.2); }
+.a1-story-relay-bar__end:disabled { opacity: 0.5; cursor: default; }
 .a1-arithmetic-surface { width: 100%; display: flex; justify-content: flex-start; }
 
 /* A1 — explain card（小家教講解：英文題/數學應用題/概念） */
@@ -262,10 +294,36 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-inline-illustration-actions { display: flex; gap: 0.5rem; }
 .a1-inline-illustration-actions .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
 .a1-inline-illustration--error .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
+
+/* A1 — inline 找影片小播放窗（find_video，per-message） */
+.a1-inline-video { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.a1-inline-video--loading { flex-direction: row; align-items: center; gap: 0.6rem; }
+.a1-inline-video--error .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
+/* 主播放窗自適應容器寬度（不鎖 480px）；16:9 比例撐高，IFrame API 產生的 iframe 填滿 */
+.a1-video-frame { width: 100%; aspect-ratio: 16 / 9; border-radius: 0.9rem; overflow: hidden; border: 1px solid rgba(139,170,255,0.18); background: #000; }
+.a1-video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.a1-video-title { margin: 0; font-weight: 700; color: #eef4ff; font-size: 0.95rem; line-height: 1.3; width: 100%; }
+.a1-video-badge { display: inline-block; margin-right: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: rgba(251,191,36,0.18); color: #fbbf24; font-size: 0.72rem; font-weight: 700; vertical-align: middle; }
+
+/* A1 — 可放大的圖（情境插畫 / 數學 SVG）：點一下開全螢幕浮層 */
+.a1-zoomable { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
+.a1-zoomable > .a1-illustration-img, .a1-zoomable > .a1-math-svg { display: block; }
+.a1-zoomable:focus-visible { outline: 2px solid #8baaff; outline-offset: 3px; border-radius: 0.9rem; }
+
+/* A1 — 放大檢視浮層（全螢幕覆蓋，點背景/✕/Esc 關閉） */
+.a1-lightbox { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 4vmin; background: rgba(4,8,18,0.86); backdrop-filter: blur(4px); cursor: zoom-out; animation: a1-lightbox-in 0.16s ease-out; }
+.a1-lightbox__content { max-width: min(96vw, 1100px); max-height: 92vh; display: flex; align-items: center; justify-content: center; cursor: default; }
+.a1-lightbox__content > .a1-math-svg { width: auto; max-width: min(96vw, 1100px); max-height: 92vh; }
+.a1-lightbox__img { max-width: min(96vw, 1100px); max-height: 92vh; width: auto; height: auto; border-radius: 0.9rem; box-shadow: 0 18px 60px rgba(0,0,0,0.55); display: block; }
+.a1-lightbox__close { position: fixed; top: env(safe-area-inset-top, 0px); right: 0; margin: 1rem; width: 2.8rem; height: 2.8rem; border: 0; border-radius: 50%; background: rgba(255,255,255,0.14); color: #fff; font-size: 1.3rem; line-height: 1; cursor: pointer; z-index: 1001; }
+.a1-lightbox__close:hover { background: rgba(255,255,255,0.26); }
+@keyframes a1-lightbox-in { from { opacity: 0; } to { opacity: 1; } }
 .a1-inline-illustration--offer { flex-direction: row; align-items: center; gap: 0.6rem; }
 .a1-inline-illustration--offer .a1-action-btn { width: auto; padding: 0 0.8rem; font-size: 0.85rem; }
 .a1-inline-illustration--capped { padding: 0.4rem 0.7rem; border-radius: 0.6rem; background: rgba(139,170,255,0.08); }
 .a1-illustration-spinner { width: 1.6rem; height: 1.6rem; border: 3px solid rgba(139,170,255,0.25); border-top-color: #60a5fa; border-radius: 50%; animation: a1-spin 0.8s linear infinite; }
+/* 思考中：只轉圈圈，不輸出「想一想」文字 */
+.a1-thinking-spinner { width: 1.4rem; height: 1.4rem; border: 3px solid rgba(139,170,255,0.25); border-top-color: #60a5fa; border-radius: 50%; animation: a1-spin 0.8s linear infinite; }
 @keyframes a1-spin { to { transform: rotate(360deg); } }
 
 /* A1 — 輸入列下方測驗快捷 chip（DD-3 雙路徑：點擊等同對應意圖） */

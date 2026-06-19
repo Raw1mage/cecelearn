@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "state": "verified",
+  "profile": [],
+  "history": [
+    {
+      "from": null,
+      "to": "proposed",
+      "at": "2026-06-19T04:31:20.732Z",
+      "by": "pkcs12",
+      "mode": "new",
+      "reason": "initial spec created via plan-init.ts"
+    },
+    {
+      "from": "proposed",
+      "to": "designed",
+      "at": "2026-06-19T04:35:52.446Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "proposal/spec/design/idef0/grafcet/sequence/data-schema 完成；題型框架單一真相源 + 機制科動態生/事實科釘答案重包裝架構與 DD-1~DD-8 已定"
+    },
+    {
+      "from": "designed",
+      "to": "planned",
+      "at": "2026-06-19T04:37:55.912Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "tasks/handoff/errors/observability/test-vectors 完成；已實作功能的任務拆解、停損閘與驗證計畫就緒"
+    },
+    {
+      "from": "planned",
+      "to": "implementing",
+      "at": "2026-06-19T04:38:01.257Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "功能已實作（quizFramework/quizGenProvider/quizBankProvider/server 路由/資料資產）"
+    },
+    {
+      "from": "implementing",
+      "to": "verified",
+      "at": "2026-06-19T04:38:23.279Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "tasks 全勾；backend/frontend tsc 綠；live 驗機制科即時生（連抽不同）、事實科釘答案+變化包裝、/api/quiz/meta 回 26 組科級"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "a6_quiz-voice-answer data contracts",
+  "definitions": {
+    "VoiceAnswerLang": {
+      "type": "string",
+      "enum": ["en-US", "cmn-Hant-TW"],
+      "description": "辨識語言；item.subject==='english' → en-US，其餘 → cmn-Hant-TW（DD-4）"
+    },
+    "QuizSubject": {
+      "type": "string",
+      "enum": ["chinese", "english", "math"],
+      "description": "QuizServeItem.subject；決定辨識語言"
+    },
+    "VoiceCaptureState": {
+      "type": "object",
+      "description": "QuizPage 語音作答的本地 UI 狀態（無持久化）",
+      "properties": {
+        "listening": { "type": "boolean", "description": "是否正在聽取（鈕顯示 🎙️…、disabled）" },
+        "micHint": { "type": "string", "description": "辨識失敗/聽不到時的孩子可讀提示；空字串表示無提示" }
+      },
+      "required": ["listening", "micHint"],
+      "additionalProperties": false
+    },
+    "SpeechCaptureContract": {
+      "type": "object",
+      "description": "借用主辨識契約（features/a1/speechCapture.ts）；不在 Provider 內時為 null，呼叫端退回 recognizeOnce",
+      "properties": {
+        "captureOnce": { "type": "object", "description": "(opts?: { lang?: string; timeoutMs?: number }) => Promise<string>" },
+        "ready": { "type": "boolean", "description": "主辨識是否就緒" }
+      },
+      "required": ["captureOnce", "ready"]
+    }
+  }
+}

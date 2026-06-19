@@ -39,11 +39,14 @@ export type A1Intent =
   | 'make_words'
   | 'make_sentence'
   | 'tell_story'
+  | 'continue_story'
   | 'draw'
   | 'solve_arithmetic'
   | 'explain'
+  | 'find_video'
   | 'start_dictation'
   | 'start_idiom'
+  | 'start_quiz'
   | 'chat'
   | 'unclear'
 
@@ -85,6 +88,52 @@ export type A1DrawPayload = {
   subject: string   // 小朋友想畫的東西（直接畫圖請求）
 }
 
+/** 找影片（find_video）：把小朋友的好奇正規化成一條 kid-safe 的中文搜尋詞。 */
+export type A1VideoPayload = {
+  query: string     // 餵給 YouTube 的搜尋詞（繁中、教育向、適齡），如「恐龍 介紹 兒童」
+  topic?: string    // 小朋友想知道的主題（顯示用），如「恐龍」
+}
+
+/** YouTube 搜尋結果單則（後端搜回，前端 inline 嵌入播放窗）。 */
+export type A1VideoItem = {
+  videoId: string
+  title: string
+  channelId: string
+  channelTitle: string
+  thumbnail: string   // 縮圖 URL
+  curated?: boolean   // 命中兒童知識型頻道庫（會被加權排前、標精選）
+}
+
+/** 兒童知識型頻道庫的一筆頻道（curated channel registry）。 */
+export type CuratedChannel = {
+  channelId?: string   // 官方頻道 ID；pending（待確認）時可空
+  title: string
+  handle?: string      // @handle
+  topics: string[]     // 主題關鍵詞（成語、科普、自然…），供檢索
+  note?: string
+  status: 'active' | 'pending'   // active 才參與搜尋加權
+  addedAt: string      // YYYY-MM-DD
+}
+
+export type ChannelListResponse = {
+  ok: true
+  channels: CuratedChannel[]
+}
+
+/** 新增頻道入庫（管理用）。channelId 必填，其餘可選。 */
+export type ChannelAddRequest = {
+  channelId: string
+  title?: string
+  handle?: string
+  topics?: string[]
+  note?: string
+}
+
+export type ChannelAddResponse = {
+  ok: true
+  channel: CuratedChannel
+}
+
 export type A1SentencePayload = {
   targetWord: string
   sentences: string[]   // 可造多句（預設 1，上限 5）
@@ -108,11 +157,17 @@ export type A1ChatMessage = {
   story?: A1StoryPayload
   arithmetic?: A1ArithmeticPayload
   explain?: A1ExplainPayload
+  video?: A1VideoPayload
 }
 
 export type A1StoryPayload = {
   topic: string
+  /** 接龍：這一輪的故事段落（開場一兩句，或老師接的一句），非整篇故事。 */
   story: string
+  /** 接龍：把棒子交回小朋友、邀他接下去的一句話（done=true 時為空）。 */
+  prompt?: string
+  /** 接龍：故事是否已收尾。true＝這是結尾、不再等小朋友接。 */
+  done?: boolean
 }
 
 export type A1LookupPayload = {
@@ -124,7 +179,7 @@ export type A1LookupPayload = {
 
 export type A1ChatRequest = {
   messages: A1ChatMessage[]
-  hint?: 'lookup'
+  hint?: 'lookup' | 'story'
 }
 
 export type A1ChatResponse = {
@@ -137,6 +192,7 @@ export type A1ChatResponse = {
   draw?: A1DrawPayload
   arithmetic?: A1ArithmeticPayload
   explain?: A1ExplainPayload
+  video?: A1VideoPayload
   illustratable?: boolean
 }
 
@@ -164,6 +220,17 @@ export type A1ReadQuestionResponse = {
   question: string      // 辨識出的題目文字（保留英文/數字/符號）
 }
 
+/* 找影片：小朋友問知識 → 小雞老師到 YouTube 找適齡影片，inline 開成小播放窗 */
+export type A1VideoSearchRequest = {
+  query: string   // chat 回的 A1VideoPayload.query
+}
+
+export type A1VideoSearchResponse = {
+  ok: true
+  query: string
+  items: A1VideoItem[]   // 0-N 則，第一則當主播放窗，其餘當候選縮圖
+}
+
 export type A1ErrorResponse = {
   ok: false
   error: string
@@ -171,7 +238,7 @@ export type A1ErrorResponse = {
 }
 
 export interface DialogueChatProvider {
-  chat(messages: A1ChatMessage[], hint?: 'lookup'): Promise<A1ChatResponse | A1ErrorResponse>
+  chat(messages: A1ChatMessage[], hint?: 'lookup' | 'story'): Promise<A1ChatResponse | A1ErrorResponse>
 }
 
 export interface SceneIllustrationProvider {
@@ -191,6 +258,10 @@ export interface QuestionVisionProvider {
     imageBase64: string,
     mimeType: string,
   ): Promise<A1ReadQuestionResponse | A1ErrorResponse>
+}
+
+export interface VideoSearchProvider {
+  search(query: string, topic?: string): Promise<A1VideoSearchResponse | A1ErrorResponse>
 }
 
 /* A5 — Dictation Practice */

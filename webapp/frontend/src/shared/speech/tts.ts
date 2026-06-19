@@ -18,6 +18,39 @@ const recentSpeech: Array<{ text: string; at: number }> = []
 type SpeechEndListener = () => void
 const speechEndListeners = new Set<SpeechEndListener>()
 
+/**
+ * 目前正在朗讀的「來源 id」（通常是 tutor 訊息 id）。null = 沒在朗讀。
+ * 讓每則 bubble 的 stop/replay 鈕知道「現在播的是不是我這則」。
+ */
+const ANON_SPEECH_ID = '__anon__'
+let currentSpeechId: string | null = null
+const playingListeners = new Set<(id: string | null) => void>()
+
+function setPlayingId(id: string | null): void {
+  if (currentSpeechId === id) return
+  currentSpeechId = id
+  for (const listener of playingListeners) {
+    try {
+      listener(id)
+    } catch {
+      /* 單一訂閱者的錯誤不影響其他訂閱者 */
+    }
+  }
+}
+
+/** 目前正在朗讀的來源 id（null = 沒在朗讀）。 */
+export function getPlayingSpeechId(): string | null {
+  return currentSpeechId
+}
+
+/** 訂閱「正在朗讀的來源 id」變化（供 bubble 鈕切換 stop/replay 樣態）。回傳取消訂閱函式。 */
+export function subscribePlayingSpeech(listener: (id: string | null) => void): () => void {
+  playingListeners.add(listener)
+  return () => {
+    playingListeners.delete(listener)
+  }
+}
+
 /** 訂閱「小雞老師朗讀結束」事件（供語音辨識在 TTS 後自我修復重啟）。回傳取消訂閱函式。 */
 export function addSpeechEndListener(listener: SpeechEndListener): () => void {
   speechEndListeners.add(listener)
@@ -162,6 +195,7 @@ export function isTtsEnabled(): boolean {
 
 export function cancelSpeech(): void {
   if (isTtsSupported()) window.speechSynthesis.cancel()
+  setPlayingId(null)
 }
 
 /** 小雞此刻是否正在朗讀（用於語音辨識的 echo 軟閘 + 重啟避讓）。 */
@@ -192,9 +226,13 @@ export function isLikelySelfEcho(transcript: string): boolean {
   })
 }
 
-/** 朗讀一段文字（若開啟且支援）。會先取消前一段，避免疊唸。 */
-export function speak(text: string): void {
-  if (!enabled || !text || !isTtsSupported()) return
+/**
+ * 朗讀一段文字（zh-TW）。會先取消前一段，避免疊唸。
+ * - opts.id：來源 id（tutor 訊息 id），讓對應 bubble 鈕顯示為「停止」。
+ * - opts.force：忽略總開關 enabled（使用者在 bubble 上明確點「重播」時用，比照 speakEnglish）。
+ */
+export function speak(text: string, opts?: { id?: string; force?: boolean }): void {
+  if ((!enabled && !opts?.force) || !text || !isTtsSupported()) return
   const synth = window.speechSynthesis
   synth.cancel()
   recordSpeechText(text)
@@ -204,12 +242,17 @@ export function speak(text: string): void {
   if (zhVoice) utter.voice = zhVoice
   utter.rate = 0.95
   utter.pitch = 1.05
+  const speakId = opts?.id ?? ANON_SPEECH_ID
+  // 用 onstart 標記正在播（而非呼叫當下），避開上面 synth.cancel() 觸發舊段 onend 的競態。
+  utter.onstart = () => setPlayingId(speakId)
   utter.onend = () => {
     lastSpeechEndedAt = Date.now()
+    if (currentSpeechId === speakId) setPlayingId(null)
     notifySpeechEnd()
   }
   utter.onerror = () => {
     lastSpeechEndedAt = Date.now()
+    if (currentSpeechId === speakId) setPlayingId(null)
     notifySpeechEnd()
   }
   synth.speak(utter)

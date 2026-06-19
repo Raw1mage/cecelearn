@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-06-19T00:00:00.000Z",
+  "source": "108課綱數學領域能力指標（範例種子，非完整課綱）",
+  "strands": [
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "3年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g3-mul",
+          "unitName": "乘法",
+          "knowledgePoints": [
+            {
+              "kpId": "math-g3-mul-2x1-nocarry",
+              "kpName": "兩位數乘一位數（不進位）",
+              "skill": "N-3-2 能熟練整數加、減、乘的直式計算",
+              "difficulty": 1,
+              "vizKind": "groups"
+            },
+            {
+              "kpId": "math-g3-mul-2x1-carry",
+              "kpName": "兩位數乘一位數（進位）",
+              "skill": "N-3-2 能熟練整數加、減、乘的直式計算",
+              "difficulty": 2,
+              "vizKind": "groups"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,800 @@
+{
+  "generatedAt": "2026-06-19T00:00:00.000Z",
+  "source": "108課綱（數學/國語文/英語文領域學習內容）展開之知識點骨架；6–9歲＝小一至小四。純骨架，無第三方題庫原文。",
+  "strands": [
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "1年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g1-number-20",
+          "unitName": "20以內的數",
+          "knowledgePoints": [
+            { "kpId": "math-g1-count-20", "kpName": "1到20數數與認讀", "skill": "N-1-1 一百以內的數：數數、讀寫、大小比較", "difficulty": 1, "vizKind": "count" },
+            { "kpId": "math-g1-compose-10", "kpName": "10的合成與分解", "skill": "N-1-2 加法與減法的意義", "difficulty": 1, "vizKind": "count" }
+          ]
+        },
+        {
+          "unitId": "math-g1-addsub-20",
+          "unitName": "20以內加減",
+          "knowledgePoints": [
+            { "kpId": "math-g1-add-nocarry", "kpName": "不進位加法", "skill": "N-1-2 加法的意義與計算", "difficulty": 1, "vizKind": "count" },
+            { "kpId": "math-g1-sub-noborrow", "kpName": "不退位減法", "skill": "N-1-2 減法的意義與計算", "difficulty": 1, "vizKind": "count" },
+            { "kpId": "math-g1-add-carry-10", "kpName": "進位加法（湊十）", "skill": "N-1-2 加法的意義與計算", "difficulty": 2, "vizKind": "count" }
+          ]
+        },
+        {
+          "unitId": "math-g1-shape",
+          "unitName": "認識形狀",
+          "knowledgePoints": [
+            { "kpId": "math-g1-shape-2d", "kpName": "辨認三角形、正方形、圓形", "skill": "S-1-1 平面圖形的辨認", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g1-time",
+          "unitName": "時間",
+          "knowledgePoints": [
+            { "kpId": "math-g1-clock-hour", "kpName": "認讀整點", "skill": "N-1-5 時間：認識時刻", "difficulty": 1, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "2年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g2-number-1000",
+          "unitName": "1000以內的數",
+          "knowledgePoints": [
+            { "kpId": "math-g2-place-3digit", "kpName": "三位數的位值（百十個）", "skill": "N-2-1 一千以內的數：位值", "difficulty": 1, "vizKind": "count" },
+            { "kpId": "math-g2-compare-1000", "kpName": "1000以內數的大小比較", "skill": "N-2-1 數的大小比較", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g2-addsub-vertical",
+          "unitName": "兩位數直式加減",
+          "knowledgePoints": [
+            { "kpId": "math-g2-add-carry", "kpName": "兩位數進位加法（直式）", "skill": "N-2-2 加減直式計算", "difficulty": 2, "vizKind": "count" },
+            { "kpId": "math-g2-sub-borrow", "kpName": "兩位數退位減法（直式）", "skill": "N-2-2 加減直式計算", "difficulty": 2, "vizKind": "count" }
+          ]
+        },
+        {
+          "unitId": "math-g2-multiply-basic",
+          "unitName": "乘法啟蒙與九九乘法",
+          "knowledgePoints": [
+            { "kpId": "math-g2-mul-meaning", "kpName": "乘法的意義（幾個幾）", "skill": "N-2-3 乘法的意義：等量累加", "difficulty": 1, "vizKind": "groups" },
+            { "kpId": "math-g2-mul-table", "kpName": "九九乘法背誦與應用", "skill": "N-2-3 九九乘法", "difficulty": 2, "vizKind": "groups" }
+          ]
+        },
+        {
+          "unitId": "math-g2-length",
+          "unitName": "長度",
+          "knowledgePoints": [
+            { "kpId": "math-g2-length-cm", "kpName": "用公分測量與比較", "skill": "N-2-6 長度：公分、公尺", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g2-time",
+          "unitName": "時間",
+          "knowledgePoints": [
+            { "kpId": "math-g2-clock-minute", "kpName": "認讀幾點幾分", "skill": "N-2-7 時間：時刻與時間量", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "3年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g3-number-10000",
+          "unitName": "10000以內的數",
+          "knowledgePoints": [
+            { "kpId": "math-g3-place-4digit", "kpName": "四位數位值與大小", "skill": "N-3-1 一萬以內的數", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g3-mul",
+          "unitName": "乘法",
+          "knowledgePoints": [
+            { "kpId": "math-g3-mul-2x1-nocarry", "kpName": "兩位數乘一位數（不進位）", "skill": "N-3-2 整數乘法直式計算", "difficulty": 1, "vizKind": "groups" },
+            { "kpId": "math-g3-mul-2x1-carry", "kpName": "兩位數乘一位數（進位）", "skill": "N-3-2 整數乘法直式計算", "difficulty": 2, "vizKind": "groups" },
+            { "kpId": "math-g3-mul-3x1", "kpName": "三位數乘一位數", "skill": "N-3-2 整數乘法直式計算", "difficulty": 3, "vizKind": "groups" }
+          ]
+        },
+        {
+          "unitId": "math-g3-div",
+          "unitName": "除法",
+          "knowledgePoints": [
+            { "kpId": "math-g3-div-meaning", "kpName": "除法的意義（平分／包含）", "skill": "N-3-3 除法的意義", "difficulty": 1, "vizKind": "groups" },
+            { "kpId": "math-g3-div-exact", "kpName": "整除的基本除法", "skill": "N-3-3 除法計算", "difficulty": 2, "vizKind": "groups" },
+            { "kpId": "math-g3-div-remainder", "kpName": "有餘數的除法", "skill": "N-3-3 除法與餘數", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g3-fraction",
+          "unitName": "分數初步",
+          "knowledgePoints": [
+            { "kpId": "math-g3-fraction-meaning", "kpName": "認識真分數（部分／全部）", "skill": "N-3-9 分數的初步認識", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g3-perimeter",
+          "unitName": "周長",
+          "knowledgePoints": [
+            { "kpId": "math-g3-perimeter-poly", "kpName": "多邊形周長計算", "skill": "S-3-3 周長的測量與計算", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "4年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g4-bignum",
+          "unitName": "大數與四則",
+          "knowledgePoints": [
+            { "kpId": "math-g4-mul-2x2", "kpName": "兩位數乘兩位數", "skill": "N-4-2 整數乘法直式計算", "difficulty": 2, "vizKind": "none" },
+            { "kpId": "math-g4-div-2digit", "kpName": "除數為兩位數的除法", "skill": "N-4-3 整數除法直式計算", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "math-g4-mixed-ops", "kpName": "整數四則混合（先乘除後加減）", "skill": "N-4-4 四則運算規則", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g4-fraction",
+          "unitName": "分數加減",
+          "knowledgePoints": [
+            { "kpId": "math-g4-fraction-add-same", "kpName": "同分母分數加減", "skill": "N-4-6 同分母分數的加減", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g4-decimal",
+          "unitName": "小數",
+          "knowledgePoints": [
+            { "kpId": "math-g4-decimal-meaning", "kpName": "認識一位小數", "skill": "N-4-7 小數的初步認識", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g4-area",
+          "unitName": "面積",
+          "knowledgePoints": [
+            { "kpId": "math-g4-area-rect", "kpName": "長方形與正方形面積", "skill": "S-4-5 面積：長方形面積公式", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "chinese",
+      "subjectName": "國語",
+      "grade": "1年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "chi-g1-bopomofo",
+          "unitName": "注音符號",
+          "knowledgePoints": [
+            { "kpId": "chi-g1-bopomofo-read", "kpName": "注音拼讀與聲調", "skill": "5-I-1 認識注音符號，正確拼讀", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "chi-g1-bopomofo-spell", "kpName": "看字標注音", "skill": "4-I-1 認識常用字注音", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g1-recognize",
+          "unitName": "基本識字",
+          "knowledgePoints": [
+            { "kpId": "chi-g1-char-read", "kpName": "常用字認讀", "skill": "4-I-1 認識常用字至少 700 字", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "chi-g1-stroke-order", "kpName": "基本筆順", "skill": "4-I-3 利用筆順書寫", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g1-word",
+          "unitName": "造詞",
+          "knowledgePoints": [
+            { "kpId": "chi-g1-make-word", "kpName": "以單字組詞", "skill": "4-I-2 利用部件、部首識字組詞", "difficulty": 1, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "chinese",
+      "subjectName": "國語",
+      "grade": "2年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "chi-g2-radical",
+          "unitName": "部首與識字",
+          "knowledgePoints": [
+            { "kpId": "chi-g2-radical", "kpName": "常見部首與字義", "skill": "4-I-2 部首識字", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g2-sentence",
+          "unitName": "造句",
+          "knowledgePoints": [
+            { "kpId": "chi-g2-make-sentence", "kpName": "用語詞造完整句", "skill": "6-I-3 寫出語意完整的句子", "difficulty": 2, "vizKind": "none" },
+            { "kpId": "chi-g2-punctuation", "kpName": "句號逗號問號的使用", "skill": "4-I-4 標點符號的使用", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g2-reading",
+          "unitName": "短文閱讀",
+          "knowledgePoints": [
+            { "kpId": "chi-g2-read-who-what", "kpName": "找出短文的人物與事件", "skill": "5-I-4 找出句段的主要訊息", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "chinese",
+      "subjectName": "國語",
+      "grade": "3年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "chi-g3-vocab",
+          "unitName": "詞語運用",
+          "knowledgePoints": [
+            { "kpId": "chi-g3-synonym", "kpName": "近義詞與反義詞", "skill": "4-II-2 認識詞語的相反與相近", "difficulty": 2, "vizKind": "none" },
+            { "kpId": "chi-g3-idiom", "kpName": "常用成語意義", "skill": "4-II-3 認識常用成語", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g3-reading",
+          "unitName": "段落閱讀理解",
+          "knowledgePoints": [
+            { "kpId": "chi-g3-main-idea", "kpName": "歸納段落大意", "skill": "5-II-4 掌握句段的主要意思", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "chi-g3-sequence", "kpName": "排列事件先後順序", "skill": "5-II-5 理解文本的順序", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "chinese",
+      "subjectName": "國語",
+      "grade": "4年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "chi-g4-rhetoric",
+          "unitName": "簡單修辭",
+          "knowledgePoints": [
+            { "kpId": "chi-g4-simile", "kpName": "認識譬喻（像／好像）", "skill": "6-II-3 運用譬喻等修辭", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "chi-g4-personify", "kpName": "認識擬人", "skill": "6-II-3 運用擬人等修辭", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g4-reading",
+          "unitName": "閱讀推論",
+          "knowledgePoints": [
+            { "kpId": "chi-g4-infer", "kpName": "由線索推論作者意圖", "skill": "5-II-6 做出簡單推論", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "english",
+      "subjectName": "英文",
+      "grade": "1年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "eng-g1-alphabet",
+          "unitName": "字母",
+          "knowledgePoints": [
+            { "kpId": "eng-g1-abc-recognize", "kpName": "大小寫字母認讀", "skill": "1-I-1 辨識 26 個字母", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "eng-g1-letter-sound", "kpName": "字母的基本發音", "skill": "1-I-2 聽辨字母的音", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g1-greeting",
+          "unitName": "招呼語",
+          "knowledgePoints": [
+            { "kpId": "eng-g1-greet", "kpName": "Hello / Goodbye / Thank you", "skill": "2-I-1 使用日常招呼語", "difficulty": 1, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "english",
+      "subjectName": "英文",
+      "grade": "2年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "eng-g2-phonics",
+          "unitName": "自然發音",
+          "knowledgePoints": [
+            { "kpId": "eng-g2-cvc", "kpName": "短母音 CVC 拼讀（cat, dog）", "skill": "1-I-3 應用自然發音拼讀單字", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g2-vocab-basic",
+          "unitName": "基礎單字",
+          "knowledgePoints": [
+            { "kpId": "eng-g2-color", "kpName": "顏色單字", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "eng-g2-number", "kpName": "數字 1–10", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "eng-g2-animal", "kpName": "動物單字", "skill": "3-I-1 認識主題常用字詞", "difficulty": 1, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "english",
+      "subjectName": "英文",
+      "grade": "3年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "eng-g3-sentence",
+          "unitName": "基礎句型",
+          "knowledgePoints": [
+            { "kpId": "eng-g3-this-is", "kpName": "This is a ___.", "skill": "2-II-2 使用簡單句型表達", "difficulty": 2, "vizKind": "none" },
+            { "kpId": "eng-g3-i-like", "kpName": "I like ___.", "skill": "2-II-2 使用簡單句型表達", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g3-listen",
+          "unitName": "聽辨與跟讀",
+          "knowledgePoints": [
+            { "kpId": "eng-g3-read-aloud-word", "kpName": "單字聽讀與跟讀比對", "skill": "1-II-4 聽懂並複誦單字", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "english",
+      "subjectName": "英文",
+      "grade": "4年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "eng-g4-question",
+          "unitName": "問答句型",
+          "knowledgePoints": [
+            { "kpId": "eng-g4-what-is", "kpName": "What is it? / It is ___.", "skill": "2-II-3 進行簡單問答", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "eng-g4-how-many", "kpName": "How many ___? 數量問答", "skill": "2-II-3 進行簡單問答", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g4-read-aloud",
+          "unitName": "句子跟讀",
+          "knowledgePoints": [
+            { "kpId": "eng-g4-read-aloud-sentence", "kpName": "短句聽讀與跟讀比對", "skill": "1-II-5 聽懂並複誦短句", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "chinese",
+      "subjectName": "國語",
+      "grade": "5年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "chi-g5-vocab",
+          "unitName": "詞語與成語進階",
+          "knowledgePoints": [
+            { "kpId": "chi-g5-polyseme", "kpName": "一詞多義的判讀", "skill": "4-III-2 認識多義詞", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "chi-g5-idiom-use", "kpName": "成語的正確使用情境", "skill": "4-III-3 在語境中運用成語", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g5-rhetoric",
+          "unitName": "修辭",
+          "knowledgePoints": [
+            { "kpId": "chi-g5-parallelism", "kpName": "認識排比", "skill": "6-III-3 運用排比等修辭", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "chi-g5-hyperbole", "kpName": "認識誇飾", "skill": "6-III-3 運用誇飾等修辭", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g5-reading",
+          "unitName": "閱讀理解",
+          "knowledgePoints": [
+            { "kpId": "chi-g5-fact-opinion", "kpName": "分辨事實與意見", "skill": "5-III-6 區辨文本中的事實與觀點", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "chinese",
+      "subjectName": "國語",
+      "grade": "6年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "chi-g6-vocab",
+          "unitName": "詞語與慣用語",
+          "knowledgePoints": [
+            { "kpId": "chi-g6-idiom-pair", "kpName": "成語與意義配對", "skill": "4-III-3 理解成語意義", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "chi-g6-classical-word", "kpName": "常見文言詞語的意思", "skill": "4-III-4 認識淺易文言詞語", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "chi-g6-reading",
+          "unitName": "閱讀與寓意",
+          "knowledgePoints": [
+            { "kpId": "chi-g6-theme", "kpName": "歸納文章主旨與寓意", "skill": "5-III-7 推論文本主旨", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "chi-g6-viewpoint", "kpName": "辨識作者的觀點與立場", "skill": "5-III-8 評估作者觀點", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "5年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g5-fraction",
+          "unitName": "異分母分數",
+          "knowledgePoints": [
+            { "kpId": "math-g5-fraction-add-diff", "kpName": "異分母分數加減（通分）", "skill": "N-5-4 異分母分數的加減", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g5-decimal",
+          "unitName": "小數乘除",
+          "knowledgePoints": [
+            { "kpId": "math-g5-decimal-mul", "kpName": "小數的乘法", "skill": "N-5-6 小數的乘法", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "math-g5-decimal-div", "kpName": "小數的除法", "skill": "N-5-7 小數的除法", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g5-factor",
+          "unitName": "因數與倍數",
+          "knowledgePoints": [
+            { "kpId": "math-g5-gcd", "kpName": "公因數與最大公因數", "skill": "N-5-3 因數、倍數、公因數", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g5-area",
+          "unitName": "平面圖形面積",
+          "knowledgePoints": [
+            { "kpId": "math-g5-area-triangle", "kpName": "三角形面積", "skill": "S-5-4 三角形面積公式", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "math-g5-area-parallelogram", "kpName": "平行四邊形面積", "skill": "S-5-4 平行四邊形面積公式", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "math",
+      "subjectName": "數學",
+      "grade": "6年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "math-g6-fraction-muldiv",
+          "unitName": "分數乘除",
+          "knowledgePoints": [
+            { "kpId": "math-g6-fraction-mul", "kpName": "分數的乘法", "skill": "N-6-2 分數的乘法", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "math-g6-fraction-div", "kpName": "分數的除法", "skill": "N-6-3 分數的除法", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g6-ratio",
+          "unitName": "比與比值",
+          "knowledgePoints": [
+            { "kpId": "math-g6-ratio", "kpName": "認識比與比值", "skill": "N-6-5 比、比值與正比", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g6-circle",
+          "unitName": "圓",
+          "knowledgePoints": [
+            { "kpId": "math-g6-circumference", "kpName": "圓周長", "skill": "S-6-3 圓周率與圓周長", "difficulty": 3, "vizKind": "none" },
+            { "kpId": "math-g6-circle-area", "kpName": "圓面積", "skill": "S-6-4 圓面積", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "math-g6-speed",
+          "unitName": "速率",
+          "knowledgePoints": [
+            { "kpId": "math-g6-speed", "kpName": "速率＝距離÷時間", "skill": "N-6-9 速率的意義與計算", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "english",
+      "subjectName": "英文",
+      "grade": "5年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "eng-g5-present-cont",
+          "unitName": "現在進行式",
+          "knowledgePoints": [
+            { "kpId": "eng-g5-be-ving", "kpName": "I am / He is + V-ing", "skill": "2-III-2 描述正在進行的動作", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g5-can",
+          "unitName": "能力句型",
+          "knowledgePoints": [
+            { "kpId": "eng-g5-can", "kpName": "can / can't 表達能力", "skill": "2-III-2 表達能力與否", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g5-vocab",
+          "unitName": "主題單字",
+          "knowledgePoints": [
+            { "kpId": "eng-g5-weather", "kpName": "天氣單字", "skill": "3-III-1 主題常用字詞", "difficulty": 2, "vizKind": "none" },
+            { "kpId": "eng-g5-read-aloud", "kpName": "句子聽讀與跟讀", "skill": "1-III-5 聽懂並複誦句子", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "english",
+      "subjectName": "英文",
+      "grade": "6年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "eng-g6-past",
+          "unitName": "過去式初步",
+          "knowledgePoints": [
+            { "kpId": "eng-g6-past-be", "kpName": "was / were 的用法", "skill": "2-III-3 敘述過去的事", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g6-future",
+          "unitName": "未來表達",
+          "knowledgePoints": [
+            { "kpId": "eng-g6-going-to", "kpName": "be going to 表達計畫", "skill": "2-III-3 表達未來計畫", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "eng-g6-dialog",
+          "unitName": "短對話",
+          "knowledgePoints": [
+            { "kpId": "eng-g6-dialog", "kpName": "看懂簡短對話", "skill": "3-III-3 讀懂簡短對話", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "science",
+      "subjectName": "自然",
+      "grade": "3年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "sci-g3-plant",
+          "unitName": "植物",
+          "knowledgePoints": [
+            { "kpId": "sci-g3-plant-parts", "kpName": "植物的根莖葉花果", "skill": "tn-II-1 觀察植物的構造", "difficulty": 1, "vizKind": "none" },
+            { "kpId": "sci-g3-plant-grow", "kpName": "種子發芽需要的條件", "skill": "tn-II-1 植物的生長", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g3-animal",
+          "unitName": "動物",
+          "knowledgePoints": [
+            { "kpId": "sci-g3-animal-feature", "kpName": "動物的外形與運動方式", "skill": "tn-II-2 觀察動物的特徵", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g3-magnet",
+          "unitName": "磁鐵",
+          "knowledgePoints": [
+            { "kpId": "sci-g3-magnet", "kpName": "磁鐵能吸引的物品與同極相斥", "skill": "tn-II-3 磁鐵的性質", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "science",
+      "subjectName": "自然",
+      "grade": "4年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "sci-g4-moon",
+          "unitName": "月亮",
+          "knowledgePoints": [
+            { "kpId": "sci-g4-moon-phase", "kpName": "月亮的圓缺變化", "skill": "tn-II-4 觀察月相", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g4-circuit",
+          "unitName": "電路",
+          "knowledgePoints": [
+            { "kpId": "sci-g4-circuit", "kpName": "電池與燈泡的簡單電路", "skill": "tn-II-5 簡單電路", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g4-water-cycle",
+          "unitName": "水的變化",
+          "knowledgePoints": [
+            { "kpId": "sci-g4-water-state", "kpName": "水的三態變化（蒸發、凝結、結冰）", "skill": "tn-II-6 水的型態變化", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "science",
+      "subjectName": "自然",
+      "grade": "5年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "sci-g5-sun",
+          "unitName": "太陽與季節",
+          "knowledgePoints": [
+            { "kpId": "sci-g5-shadow", "kpName": "太陽位置與影子變化", "skill": "tn-III-1 太陽與影子", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g5-heat",
+          "unitName": "熱",
+          "knowledgePoints": [
+            { "kpId": "sci-g5-heat-transfer", "kpName": "熱的傳導與物體受熱膨脹", "skill": "tn-III-2 熱的傳播", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g5-solution",
+          "unitName": "水溶液",
+          "knowledgePoints": [
+            { "kpId": "sci-g5-dissolve", "kpName": "物質的溶解與飽和", "skill": "tn-III-3 水溶液", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "science",
+      "subjectName": "自然",
+      "grade": "6年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "sci-g6-electromagnet",
+          "unitName": "電與磁",
+          "knowledgePoints": [
+            { "kpId": "sci-g6-electromagnet", "kpName": "電磁鐵的原理與應用", "skill": "tn-III-4 電流的磁效應", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g6-machine",
+          "unitName": "簡單機械",
+          "knowledgePoints": [
+            { "kpId": "sci-g6-lever", "kpName": "槓桿與滑輪的省力", "skill": "tn-III-5 簡單機械", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "sci-g6-ecology",
+          "unitName": "生物與環境",
+          "knowledgePoints": [
+            { "kpId": "sci-g6-food-chain", "kpName": "食物鏈與生產者消費者", "skill": "tn-III-6 生態系與食物網", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "subject": "social",
+      "subjectName": "社會",
+      "grade": "3年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "soc-g3-hometown",
+          "unitName": "我的家鄉",
+          "knowledgePoints": [
+            { "kpId": "soc-g3-location", "kpName": "家鄉的位置與地名由來", "skill": "Ab-II-1 居住地的環境", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g3-community",
+          "unitName": "學校與社區",
+          "knowledgePoints": [
+            { "kpId": "soc-g3-community", "kpName": "社區的公共場所與功能", "skill": "Ac-II-1 社區生活", "difficulty": 1, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g3-map",
+          "unitName": "方向與地圖",
+          "knowledgePoints": [
+            { "kpId": "soc-g3-direction", "kpName": "東西南北方位與簡單地圖", "skill": "Ab-II-2 方位與簡圖", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "social",
+      "subjectName": "社會",
+      "grade": "4年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "soc-g4-industry",
+          "unitName": "家鄉的產業",
+          "knowledgePoints": [
+            { "kpId": "soc-g4-industry", "kpName": "農林漁牧與在地產業", "skill": "Ab-II-3 家鄉的產業", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g4-public",
+          "unitName": "公共生活",
+          "knowledgePoints": [
+            { "kpId": "soc-g4-public-service", "kpName": "公共設施與政府服務", "skill": "Ac-II-2 公共事務", "difficulty": 2, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "social",
+      "subjectName": "社會",
+      "grade": "5年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "soc-g5-geography",
+          "unitName": "台灣的環境",
+          "knowledgePoints": [
+            { "kpId": "soc-g5-landform", "kpName": "台灣的地形與氣候", "skill": "Ab-III-1 臺灣的自然環境", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g5-people",
+          "unitName": "台灣的人民",
+          "knowledgePoints": [
+            { "kpId": "soc-g5-ethnic", "kpName": "台灣的族群與多元文化", "skill": "Ca-III-1 多元族群", "difficulty": 2, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g5-history",
+          "unitName": "台灣的過去",
+          "knowledgePoints": [
+            { "kpId": "soc-g5-history", "kpName": "原住民與早期開墾", "skill": "Ha-III-1 臺灣的歷史發展", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "social",
+      "subjectName": "社會",
+      "grade": "6年級",
+      "version": "通用",
+      "units": [
+        {
+          "unitId": "soc-g6-democracy",
+          "unitName": "民主生活",
+          "knowledgePoints": [
+            { "kpId": "soc-g6-democracy", "kpName": "民主、投票與公民參與", "skill": "Ac-III-1 民主社會的參與", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g6-economy",
+          "unitName": "經濟生活",
+          "knowledgePoints": [
+            { "kpId": "soc-g6-economy", "kpName": "生產、消費與選擇", "skill": "Ad-III-1 經濟生活", "difficulty": 3, "vizKind": "none" }
+          ]
+        },
+        {
+          "unitId": "soc-g6-world",
+          "unitName": "台灣與世界",
+          "knowledgePoints": [
+            { "kpId": "soc-g6-world", "kpName": "台灣與其他國家的交流", "skill": "Bc-III-1 全球關連", "difficulty": 3, "vizKind": "none" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConversation } from "./hooks/useConversation";
+import { SpeechCaptureContext, type SpeechCapture } from "./speechCapture";
 import { ConversationView } from "./components/ConversationView";
 import { Panel } from "../../shared/components/Panel";
 import { A5Page } from "../a5/A5Page";
 import { A2Page } from "../a2/A2Page";
+import { QuizPage } from "../a6/QuizPage";
 import {
   isTtsSupported,
   isTtsEnabled,
@@ -11,6 +13,8 @@ import {
   isWithinSpeechGuard,
   isLikelySelfEcho,
   addSpeechEndListener,
+  cancelSpeech,
+  isSpeaking,
 } from "../../shared/speech/tts";
 import { getSpeechRecognitionConstructor } from "./hanziWriterAdapter";
 import { apiClient } from "../../shared/api/client";
@@ -69,9 +73,13 @@ export function A1Page() {
     status: convStatus,
     busy,
     illustrations,
+    videos,
     activeOverlay,
+    storyActive,
     sendTurn,
+    endStory,
     redrawIllustration,
+    retryVideos,
     openOverlay,
     closeOverlay,
     onQuizComplete,
@@ -83,6 +91,7 @@ export function A1Page() {
   const [listening, setListening] = useState(false);
   const [ttsOn, setTtsOn] = useState(isTtsEnabled());
   const [reading, setReading] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -94,6 +103,25 @@ export function A1Page() {
   const lookupRef = useRef<(value: string) => Promise<void>>(null!);
   const startListeningFlowRef = useRef<() => void>(() => {});
   const stopVadRef = useRef<() => void>(() => {});
+  // 跟讀借用主辨識（DD-跟讀）：pending 借用狀態 + 借用入口。
+  // captureStateRef 非 null 代表「現在有一次跟讀借用在等結果」——onresult 會把下一句
+  // final 結果導回這裡，而非送進對話。
+  const captureStateRef = useRef<{
+    resolve: (text: string) => void;
+    reject: (err: Error) => void;
+    timer: ReturnType<typeof setTimeout>;
+    prevLang: string;
+    prevWant: boolean;
+  } | null>(null);
+  const captureOnceRef = useRef<(lang: string, timeoutMs: number) => Promise<string>>(
+    () => Promise.reject(new Error("語音尚未就緒")),
+  );
+  // 取消進行中的跟讀借用：給「外力打斷辨識」的路徑（開 overlay、手動停麥克風）呼叫，
+  // 把語言切回中文並 reject promise，避免主辨識被卡在 en-US 而弄壞中文對話。
+  const cancelCaptureRef = useRef<() => void>(() => {});
+  // 找影片時暫停麥克風：記住「影片開始前麥克風是否開著」，影片播完才據此自動開回。
+  const micWasOnBeforeVideoRef = useRef(false);
+  const videoPlayingRef = useRef(false);
 
   // ──────────────────────────────────────────────────────────────────
   // 語音辨識核心 useEffect（DD-10：完全保留，不重寫；僅辨識結果下游改指向 sendTurn）
@@ -226,16 +254,104 @@ export function A1Page() {
       : resumeListening;
     stopVadRef.current = stopVad;
 
+    // ── 跟讀借用：把「原本的聽音」這支主辨識暫借一句、攔下結果（DD-跟讀） ──
+    // 跟讀不再自己開第二個 en-US SpeechRecognition（會與常駐中文辨識搶麥克風、互相弄聾）。
+    // 借用期間：把主辨識切到目標語言並沿用既有重啟路徑生效；下一句 final 結果在 onresult
+    // 被攔下、導回呼叫端（跟讀判斷），不進對話；結束後語言切回中文、回到常駐聆聽。
+    function restoreAfterCapture(st: NonNullable<typeof captureStateRef.current>) {
+      clearTimeout(st.timer);
+      recognition.lang = st.prevLang;
+      wantListeningRef.current = st.prevWant;
+      if (isSamsungManualMode) {
+        // Samsung 手動模式本就不常駐：借用後停回待命。
+        try {
+          recognition.abort();
+        } catch {
+          /* ok */
+        }
+        recRunningRef.current = false;
+        setStatus(samsungManualPrompt);
+      } else if (st.prevWant) {
+        // 先前在常駐聆聽：沿用自我修復路徑重啟，讓語言切回中文。
+        restartSession();
+      } else {
+        // 先前沒在聽：收掉麥克風。
+        stopVad();
+        try {
+          recognition.abort();
+        } catch {
+          /* ok */
+        }
+        recRunningRef.current = false;
+        setListening(false);
+      }
+    }
+    function resolveCapture(text: string) {
+      const st = captureStateRef.current;
+      if (!st) return;
+      captureStateRef.current = null;
+      restoreAfterCapture(st);
+      st.resolve(text);
+    }
+    function rejectCapture(err: Error) {
+      const st = captureStateRef.current;
+      if (!st) return;
+      captureStateRef.current = null;
+      restoreAfterCapture(st);
+      st.reject(err);
+    }
+    // 外力取消：只把語言切回、reject promise，不自行重啟——麥克風狀態交給呼叫端
+    // （它正準備 abort / 接手聆聽）。避免主辨識卡在 en-US 弄壞中文對話。
+    cancelCaptureRef.current = () => {
+      const st = captureStateRef.current;
+      if (!st) return;
+      captureStateRef.current = null;
+      clearTimeout(st.timer);
+      recognition.lang = st.prevLang;
+      st.reject(new Error("跟讀已取消"));
+    };
+    captureOnceRef.current = (lang: string, timeoutMs: number) =>
+      new Promise<string>((resolve, reject) => {
+        // 同時只允許一個跟讀借用；新的取代舊的（舊的以錯誤收尾）。
+        if (captureStateRef.current) rejectCapture(new Error("已被新的跟讀取代"));
+        const prevLang = recognition.lang;
+        const prevWant = wantListeningRef.current;
+        const timer = setTimeout(
+          () => rejectCapture(new Error("沒聽到聲音，再試一次好嗎？")),
+          timeoutMs,
+        );
+        captureStateRef.current = { resolve, reject, timer, prevLang, prevWant };
+        // 借用：清掉觸發鎖、切語言、確保在聽，沿用既有重啟路徑讓新語言生效。
+        triggeredRef.current = false;
+        recognition.lang = lang;
+        wantListeningRef.current = true;
+        if (isSamsungManualMode) {
+          try {
+            recognition.abort();
+          } catch {
+            /* ok */
+          }
+          recRunningRef.current = false;
+          clearTimeout(restartTimer);
+          restartTimer = setTimeout(() => {
+            try {
+              recognition.start();
+            } catch {
+              /* ok */
+            }
+          }, 150);
+        } else {
+          restartSession();
+        }
+      });
+
     // ── Recognition event handlers ──
     recognition.onstart = () => {
       recRunningRef.current = true;
       lastAliveAt = Date.now();
       setListening(true);
-      setStatus(
-        isSamsungManualMode
-          ? samsungManualPrompt
-          : "我在聽，直接說說看吧！",
-      );
+      // 聆聽狀態不再用文字提示，改由輸入框背景的呼吸燈效果表示（見 .a1-input-wrap--listening）。
+      setStatus(isSamsungManualMode ? samsungManualPrompt : "");
     };
     recognition.onend = () => {
       recRunningRef.current = false;
@@ -282,10 +398,22 @@ export function A1Page() {
       setStatus(`語音辨識失敗：${event.error}`);
     };
     recognition.onresult = (event: SpeechRecognitionEventLike) => {
-      if (triggeredRef.current) return;
-
       const latest = event.results[event.results.length - 1];
       const transcript = latest[0].transcript.trim();
+
+      // 跟讀借用攔截（最優先）：有 pending 借用時，final 結果導回跟讀判斷，不進對話，
+      // 且不受 triggeredRef 與 echo/self-echo 軟閘影響——小朋友按了「跟讀」本來就要
+      // 開口跟著唸（而且念的正是剛剛 🔊 唸過的單字，會被 self-echo 誤殺）。
+      if (captureStateRef.current) {
+        if (!latest.isFinal || !transcript || transcript.length > 50) return;
+        // 朗讀進行中/尾窗內的結果丟掉（擋住 bubble 重播等 TTS 竄進跟讀判斷）；
+        // 但「不」套 self-echo——小朋友本來就要跟著唸剛聽到的那個單字。
+        if (isWithinSpeechGuard()) return;
+        resolveCapture(transcript);
+        return;
+      }
+
+      if (triggeredRef.current) return;
       if (transcript.length > 50) return;
 
       if (isSamsungManualMode) {
@@ -295,14 +423,24 @@ export function A1Page() {
         return;
       }
 
-      // 自由對話模式（DD-10 v2）：不需喚醒詞。interim 略過，final 直接送出。
-      if (!latest.isFinal) return;
+      // 自由對話模式（DD-10 v2）：不需喚醒詞。
+      // interim 即時回填輸入框（小朋友看得到「聽到什麼」），final 才送出。
+      if (!latest.isFinal) {
+        // 朗讀中/尾窗內的 interim 多半是自我回音，不回填，免得框裡跳出小雞自己的話。
+        if (!isWithinSpeechGuard()) setQuery(transcript);
+        return;
+      }
       if (!transcript) return;
 
       // echo 軟閘（DD-11）：小雞朗讀時/尾窗內，或文字高度吻合最近朗讀內容時，
       // 丟棄該結果擋掉自我迴圈。麥克風不暫停（保住全雙工）。
-      if (isWithinSpeechGuard() || isLikelySelfEcho(transcript)) return;
+      if (isWithinSpeechGuard() || isLikelySelfEcho(transcript)) {
+        // 這次結果是回音 → 連同框裡殘留的 interim 一起清掉，不要留小雞自己的話。
+        setQuery("");
+        return;
+      }
 
+      // 話講完 → 即時送出（送出端會清空輸入框）。
       triggeredRef.current = true;
       void lookupRef.current(transcript);
     };
@@ -379,6 +517,14 @@ export function A1Page() {
       removeSpeechEndListener?.();
       startListeningFlowRef.current = () => {};
       stopVadRef.current = () => {};
+      captureOnceRef.current = () => Promise.reject(new Error("語音尚未就緒"));
+      cancelCaptureRef.current = () => {};
+      if (captureStateRef.current) {
+        const st = captureStateRef.current;
+        captureStateRef.current = null;
+        clearTimeout(st.timer);
+        st.reject(new Error("語音已關閉"));
+      }
       try {
         recognition.abort();
       } catch {
@@ -394,6 +540,8 @@ export function A1Page() {
   const wasListeningBeforeOverlayRef = useRef(false);
   useEffect(() => {
     if (activeOverlay) {
+      // 進 overlay 前若有跟讀借用在進行，先取消（切回中文、reject），避免主辨識卡 en-US。
+      cancelCaptureRef.current();
       // 記住進 overlay 前是否在聽，關閉後據此恢復。
       wasListeningBeforeOverlayRef.current = wantListeningRef.current;
       wantListeningRef.current = false;
@@ -414,6 +562,20 @@ export function A1Page() {
       }
     }
   }, [activeOverlay]);
+
+  // 朗讀中偵測（驅動 kill switch 的紅色脈動）：SpeechSynthesis 沒有可靠的「開始播放」
+  // 事件，輪詢 isSpeaking() 最穩。停止時把按鈕收回靜止態。
+  useEffect(() => {
+    if (!isTtsSupported()) return;
+    const id = setInterval(() => setSpeaking(isSpeaking()), 250);
+    return () => clearInterval(id);
+  }, []);
+
+  /** Kill switch：強制中止小雞老師的語音輸出（朗讀打斷不了的逃生口）。 */
+  function stopSpeaking() {
+    cancelSpeech();
+    setSpeaking(false);
+  }
 
   // 辨識結果下游：sendTurn 包裝（DD-10：lookupRef 改指向對話送出）
   lookupRef.current = sendTurnFromSpeech;
@@ -459,6 +621,8 @@ export function A1Page() {
   function toggleListening() {
     if (!recognitionRef.current) return;
     if (listening) {
+      // 手動停麥克風時，連同進行中的跟讀借用一起取消（切回中文、reject）。
+      cancelCaptureRef.current();
       wantListeningRef.current = false;
       if (!samsungManualModeRef.current) stopVadRef.current();
       triggeredRef.current = false;
@@ -475,6 +639,39 @@ export function A1Page() {
     }
   }
 
+  /**
+   * 影片播放/暫停時調整麥克風（DD-找影片）。
+   * 播放中：暫停常駐辨識（不然影片聲音會被當成小朋友說話、亂觸發小雞老師）；
+   *         記住先前是否開著。暫停/播完：若先前開著就自動開回。
+   * 用 wantListeningRef 當「先前是否開著」的真實來源（state 在 callback 內會過時）。
+   */
+  const handleVideoPlayingChange = useCallback((playing: boolean) => {
+    if (playing === videoPlayingRef.current) return;
+    videoPlayingRef.current = playing;
+    if (playing) {
+      micWasOnBeforeVideoRef.current = wantListeningRef.current;
+      if (wantListeningRef.current) {
+        cancelCaptureRef.current();
+        wantListeningRef.current = false;
+        if (!samsungManualModeRef.current) stopVadRef.current();
+        triggeredRef.current = false;
+        try {
+          recognitionRef.current?.abort();
+        } catch {
+          /* ok */
+        }
+        setListening(false);
+        setStatus("");
+      }
+    } else {
+      if (micWasOnBeforeVideoRef.current && recognitionRef.current) {
+        wantListeningRef.current = true;
+        startListeningFlowRef.current();
+      }
+      micWasOnBeforeVideoRef.current = false;
+    }
+  }, []);
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") void sendTurnFromSpeech();
   }
@@ -487,7 +684,18 @@ export function A1Page() {
 
   const displayStatus = status || convStatus;
 
+  // 跟讀借用入口（給深層的 EnglishPractice 用）：穩定 identity，只隨 speechReady 變。
+  const speechCapture = useMemo<SpeechCapture>(
+    () => ({
+      captureOnce: (opts) =>
+        captureOnceRef.current(opts?.lang ?? "en-US", opts?.timeoutMs ?? 8000),
+      ready: speechReady,
+    }),
+    [speechReady],
+  );
+
   return (
+    <SpeechCaptureContext.Provider value={speechCapture}>
     <div className="feature-page">
       <div className="a1-chat-layout">
         <Panel className="a1-conversation-panel">
@@ -496,17 +704,37 @@ export function A1Page() {
             busy={busy}
             illustrations={illustrations}
             onRedraw={redrawIllustration}
+            videos={videos}
+            onRetryVideos={retryVideos}
+            onVideoPlayingChange={handleVideoPlayingChange}
           />
         </Panel>
 
         <Panel className="a1-input-panel">
-          <div className="a1-input-wrap">
+          {storyActive && (
+            <div className="a1-story-relay-bar">
+              <span className="a1-story-relay-bar__label">📖 故事接龍中——換你接下去！</span>
+              <button
+                type="button"
+                className="a1-story-relay-bar__end"
+                onClick={endStory}
+                disabled={busy}
+              >
+                結束故事
+              </button>
+            </div>
+          )}
+          <div className={`a1-input-wrap${listening ? " a1-input-wrap--listening" : ""}`}>
               <input
                 className="a1-query-input"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="說說看：用蘋果造句、花可以組什麼詞、蘋果的蘋、說個故事"
+                placeholder={
+                  storyActive
+                    ? "換你接下去！說一句故事接下來發生什麼…"
+                    : "說說看：用蘋果造句、花可以組什麼詞、蘋果的蘋、說個故事"
+                }
               />
               <input
                 ref={photoInputRef}
@@ -560,22 +788,19 @@ export function A1Page() {
                 </svg>
               </button>
               <button
-                className="a1-search-btn"
-                onClick={() => void sendTurnFromSpeech()}
-                aria-label="送出"
+                className={`a1-stop-btn${speaking ? " a1-stop-btn--active" : ""}`}
+                onClick={stopSpeaking}
+                aria-label="停止說話"
+                title="停止小雞老師說話"
               >
                 <svg
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  fill="currentColor"
+                  stroke="none"
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <rect x="6" y="6" width="12" height="12" rx="2.5" />
                 </svg>
               </button>
               {isTtsSupported() && (
@@ -604,6 +829,13 @@ export function A1Page() {
             >
               🧩 成語
             </button>
+            <button
+              type="button"
+              className="a1-quick-chip"
+              onClick={() => openOverlay("quiz")}
+            >
+              📝 練習
+            </button>
           </div>
           {displayStatus ? (
             <p className="muted" style={{ marginTop: "0.5rem" }}>
@@ -626,12 +858,15 @@ export function A1Page() {
           <div className="a1-quiz-overlay__body">
             {activeOverlay === "dictation" ? (
               <A5Page onClose={closeOverlay} onComplete={onQuizComplete} />
-            ) : (
+            ) : activeOverlay === "idiom" ? (
               <A2Page onClose={closeOverlay} onComplete={onQuizComplete} />
+            ) : (
+              <QuizPage onClose={closeOverlay} onComplete={onQuizComplete} />
             )}
           </div>
         </div>
       )}
     </div>
+    </SpeechCaptureContext.Provider>
   );
 }

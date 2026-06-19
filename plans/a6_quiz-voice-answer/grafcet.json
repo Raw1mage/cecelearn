@@ -1,0 +1,7 @@
+[
+  { "StepNumber": 0, "ModuleRef": "A0", "StepType": "initial", "StepAction": "顯示填空題：輸入框 + 麥克風鈕，等待作答", "LinkInputType": ["convergence_or", "convergence_or"], "LinkInputNumber": [3, 4], "LinkOutputType": "track", "LinkOutputNumber": [1], "Condition": ["孩子按下麥克風鈕"], "SubGrafcet": [] },
+  { "StepNumber": 1, "ModuleRef": "A0", "StepType": "normal", "StepAction": "設 listening、清空 micHint、依科目選辨識語言", "LinkInputType": ["track"], "LinkInputNumber": [0], "LinkOutputType": "track", "LinkOutputNumber": [2], "Condition": ["已取得辨識語言"], "SubGrafcet": [] },
+  { "StepNumber": 2, "ModuleRef": "A0", "StepType": "normal", "StepAction": "借用主辨識 captureOnce 聽一句（無 Provider 退回 recognizeOnce）", "LinkInputType": ["track"], "LinkInputNumber": [1], "LinkOutputType": "divergence_or", "LinkOutputNumber": [3, 4], "Condition": ["辨識成功且非空", "辨識失敗或空字串"], "SubGrafcet": [] },
+  { "StepNumber": 3, "ModuleRef": "A0", "StepType": "normal", "StepAction": "辨識文字回填輸入框、解除 listening（孩子可改後送出）", "LinkInputType": ["divergence_or"], "LinkInputNumber": [2], "LinkOutputType": "convergence_or", "LinkOutputNumber": [0], "Condition": ["回到等待作答"], "SubGrafcet": [] },
+  { "StepNumber": 4, "ModuleRef": "A0", "StepType": "normal", "StepAction": "設 micHint 提示、解除 listening（保留打字退路）", "LinkInputType": ["divergence_or"], "LinkInputNumber": [2], "LinkOutputType": "convergence_or", "LinkOutputNumber": [0], "Condition": ["回到等待作答"], "SubGrafcet": [] }
+]

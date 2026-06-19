@@ -1,0 +1,62 @@
+[
+  {
+    "id": "TV1",
+    "requirement": "填空題顯示麥克風鈕",
+    "input": { "type": "render", "item": { "type": "fill", "subject": "chinese" } },
+    "expected": { "mic_button_present": true, "input_present": true }
+  },
+  {
+    "id": "TV2",
+    "requirement": "選擇題不顯示麥克風鈕",
+    "input": { "type": "render", "item": { "type": "choice", "subject": "chinese", "choices": ["A", "B"] } },
+    "expected": { "mic_button_present": false }
+  },
+  {
+    "id": "TV3",
+    "requirement": "依科目選辨識語言 — 國語",
+    "input": { "type": "voice_click", "item": { "type": "fill", "subject": "chinese" } },
+    "expected": { "lang": "cmn-Hant-TW" }
+  },
+  {
+    "id": "TV4",
+    "requirement": "依科目選辨識語言 — 英文",
+    "input": { "type": "voice_click", "item": { "type": "make_word", "subject": "english" } },
+    "expected": { "lang": "en-US" }
+  },
+  {
+    "id": "TV5",
+    "requirement": "依科目選辨識語言 — 數學走中文",
+    "input": { "type": "voice_click", "item": { "type": "fill", "subject": "math" } },
+    "expected": { "lang": "cmn-Hant-TW" }
+  },
+  {
+    "id": "TV6",
+    "requirement": "辨識成功回填不自動送出",
+    "input": { "type": "voice_result", "transcript": "下雨了" },
+    "expected": { "input_value": "下雨了", "auto_submitted": false, "listening": false }
+  },
+  {
+    "id": "TV7",
+    "requirement": "借用主辨識優先，無 Provider 退回獨立辨識",
+    "input": { "type": "voice_click", "capture_available": false },
+    "expected": { "uses": "recognizeOnce" }
+  },
+  {
+    "id": "TV8",
+    "requirement": "辨識失敗 fail-soft 提示",
+    "input": { "type": "voice_result", "reject": true },
+    "expected": { "micHint_nonempty": true, "listening": false, "typing_allowed": true }
+  },
+  {
+    "id": "TV9",
+    "requirement": "空辨識結果提示",
+    "input": { "type": "voice_result", "transcript": "" },
+    "expected": { "micHint_nonempty": true, "input_value_unchanged": true }
+  },
+  {
+    "id": "TV10",
+    "requirement": "換題重置語音狀態",
+    "input": { "type": "next_question", "prior": { "micHint": "沒聽到，再按一次麥克風喔" } },
+    "expected": { "micHint": "", "listening": false }
+  }
+]

@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "note": "兒童知識型 YouTube 頻道庫。小雞老師找影片時，命中這些頻道的結果會被加權排到最前面、標記為精選。新增請走 POST /api/a1/channels（或直接編此檔）。status=active 才會參與加權；pending=已知好頻道但尚未確認官方頻道 ID。",
+  "channels": [
+    {
+      "channelId": "UCtWocEKhgpEffPDlwwozK9Q",
+      "title": "樂樂TV",
+      "handle": "@xiaoxingxing-樂樂tv",
+      "topics": [
+        "綜合",
+        "啟蒙",
+        "故事",
+        "成語",
+        "數學",
+        "自然",
+        "生活"
+      ],
+      "note": "兒童影音學習頻道，寓教於樂；守備範圍廣。",
+      "status": "active",
+      "addedAt": "2026-06-19"
+    },
+    {
+      "channelId": "UCWfmeHHScyivFwonBW0IklQ",
+      "title": "十萬個為什麼 | Tell Me Why",
+      "handle": "@tellmewhy9680",
+      "topics": [
+        "科普",
+        "自然",
+        "科學",
+        "為什麼",
+        "知識"
+      ],
+      "note": "用故事解答小朋友的「為什麼」，科普啟蒙。",
+      "status": "active",
+      "addedAt": "2026-06-19"
+    },
+    {
+      "channelId": "UCyz6YbHe5M3s_D_ngwClrcQ",
+      "title": "FCCSD 中華文化永續發展基金會",
+      "handle": "@teamfccsd1200",
+      "topics": [
+        "成語",
+        "成語任務",
+        "國語",
+        "中華文化"
+      ],
+      "note": "「成語任務」系列製作方；成語/文化教學。",
+      "status": "active",
+      "addedAt": "2026-06-19"
+    },
+    {
+      "channelId": "UCRi0sw4PDw-C2C7fS9hrx5Q",
+      "title": "小豬佩奇 中文官方 - Peppa Pig",
+      "handle": "@peppapigchineseofficial",
+      "topics": [
+        "語言",
+        "生活",
+        "英文",
+        "啟蒙",
+        "故事"
+      ],
+      "note": "官方中文頻道；語言與生活情境啟蒙，幼齡友善。",
+      "status": "active",
+      "addedAt": "2026-06-19"
+    },
+    {
+      "title": "烏龍院成語",
+      "topics": [
+        "成語"
+      ],
+      "note": "敖幼祥《烏龍院》成語動畫；尚未確認官方 YouTube 頻道 ID，待補。",
+      "status": "pending",
+      "addedAt": "2026-06-19"
+    }
+  ]
+}

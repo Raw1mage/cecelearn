@@ -4,7 +4,7 @@ import type {
   A1ErrorResponse,
   DialogueChatProvider,
 } from '../contracts/providers.js'
-import { SYSTEM_PROMPT, LOOKUP_HINT, buildA1Response, type ParsedReply } from './a1ChatShared.js'
+import { SYSTEM_PROMPT, LOOKUP_HINT, STORY_HINT, buildA1Response, type ParsedReply } from './a1ChatShared.js'
 
 const GEMINI_CHAT_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
@@ -24,7 +24,7 @@ const RESPONSE_SCHEMA = {
   properties: {
     intent: {
       type: 'STRING',
-      enum: ['lookup', 'make_words', 'make_sentence', 'tell_story', 'draw', 'solve_arithmetic', 'explain', 'start_dictation', 'start_idiom', 'chat', 'unclear'],
+      enum: ['lookup', 'make_words', 'make_sentence', 'tell_story', 'continue_story', 'draw', 'solve_arithmetic', 'explain', 'find_video', 'start_dictation', 'start_idiom', 'start_quiz', 'chat', 'unclear'],
     },
     reply: { type: 'STRING' },
     lookup: {
@@ -48,13 +48,26 @@ const RESPONSE_SCHEMA = {
     },
     story: {
       type: 'OBJECT',
-      properties: { topic: { type: 'STRING' }, story: { type: 'STRING' } },
+      properties: {
+        topic: { type: 'STRING' },
+        story: { type: 'STRING' },
+        prompt: { type: 'STRING' },
+        done: { type: 'BOOLEAN' },
+      },
       required: ['topic', 'story'],
     },
     draw: {
       type: 'OBJECT',
       properties: { subject: { type: 'STRING' } },
       required: ['subject'],
+    },
+    video: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING' },
+        topic: { type: 'STRING' },
+      },
+      required: ['query'],
     },
     arithmetic: {
       type: 'OBJECT',
@@ -128,7 +141,7 @@ export class GeminiChatProvider implements DialogueChatProvider {
 
   async chat(
     messages: A1ChatMessage[],
-    hint?: 'lookup',
+    hint?: 'lookup' | 'story',
   ): Promise<A1ChatResponse | A1ErrorResponse> {
     const start = Date.now()
     log('a1.chat.request', { turnCount: messages.length, hasHint: Boolean(hint) })
@@ -155,6 +168,8 @@ export class GeminiChatProvider implements DialogueChatProvider {
     }))
     if (hint === 'lookup') {
       contents[contents.length - 1]!.parts[0]!.text += LOOKUP_HINT
+    } else if (hint === 'story') {
+      contents[contents.length - 1]!.parts[0]!.text += STORY_HINT
     }
 
     const body = JSON.stringify({

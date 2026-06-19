@@ -1,0 +1,33 @@
+[
+  {
+    "id": "P1",
+    "name": "機制科動態生題（國/數/英）",
+    "componentRef": ["A0"],
+    "messages": [
+      { "id": "MSG1", "from": "Frontend", "to": "Server", "label": "GET /api/quiz?subject=math&grade=2年級&count=N" },
+      { "id": "MSG2", "from": "Server", "to": "QuizGenProvider", "label": "generate(subject, grade, count)" },
+      { "id": "MSG3", "from": "QuizGenProvider", "to": "QuizGenProvider", "label": "distribute count 到 curriculum KP（洗牌 round-robin）" },
+      { "id": "MSG4", "from": "QuizGenProvider", "to": "quizFramework", "label": "genForKp(apiKeys, kp, strand, n)（並行）" },
+      { "id": "MSG5", "from": "quizFramework", "to": "Gemini", "label": "callGemini(prompt, responseSchema)" },
+      { "id": "MSG6", "from": "quizFramework", "to": "quizFramework", "label": "sanitizeViz 剝除不一致圖解 + validate 剔除壞題" },
+      { "id": "MSG7", "from": "QuizGenProvider", "to": "Server", "label": "QuizServeItem[]（攤平 explain）" },
+      { "id": "MSG8", "from": "Server", "to": "Frontend", "label": "{ ok:true, items }" }
+    ]
+  },
+  {
+    "id": "P2",
+    "name": "事實科種子重包裝（自然/社會）",
+    "componentRef": ["A0"],
+    "messages": [
+      { "id": "MSG1", "from": "Frontend", "to": "Server", "label": "GET /api/quiz?subject=science&grade=4年級&count=N" },
+      { "id": "MSG2", "from": "Server", "to": "QuizGenProvider", "label": "generate(...)" },
+      { "id": "MSG3", "from": "QuizGenProvider", "to": "QuizBankProvider", "label": "serve({subject, grade, count}) → 事實種子" },
+      { "id": "MSG4", "from": "QuizGenProvider", "to": "quizFramework", "label": "reposeFact(seed, strand)（每條種子並行）" },
+      { "id": "MSG5", "from": "quizFramework", "to": "Gemini", "label": "重出選擇題（prompt 含種子事實＋正確答案）" },
+      { "id": "MSG6", "from": "quizFramework", "to": "quizFramework", "label": "釘答案＝種子答案 + 驗選項含正解且互異" },
+      { "id": "MSG7", "from": "quizFramework", "to": "QuizGenProvider", "label": "通過→新題；不過→null" },
+      { "id": "MSG8", "from": "QuizGenProvider", "to": "QuizGenProvider", "label": "null → fail-safe 退回種子原題" },
+      { "id": "MSG9", "from": "Server", "to": "Frontend", "label": "{ ok:true, items }" }
+    ]
+  }
+]

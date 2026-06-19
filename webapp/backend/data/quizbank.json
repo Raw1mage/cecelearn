@@ -1,0 +1,2400 @@
+[
+  {
+    "qId": "sci-g3-plant-parts#1",
+    "kpId": "sci-g3-plant-parts",
+    "type": "choice",
+    "stem": "植物主要用哪個部位來吸收水分？",
+    "answer": "根",
+    "explain": {
+      "steps": [
+        "根就像植物的吸管，會從土壤裡吸水和養分喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:01.763Z",
+    "reviewed": false,
+    "choices": [
+      "葉子",
+      "莖",
+      "根",
+      "花"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-parts#2",
+    "kpId": "sci-g3-plant-parts",
+    "type": "choice",
+    "stem": "植物的哪個部位負責支撐整株植物，並運輸水分和養分？",
+    "answer": "莖",
+    "explain": {
+      "steps": [
+        "莖就像植物的骨架，挺直地站立，還會把根吸收的水分送到葉子和花喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:01.763Z",
+    "reviewed": false,
+    "choices": [
+      "葉子",
+      "莖",
+      "花",
+      "果實"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-parts#3",
+    "kpId": "sci-g3-plant-parts",
+    "type": "choice",
+    "stem": "植物會在哪個部位製造自己的食物？",
+    "answer": "葉子",
+    "explain": {
+      "steps": [
+        "葉子就像植物的小廚房，利用陽光、水和空氣來製作食物，讓植物長大！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:01.763Z",
+    "reviewed": false,
+    "choices": [
+      "根",
+      "莖",
+      "葉子",
+      "花"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-parts#4",
+    "kpId": "sci-g3-plant-parts",
+    "type": "choice",
+    "stem": "植物的哪個部位開花結果後，裡面會有種子？",
+    "answer": "果實",
+    "explain": {
+      "steps": [
+        "花朵變成香甜的果實，果實裡面會藏著種子，這些種子可以長成新的植物喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:01.763Z",
+    "reviewed": false,
+    "choices": [
+      "根",
+      "葉子",
+      "花",
+      "果實"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-parts#5",
+    "kpId": "sci-g3-plant-parts",
+    "type": "choice",
+    "stem": "大部分的植物，哪個部位會長在土壤裡面，我們通常看不到？",
+    "answer": "根",
+    "explain": {
+      "steps": [
+        "根躲在土壤下面，默默地幫植物吸水和固定身體，所以我們通常看不到它喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:01.763Z",
+    "reviewed": false,
+    "choices": [
+      "葉子",
+      "花朵",
+      "根",
+      "果實"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-grow#1",
+    "kpId": "sci-g3-plant-grow",
+    "type": "choice",
+    "stem": "請問，種子發芽通常需要哪些重要的條件呢？",
+    "answer": "充足的水分、適當的溫度和空氣。",
+    "explain": {
+      "steps": [
+        "種子要發芽，就像小寶寶要長大一樣，需要喝水（水分）、舒服的環境（適當溫度）和呼吸（空氣）喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.057Z",
+    "reviewed": false,
+    "choices": [
+      "充足的水分、適當的溫度和空氣。",
+      "肥沃的土壤、陽光和養分。",
+      "很多肥料、黑暗和安靜。",
+      "大風、下雨和雷聲。"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-grow#2",
+    "kpId": "sci-g3-plant-grow",
+    "type": "choice",
+    "stem": "小明把一些紅豆種子放在乾燥的棉花上，每天給它適當的溫度和空氣，但是沒有給水，請問紅豆種子會發芽嗎？",
+    "answer": "不會，因為缺少水分。",
+    "explain": {
+      "steps": [
+        "種子沒有水，就像我們口渴沒水喝一樣，會很難啟動生命力，所以不會發芽喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.057Z",
+    "reviewed": false,
+    "choices": [
+      "會，因為有空氣和溫度。",
+      "不會，因為缺少水分。",
+      "會，因為紅豆本身就有水分。",
+      "不知道，要等很久才會發芽。"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-grow#3",
+    "kpId": "sci-g3-plant-grow",
+    "type": "choice",
+    "stem": "如果我們把種子完全泡在裝滿水的瓶子裡，並且把瓶蓋蓋緊，讓它沒有辦法接觸到空氣，請問種子會發芽嗎？",
+    "answer": "不會，因為缺少空氣。",
+    "explain": {
+      "steps": [
+        "種子發芽也需要呼吸新鮮空氣，就像我們一樣。如果沒有空氣，它就不能好好「呼吸」，也就不會發芽了。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.057Z",
+    "reviewed": false,
+    "choices": [
+      "會，因為有水和適當的溫度。",
+      "不會，因為缺少空氣。",
+      "會，因為水裡有氧氣。",
+      "不知道，可能有些種子可以。"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-grow#4",
+    "kpId": "sci-g3-plant-grow",
+    "type": "choice",
+    "stem": "小華把種子放在冰箱的冷凍庫裡，每天給它水和空氣，請問種子會發芽嗎？",
+    "answer": "不會，因為溫度太低了。",
+    "explain": {
+      "steps": [
+        "種子發芽需要「適當的溫度」，太冷或太熱都不行喔！就像我們在太冷的地方會發抖，種子也會受不了。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.057Z",
+    "reviewed": false,
+    "choices": [
+      "會，因為有水和空氣。",
+      "不會，因為溫度太低了。",
+      "會，因為冷凍庫很乾淨。",
+      "不知道，可能有些種子喜歡冷。"
+    ]
+  },
+  {
+    "qId": "sci-g3-plant-grow#5",
+    "kpId": "sci-g3-plant-grow",
+    "type": "fill",
+    "stem": "種子發芽需要水、空氣和_____的溫度。",
+    "answer": "適當",
+    "explain": {
+      "steps": [
+        "種子發芽需要的溫度，不能太冷也不能太熱，要剛剛好舒服的「適當」溫度，才能順利長大喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.057Z",
+    "reviewed": false
+  },
+  {
+    "qId": "sci-g3-magnet#1",
+    "kpId": "sci-g3-magnet",
+    "type": "choice",
+    "stem": "磁鐵可以吸住下列哪一種物品？",
+    "answer": "迴紋針",
+    "explain": {
+      "steps": [
+        "磁鐵主要能吸引鐵製的物品。",
+        "在選項中，迴紋針通常是鐵做的，所以磁鐵可以吸住它。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.387Z",
+    "reviewed": false,
+    "choices": [
+      "鉛筆",
+      "迴紋針",
+      "塑膠尺",
+      "橡皮擦"
+    ]
+  },
+  {
+    "qId": "sci-g3-magnet#2",
+    "kpId": "sci-g3-magnet",
+    "type": "choice",
+    "stem": "下列哪一種物品，磁鐵無法吸住？",
+    "answer": "尺（塑膠製）",
+    "explain": {
+      "steps": [
+        "磁鐵只能吸引鐵製的物品。",
+        "鐵釘、剪刀、錢幣（通常含有鐵或鎳）會被磁鐵吸引，而塑膠尺不是鐵做的，所以磁鐵吸不住它。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.387Z",
+    "reviewed": false,
+    "choices": [
+      "鐵釘",
+      "剪刀",
+      "錢幣",
+      "尺（塑膠製）"
+    ]
+  },
+  {
+    "qId": "sci-g3-magnet#3",
+    "kpId": "sci-g3-magnet",
+    "type": "choice",
+    "stem": "當兩個磁鐵的「N極」靠近「N極」時，會發生什麼事？",
+    "answer": "互相排斥",
+    "explain": {
+      "steps": [
+        "磁鐵的同一個磁極靠近時，會互相推開。",
+        "所以，N極和N極靠近時，它們會互相排斥，就像它們不喜歡靠近彼此一樣。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.387Z",
+    "reviewed": false,
+    "choices": [
+      "互相吸引",
+      "互相排斥",
+      "沒有反應",
+      "溫度升高"
+    ]
+  },
+  {
+    "qId": "sci-g3-magnet#4",
+    "kpId": "sci-g3-magnet",
+    "type": "choice",
+    "stem": "磁鐵的「N極」和「S極」靠近時，會發生什麼事？",
+    "answer": "互相吸引",
+    "explain": {
+      "steps": [
+        "磁鐵的不同磁極靠近時，會互相拉近。",
+        "所以，N極和S極靠近時，它們會互相吸引，就像兩個好朋友想要靠近對方一樣。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.387Z",
+    "reviewed": false,
+    "choices": [
+      "互相吸引",
+      "互相排斥",
+      "沒有反應",
+      "兩邊都變熱"
+    ]
+  },
+  {
+    "qId": "sci-g3-magnet#5",
+    "kpId": "sci-g3-magnet",
+    "type": "fill",
+    "stem": "磁鐵主要能吸引含有_______的物品。",
+    "answer": "鐵",
+    "explain": {
+      "steps": [
+        "磁鐵的特性就是它能吸住某些金屬。",
+        "在我們生活中，最常被磁鐵吸引的就是鐵做的東西，所以磁鐵主要吸引含有鐵的物品。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.387Z",
+    "reviewed": false
+  },
+  {
+    "qId": "sci-g3-animal-feature#1",
+    "kpId": "sci-g3-animal-feature",
+    "type": "choice",
+    "stem": "魚兒在水裡會怎麼移動呢？",
+    "answer": "用鰭游泳",
+    "explain": {
+      "steps": [
+        "魚兒有魚鰭，就像我們的腳一樣，可以幫助牠們在水裡前進和保持平衡喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.687Z",
+    "reviewed": false,
+    "choices": [
+      "用腳走路",
+      "用翅膀飛",
+      "用鰭游泳",
+      "用尾巴跳"
+    ]
+  },
+  {
+    "qId": "sci-g3-animal-feature#2",
+    "kpId": "sci-g3-animal-feature",
+    "type": "choice",
+    "stem": "小鳥的身體外面通常覆蓋著什麼？",
+    "answer": "羽毛",
+    "explain": {
+      "steps": [
+        "小鳥的羽毛不只讓牠們看起來很漂亮，也能幫助牠們保暖和飛行喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.687Z",
+    "reviewed": false,
+    "choices": [
+      "毛髮",
+      "鱗片",
+      "羽毛",
+      "皮膚"
+    ]
+  },
+  {
+    "qId": "sci-g3-animal-feature#3",
+    "kpId": "sci-g3-animal-feature",
+    "type": "choice",
+    "stem": "貓咪和狗狗通常會用什麼方式移動？",
+    "answer": "用走的和跑的",
+    "explain": {
+      "steps": [
+        "貓咪和狗狗有四隻腳，牠們最常用走路和跑步的方式來移動，有時候也會跳一下喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.687Z",
+    "reviewed": false,
+    "choices": [
+      "用爬的",
+      "用跳的",
+      "用走的和跑的",
+      "用飛的"
+    ]
+  },
+  {
+    "qId": "sci-g3-animal-feature#4",
+    "kpId": "sci-g3-animal-feature",
+    "type": "choice",
+    "stem": "青蛙在陸地上最常怎麼移動呢？",
+    "answer": "用兩隻後腳跳",
+    "explain": {
+      "steps": [
+        "青蛙的兩隻後腳特別強壯，讓牠們可以跳得很高很遠，快速移動，抓住蟲子吃！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.687Z",
+    "reviewed": false,
+    "choices": [
+      "用翅膀飛",
+      "用尾巴游",
+      "用兩隻後腳跳",
+      "用四隻腳走"
+    ]
+  },
+  {
+    "qId": "sci-g3-animal-feature#5",
+    "kpId": "sci-g3-animal-feature",
+    "type": "choice",
+    "stem": "蛇沒有腳，牠們是怎麼移動的呢？",
+    "answer": "用身體滑行",
+    "explain": {
+      "steps": [
+        "蛇利用牠的身體肌肉和腹部的鱗片，在地上彎曲滑動前進，看起來很特別吧！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:07.687Z",
+    "reviewed": false,
+    "choices": [
+      "用翅膀飛",
+      "用身體滑行",
+      "用跳的",
+      "用滾的"
+    ]
+  },
+  {
+    "qId": "sci-g4-moon-phase#1",
+    "kpId": "sci-g4-moon-phase",
+    "type": "choice",
+    "stem": "月亮的圓缺變化是怎麼造成的呢？",
+    "answer": "太陽照到月亮的部分不同",
+    "explain": {
+      "steps": [
+        "月亮本身不會發光，我們看到月亮不同的形狀，是因為太陽光照到月亮的部分不一樣喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:09.099Z",
+    "reviewed": false,
+    "choices": [
+      "月亮被地球的影子遮住",
+      "月亮自己會發光所以形狀改變",
+      "太陽照到月亮的部分不同",
+      "月亮被外星人啃掉了"
+    ]
+  },
+  {
+    "qId": "sci-g4-moon-phase#2",
+    "kpId": "sci-g4-moon-phase",
+    "type": "choice",
+    "stem": "農曆十五號左右，我們會看到圓圓的月亮，這個時候的月亮叫做什麼呢？",
+    "answer": "滿月",
+    "explain": {
+      "steps": [
+        "農曆十五的月亮會又圓又亮，我們就叫它「滿月」。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:09.099Z",
+    "reviewed": false,
+    "choices": [
+      "上弦月",
+      "下弦月",
+      "新月",
+      "滿月"
+    ]
+  },
+  {
+    "qId": "sci-g4-moon-phase#3",
+    "kpId": "sci-g4-moon-phase",
+    "type": "choice",
+    "stem": "滿月過後，月亮的形狀會怎麼變化呢？",
+    "answer": "從左邊慢慢變小",
+    "explain": {
+      "steps": [
+        "滿月之後，月亮會從左邊開始慢慢缺一塊，看起來越來越小喔。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:09.099Z",
+    "reviewed": false,
+    "choices": [
+      "從右邊慢慢變小",
+      "從左邊慢慢變小",
+      "形狀不變",
+      "馬上變成新月"
+    ]
+  },
+  {
+    "qId": "sci-g4-moon-phase#4",
+    "kpId": "sci-g4-moon-phase",
+    "type": "choice",
+    "stem": "農曆初一的時候，月亮幾乎看不到，叫做新月。那新月過後，月亮會從哪邊開始亮起來呢？",
+    "answer": "右邊",
+    "explain": {
+      "steps": [
+        "新月之後，月亮會從右邊開始亮起來，慢慢變成眉月，然後是上弦月。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:09.099Z",
+    "reviewed": false,
+    "choices": [
+      "左邊",
+      "右邊",
+      "中間",
+      "下面"
+    ]
+  },
+  {
+    "qId": "sci-g4-moon-phase#5",
+    "kpId": "sci-g4-moon-phase",
+    "type": "choice",
+    "stem": "月亮從新月到下一個新月，大約需要多少天的時間呢？",
+    "answer": "大約一個月",
+    "explain": {
+      "steps": [
+        "月亮從新月、上弦月、滿月、下弦月，再回到新月，大概需要一個月的時間，也就是大約29到30天喔。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:09.099Z",
+    "reviewed": false,
+    "choices": [
+      "大約一天",
+      "大約七天",
+      "大約一個月",
+      "大約一年"
+    ]
+  },
+  {
+    "qId": "sci-g5-shadow#1",
+    "kpId": "sci-g5-shadow",
+    "type": "choice",
+    "stem": "太陽在天空中的位置越高，物體的影子會變得怎麼樣？",
+    "answer": "變短",
+    "explain": {
+      "steps": [
+        "太陽升得很高的時候，陽光會從比較上面照下來，就像手電筒從頭頂照下來，影子就會比較短喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.368Z",
+    "reviewed": false,
+    "choices": [
+      "變長",
+      "變短",
+      "不變",
+      "消失"
+    ]
+  },
+  {
+    "qId": "sci-g5-shadow#2",
+    "kpId": "sci-g5-shadow",
+    "type": "choice",
+    "stem": "上午太陽在東邊時，物體的影子通常會指向哪一個方向？",
+    "answer": "西邊",
+    "explain": {
+      "steps": [
+        "太陽在東邊，陽光從東邊照過來，影子就會跑到它的另一邊，也就是西邊喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.368Z",
+    "reviewed": false,
+    "choices": [
+      "東邊",
+      "南邊",
+      "西邊",
+      "北邊"
+    ]
+  },
+  {
+    "qId": "sci-g5-shadow#3",
+    "kpId": "sci-g5-shadow",
+    "type": "choice",
+    "stem": "一天當中，什麼時候物體的影子通常最長？",
+    "answer": "早上剛起床時",
+    "explain": {
+      "steps": [
+        "早上太陽剛升起來的時候，太陽在很低的地方，陽光是斜斜地照過來，影子就會被拉得很長很長喔！傍晚太陽快下山時，影子也會很長。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.368Z",
+    "reviewed": false,
+    "choices": [
+      "中午",
+      "早上剛起床時",
+      "傍晚太陽快下山時",
+      "晚上"
+    ]
+  },
+  {
+    "qId": "sci-g5-shadow#4",
+    "kpId": "sci-g5-shadow",
+    "type": "choice",
+    "stem": "一天當中，什麼時候物體的影子通常最短？",
+    "answer": "中午",
+    "explain": {
+      "steps": [
+        "中午的時候，太陽通常在天空最高的地方，陽光幾乎是從我們的頭頂直直地照下來，所以影子就會最短喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.368Z",
+    "reviewed": false,
+    "choices": [
+      "早上剛起床時",
+      "中午",
+      "傍晚太陽快下山時",
+      "晚上"
+    ]
+  },
+  {
+    "qId": "sci-g5-shadow#5",
+    "kpId": "sci-g5-shadow",
+    "type": "fill",
+    "stem": "從早上到下午，太陽在天空中的位置會改變，物體的影子方向也會跟著改變。請問早上太陽在東邊時，影子在西邊；到了下午太陽在西邊時，影子會在哪一邊？",
+    "answer": "東邊",
+    "explain": {
+      "steps": [
+        "太陽跟影子就像玩翹翹板一樣，太陽在哪一邊，影子就會在它的相反方向。所以下午太陽在西邊，影子就會跑到東邊喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.368Z",
+    "reviewed": false
+  },
+  {
+    "qId": "sci-g4-circuit#1",
+    "kpId": "sci-g4-circuit",
+    "type": "choice",
+    "stem": "讓燈泡亮起來的簡單電路，通常需要哪些東西？",
+    "answer": "電池、電線、燈泡",
+    "explain": {
+      "steps": [
+        "燈泡要亮，需要有電。電池提供電，電線是電的通道，燈泡才能發光喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.826Z",
+    "reviewed": false,
+    "choices": [
+      "電池、電線、燈泡",
+      "剪刀、膠帶、紙",
+      "水、杯子、吸管",
+      "鉛筆、橡皮擦、尺"
+    ]
+  },
+  {
+    "qId": "sci-g4-circuit#2",
+    "kpId": "sci-g4-circuit",
+    "type": "choice",
+    "stem": "電路中，電流是怎麼流動的呢？",
+    "answer": "從電池一端流出，通過電線和燈泡，再流回電池的另一端",
+    "explain": {
+      "steps": [
+        "電流就像小水流，一定要從電池的正極出發，經過燈泡，再回到電池的負極，形成一個完整的通路，燈泡才會亮喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.826Z",
+    "reviewed": false,
+    "choices": [
+      "從電池一端流出，通過電線和燈泡，再流回電池的另一端",
+      "在電線裡亂跑",
+      "燈泡自己會發電",
+      "電池不用電線就能讓燈泡亮"
+    ]
+  },
+  {
+    "qId": "sci-g4-circuit#3",
+    "kpId": "sci-g4-circuit",
+    "type": "choice",
+    "stem": "如果電路中間有一段電線斷掉了，燈泡會怎麼樣？",
+    "answer": "燈泡會熄滅",
+    "explain": {
+      "steps": [
+        "電流需要走一條完整的路徑，如果電線斷掉了，就像橋斷了一樣，電流沒辦法通過，燈泡就不會亮了。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.826Z",
+    "reviewed": false,
+    "choices": [
+      "燈泡會熄滅",
+      "燈泡會更亮",
+      "燈泡會爆炸",
+      "燈泡會變熱"
+    ]
+  },
+  {
+    "qId": "sci-g4-circuit#4",
+    "kpId": "sci-g4-circuit",
+    "type": "choice",
+    "stem": "在電路中，電池的主要功用是什麼？",
+    "answer": "提供電力讓燈泡發亮",
+    "explain": {
+      "steps": [
+        "電池是電路的「心臟」，它提供能量，讓電流能夠流動，把燈泡點亮！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.826Z",
+    "reviewed": false,
+    "choices": [
+      "提供電力讓燈泡發亮",
+      "讓電線變長",
+      "讓燈泡變小",
+      "讓電線變色"
+    ]
+  },
+  {
+    "qId": "sci-g4-circuit#5",
+    "kpId": "sci-g4-circuit",
+    "type": "choice",
+    "stem": "要讓燈泡亮起來，電線需要接到電池的哪裡和燈泡的哪裡？",
+    "answer": "電池的兩端和燈泡的底部金屬片與側邊金屬環",
+    "explain": {
+      "steps": [
+        "電池有正極和負極，燈泡也有底部金屬片和側邊金屬環。電線要正確連接在這些地方，形成一個完整的迴路，燈泡才會亮喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:16.826Z",
+    "reviewed": false,
+    "choices": [
+      "電池的兩端和燈泡的底部金屬片與側邊金屬環",
+      "電池的側邊和燈泡的頂部",
+      "電池的底部和燈泡的玻璃",
+      "隨便接都可以"
+    ]
+  },
+  {
+    "qId": "sci-g4-water-state#1",
+    "kpId": "sci-g4-water-state",
+    "type": "choice",
+    "stem": "曬衣服時，衣服上的水會變成水蒸氣跑到空氣中，這種現象叫做什麼？",
+    "answer": "蒸發",
+    "explain": {
+      "steps": [
+        "蒸發是水從液態變成氣態水蒸氣的過程，就像曬衣服時，衣服上的水分會慢慢消失不見一樣喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:25.296Z",
+    "reviewed": false,
+    "choices": [
+      "蒸發",
+      "凝結",
+      "結冰",
+      "融化"
+    ]
+  },
+  {
+    "qId": "sci-g4-water-state#2",
+    "kpId": "sci-g4-water-state",
+    "type": "choice",
+    "stem": "剛從冰箱拿出來的冰飲料，瓶子外面會出現小水珠，這是什麼現象？",
+    "answer": "凝結",
+    "explain": {
+      "steps": [
+        "空氣中的水蒸氣碰到冰冷的瓶子，會因為溫度降低，重新變回液態的小水滴，這就是凝結的現象喔。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:25.296Z",
+    "reviewed": false,
+    "choices": [
+      "蒸發",
+      "凝結",
+      "結冰",
+      "融化"
+    ]
+  },
+  {
+    "qId": "sci-g4-water-state#3",
+    "kpId": "sci-g4-water-state",
+    "type": "choice",
+    "stem": "把水放進冷凍庫，水會變成固體的冰，這個過程叫做什麼？",
+    "answer": "結冰",
+    "explain": {
+      "steps": [
+        "當水溫下降到攝氏零度或更低時，液態的水就會變成固態的冰，我們稱這個過程為結冰。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:25.296Z",
+    "reviewed": false,
+    "choices": [
+      "蒸發",
+      "凝結",
+      "結冰",
+      "融化"
+    ]
+  },
+  {
+    "qId": "sci-g4-water-state#4",
+    "kpId": "sci-g4-water-state",
+    "type": "choice",
+    "stem": "下列哪一種現象和「水蒸氣變成水」的過程最相似？",
+    "answer": "下雨",
+    "explain": {
+      "steps": [
+        "下雨是因為高空中的水蒸氣遇到冷空氣，凝結成小水滴後掉落下來，這就是水蒸氣變成水的現象。",
+        "煮水時冒出的熱氣，主要是水從液態變成氣態（蒸發）的結果，雖然熱氣中也有凝結的小水滴，但下雨是更明顯且大規模的水蒸氣凝結成水的例子。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:25.296Z",
+    "reviewed": false,
+    "choices": [
+      "煮水時冒出熱氣",
+      "把水倒進杯子",
+      "下雨",
+      "冰塊融化"
+    ]
+  },
+  {
+    "qId": "sci-g4-water-state#5",
+    "kpId": "sci-g4-water-state",
+    "type": "choice",
+    "stem": "當我們將水加熱到沸騰時，水會從液態變成哪一種狀態？",
+    "answer": "氣態",
+    "explain": {
+      "steps": [
+        "水加熱到沸騰時，會產生大量的蒸汽，這些蒸汽就是水的氣態形式喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:25.296Z",
+    "reviewed": false,
+    "choices": [
+      "固態",
+      "氣態",
+      "半固態",
+      "液態"
+    ]
+  },
+  {
+    "qId": "sci-g6-electromagnet#1",
+    "kpId": "sci-g6-electromagnet",
+    "type": "choice",
+    "stem": "電磁鐵具有磁性是因為什麼原因？",
+    "answer": "通電的導線會產生磁場",
+    "explain": {
+      "steps": [
+        "當電流通過導線時，導線周圍會產生磁場，這就是電流的磁效應。",
+        "電磁鐵就是利用這個原理，將導線繞成線圈，通電後就能產生足夠強的磁性。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:27.403Z",
+    "reviewed": false,
+    "choices": [
+      "通電的導線會產生磁場",
+      "導線本身就有磁性",
+      "導線被磁鐵吸引",
+      "電壓越高磁性越強"
+    ]
+  },
+  {
+    "qId": "sci-g6-electromagnet#2",
+    "kpId": "sci-g6-electromagnet",
+    "type": "choice",
+    "stem": "想要增加電磁鐵的磁力，下列哪種方法是有效的？",
+    "answer": "增加通過線圈的電流",
+    "explain": {
+      "steps": [
+        "電磁鐵的磁力大小和通過線圈的電流強度成正比，電流越大，磁力就越強。",
+        "另外，增加線圈的匝數或在線圈中放入鐵芯也能增強磁力喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:27.403Z",
+    "reviewed": false,
+    "choices": [
+      "增加通過線圈的電流",
+      "減少線圈的匝數",
+      "改用更細的導線",
+      "將電池反向連接"
+    ]
+  },
+  {
+    "qId": "sci-g6-electromagnet#3",
+    "kpId": "sci-g6-electromagnet",
+    "type": "choice",
+    "stem": "我們日常生活中，哪一種物品的運作原理應用了電磁鐵？",
+    "answer": "電鈴",
+    "explain": {
+      "steps": [
+        "電鈴裡面有一個電磁鐵，當你按下電鈴時，電流通過電磁鐵，產生磁力吸動小錘子去敲擊鈴鐺，發出聲音。",
+        "指南針是利用地球磁場，手電筒是把電能轉成光能，溜溜球是重力與慣性。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:27.403Z",
+    "reviewed": false,
+    "choices": [
+      "指南針",
+      "手電筒",
+      "電鈴",
+      "溜溜球"
+    ]
+  },
+  {
+    "qId": "sci-g6-electromagnet#4",
+    "kpId": "sci-g6-electromagnet",
+    "type": "choice",
+    "stem": "如果想要改變電磁鐵的南北極方向，應該怎麼做？",
+    "answer": "改變通過線圈的電流方向",
+    "explain": {
+      "steps": [
+        "電磁鐵的磁極方向是由電流的方向決定的。",
+        "根據安培右手定則，只要改變電流的方向，電磁鐵的南北極就會互換。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:27.403Z",
+    "reviewed": false,
+    "choices": [
+      "改變線圈的匝數",
+      "改變通過線圈的電流方向",
+      "改變線圈的長度",
+      "改變線圈的材質"
+    ]
+  },
+  {
+    "qId": "sci-g6-electromagnet#5",
+    "kpId": "sci-g6-electromagnet",
+    "type": "choice",
+    "stem": "電磁鐵和永久磁鐵最大的不同點是什麼？",
+    "answer": "電磁鐵的磁性可以隨時開關或改變強弱",
+    "explain": {
+      "steps": [
+        "電磁鐵的磁性是通電時才產生，而且可以透過電流大小或線圈匝數來調整磁力強弱，甚至改變磁極方向。",
+        "永久磁鐵則是一直有磁性，而且磁力大小和磁極方向通常是固定的。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:27.403Z",
+    "reviewed": false,
+    "choices": [
+      "電磁鐵的磁性可以隨時開關或改變強弱",
+      "永久磁鐵的磁性比較弱",
+      "電磁鐵不需要電力就能產生磁性",
+      "永久磁鐵的磁極可以任意改變"
+    ]
+  },
+  {
+    "qId": "sci-g5-heat-transfer#1",
+    "kpId": "sci-g5-heat-transfer",
+    "type": "choice",
+    "stem": "為什麼在同樣室溫下，用手摸金屬湯匙會感覺比木製湯匙冰涼？",
+    "answer": "金屬湯匙導熱速度快，會迅速將手上的熱量帶走。",
+    "explain": {
+      "steps": [
+        "金屬是熱的良好導體，熱量傳遞的速度非常快。",
+        "當你摸金屬湯匙時，它會快速地將你手上的熱量傳導出去，因此你會感覺到金屬湯匙比較冰涼。",
+        "木頭是熱的不良導體，導熱速度慢，所以摸起來不會有那麼冰冷的感覺。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:29.319Z",
+    "reviewed": false,
+    "choices": [
+      "金屬湯匙本身溫度較低。",
+      "金屬湯匙導熱速度快，會迅速將手上的熱量帶走。",
+      "木製湯匙導熱速度比金屬湯匙快。",
+      "金屬湯匙的表面比較光滑。"
+    ]
+  },
+  {
+    "qId": "sci-g5-heat-transfer#2",
+    "kpId": "sci-g5-heat-transfer",
+    "type": "choice",
+    "stem": "在鋪設鐵軌時，為什麼每段鐵軌之間都要預留一些空隙？",
+    "answer": "避免夏天受熱膨脹時，鐵軌互相擠壓變形。",
+    "explain": {
+      "steps": [
+        "所有物體都有「熱脹冷縮」的特性，也就是說，當物體受熱時會膨脹，遇冷時會收縮。",
+        "鐵軌在夏天時會因為太陽照射而溫度升高，如果沒有預留空隙，膨脹的鐵軌會互相擠壓，導致彎曲變形，非常危險。",
+        "預留空隙可以讓鐵軌在受熱膨脹時有足夠的空間伸展，避免發生意外。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:29.319Z",
+    "reviewed": false,
+    "choices": [
+      "方便維修和清潔。",
+      "避免火車行駛時產生巨大聲響。",
+      "避免夏天受熱膨脹時，鐵軌互相擠壓變形。",
+      "讓雨水可以流過，避免積水。"
+    ]
+  },
+  {
+    "qId": "sci-g5-heat-transfer#3",
+    "kpId": "sci-g5-heat-transfer",
+    "type": "choice",
+    "stem": "媽媽在廚房煮菜時，常常使用塑膠或木製把手的鍋子，這是為什麼呢？",
+    "answer": "塑膠和木頭是熱的不良導體，可以避免手被燙傷。",
+    "explain": {
+      "steps": [
+        "鍋子在加熱時溫度會非常高，如果把手也是金屬的，熱量會快速傳導到把手，手就會被燙傷。",
+        "塑膠和木頭都是「熱的不良導體」，也就是說，它們傳導熱量的速度很慢。",
+        "使用塑膠或木製把手，可以有效阻擋熱量從鍋身傳到把手，保護我們的手不會被高溫燙傷。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:29.319Z",
+    "reviewed": false,
+    "choices": [
+      "塑膠和木頭本身不會發熱。",
+      "塑膠和木頭的熔點很高。",
+      "塑膠和木頭是熱的不良導體，可以避免手被燙傷。",
+      "塑膠和木頭把手比較輕，方便拿取。"
+    ]
+  },
+  {
+    "qId": "sci-g5-heat-transfer#4",
+    "kpId": "sci-g5-heat-transfer",
+    "type": "choice",
+    "stem": "我們使用的溫度計，裡面的液體（通常是水銀或酒精）為什麼會隨著溫度升高而往上跑？",
+    "answer": "液體受熱膨脹，體積變大而往上移動。",
+    "explain": {
+      "steps": [
+        "溫度計的原理就是利用「熱脹冷縮」的特性。",
+        "當周圍的溫度升高時，溫度計裡的液體會因為受熱而膨脹，體積變大。",
+        "由於液體在細小的玻璃管中膨脹，沒有其他空間，所以只能往上移動，我們就能從刻度上讀出溫度了。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:29.319Z",
+    "reviewed": false,
+    "choices": [
+      "溫度越高，液體會變得越輕。",
+      "液體受熱膨脹，體積變大而往上移動。",
+      "溫度越高，玻璃管會收縮。",
+      "這是光的折射現象，並不是真的移動。"
+    ]
+  },
+  {
+    "qId": "sci-g5-heat-transfer#5",
+    "kpId": "sci-g5-heat-transfer",
+    "type": "choice",
+    "stem": "冬天穿著蓬鬆的羽絨外套或毛衣，會感覺特別溫暖，主要原因是什麼？",
+    "answer": "衣服纖維間充滿了空氣，空氣是熱的不良導體，能減少身體熱量散失。",
+    "explain": {
+      "steps": [
+        "羽絨外套或毛衣的纖維之間會困住大量的空氣。",
+        "空氣是熱的「不良導體」，也就是說，它傳導熱量的速度非常慢，能有效阻擋熱量傳播。",
+        "這些被困住的空氣就像一層保護膜，能減少我們身體的熱量散失到外面，同時也能阻止外界的冷空氣進入，所以我們就會感覺特別溫暖。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:29.319Z",
+    "reviewed": false,
+    "choices": [
+      "羽絨或毛線本身會產生熱能。",
+      "羽絨外套或毛衣的顏色通常比較深，容易吸收太陽熱量。",
+      "衣服纖維間充滿了空氣，空氣是熱的不良導體，能減少身體熱量散失。",
+      "穿著蓬鬆的衣服會增加摩擦力，產生更多熱能。"
+    ]
+  },
+  {
+    "qId": "sci-g5-dissolve#1",
+    "kpId": "sci-g5-dissolve",
+    "type": "choice",
+    "stem": "我們把糖加到水裡，糖不見了，均勻散開，這個現象叫做什麼？",
+    "answer": "溶解",
+    "explain": {
+      "steps": [
+        "糖粒在水中變得非常小，均勻地分散在水裡，這種固體在液體中散開的過程叫做「溶解」。",
+        "而「熔化」是指固體因為受熱變成液體的狀態，例如冰塊變成水，兩者是不一樣的喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:32.205Z",
+    "reviewed": false,
+    "choices": [
+      "溶解",
+      "熔化",
+      "凝固",
+      "蒸發"
+    ]
+  },
+  {
+    "qId": "sci-g5-dissolve#2",
+    "kpId": "sci-g5-dissolve",
+    "type": "choice",
+    "stem": "如果我們想讓砂糖在水裡溶解得更快，下列哪一個方法最有效？",
+    "answer": "用湯匙攪拌水",
+    "explain": {
+      "steps": [
+        "攪拌可以幫助水分子和糖粒更快地接觸，加速糖溶解到水中的速度。",
+        "這就像你趕時間吃麵，會攪拌一下讓它涼得快一樣喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:32.205Z",
+    "reviewed": false,
+    "choices": [
+      "用湯匙攪拌水",
+      "把水放進冰箱讓它變冷",
+      "讓杯子裡的水完全靜止不動",
+      "再加入更多的砂糖"
+    ]
+  },
+  {
+    "qId": "sci-g5-dissolve#3",
+    "kpId": "sci-g5-dissolve",
+    "type": "choice",
+    "stem": "當我們持續把鹽加到一杯水中，直到鹽不再溶解，即使再攪拌也只會沉澱在杯底，這時候的水溶液我們稱為什麼？",
+    "answer": "飽和食鹽水",
+    "explain": {
+      "steps": [
+        "當溶劑（這裡指水）已經溶解了最大限度的溶質（這裡指鹽），無法再溶解更多時，這個溶液就叫做「飽和溶液」。",
+        "這時候多出來的鹽，就會沉在杯底不會再溶解了。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:32.205Z",
+    "reviewed": false,
+    "choices": [
+      "飽和食鹽水",
+      "稀釋食鹽水",
+      "濃縮食鹽水",
+      "純水"
+    ]
+  },
+  {
+    "qId": "sci-g5-dissolve#4",
+    "kpId": "sci-g5-dissolve",
+    "type": "choice",
+    "stem": "小華有一杯已經達到飽和的糖水，杯底還有一些沒溶解的糖。如果他想讓杯底的糖也能溶解，可以怎麼做？",
+    "answer": "把糖水加熱",
+    "explain": {
+      "steps": [
+        "大部分的固體，像糖，它們在水中的溶解量會隨著水溫升高而增加。",
+        "所以加熱糖水，可以讓更多的糖溶解，杯底的糖也就能慢慢消失了。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:32.205Z",
+    "reviewed": false,
+    "choices": [
+      "把糖水加熱",
+      "把糖水放到冰箱裡冷卻",
+      "再加入更多的糖並用力攪拌",
+      "讓糖水靜置不動"
+    ]
+  },
+  {
+    "qId": "sci-g5-dissolve#5",
+    "kpId": "sci-g5-dissolve",
+    "type": "choice",
+    "stem": "媽媽煮了一鍋熱的飽和糖水，放涼後發現鍋底和鍋壁出現了一些晶體。請問這些晶體是什麼？為什麼會出現？",
+    "answer": "糖的晶體，因為溫度降低導致糖的溶解度減少而析出。",
+    "explain": {
+      "steps": [
+        "很多固體物質，特別是糖，在熱水中的溶解度會比在冷水裡高很多。",
+        "當熱的飽和糖水慢慢冷卻時，水能溶解的糖量變少了，多出來的糖就會從水中跑出來，重新結合成我們看到的晶體喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:32.205Z",
+    "reviewed": false,
+    "choices": [
+      "糖的晶體，因為溫度降低導致糖的溶解度減少而析出。",
+      "鹽的晶體，因為水中雜質沉澱。",
+      "鍋子的鏽斑，因為加熱過久。",
+      "糖水變質，所以產生異物。"
+    ]
+  },
+  {
+    "qId": "sci-g6-food-chain#1",
+    "kpId": "sci-g6-food-chain",
+    "type": "choice",
+    "stem": "食物鏈中的「生產者」主要指的是哪一類生物？",
+    "answer": "自己製造養分的生物",
+    "explain": {
+      "steps": [
+        "生產者通常是綠色植物，它們能透過光合作用，利用陽光、水和二氧化碳來製造自己的食物喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.523Z",
+    "reviewed": false,
+    "choices": [
+      "吃其他動物的生物",
+      "自己製造養分的生物",
+      "分解動植物屍體的生物",
+      "吃植物的生物"
+    ]
+  },
+  {
+    "qId": "sci-g6-food-chain#2",
+    "kpId": "sci-g6-food-chain",
+    "type": "choice",
+    "stem": "食物鏈中的「消費者」指的是哪一類生物？",
+    "answer": "必須攝取其他生物來獲得能量的生物",
+    "explain": {
+      "steps": [
+        "消費者不能自己製造食物，所以需要吃其他的生物（可能是植物或動物）來獲取所需的能量和養分。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.523Z",
+    "reviewed": false,
+    "choices": [
+      "能夠自己製造養分的生物",
+      "分解其他生物屍體的生物",
+      "必須攝取其他生物來獲得能量的生物",
+      "能把陽光變成能量的生物"
+    ]
+  },
+  {
+    "qId": "sci-g6-food-chain#3",
+    "kpId": "sci-g6-food-chain",
+    "type": "choice",
+    "stem": "下列哪一種生物是食物鏈中的「生產者」？",
+    "answer": "小草",
+    "explain": {
+      "steps": [
+        "小草是綠色植物，它能透過光合作用自己製造食物，所以是生產者。老虎、麻雀是消費者，蚯蚓是分解者。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.523Z",
+    "reviewed": false,
+    "choices": [
+      "老虎",
+      "小草",
+      "麻雀",
+      "蚯蚓"
+    ]
+  },
+  {
+    "qId": "sci-g6-food-chain#4",
+    "kpId": "sci-g6-food-chain",
+    "type": "choice",
+    "stem": "小朋友，下列哪一種生物屬於「初級消費者」？",
+    "answer": "牛",
+    "explain": {
+      "steps": [
+        "初級消費者是直接吃植物的生物。牛是草食性動物，以吃草維生，所以它是初級消費者。獅子和老鷹吃動物，香菇是分解者。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.523Z",
+    "reviewed": false,
+    "choices": [
+      "獅子",
+      "牛",
+      "老鷹",
+      "香菇"
+    ]
+  },
+  {
+    "qId": "sci-g6-food-chain#5",
+    "kpId": "sci-g6-food-chain",
+    "type": "fill",
+    "stem": "食物鏈中，像細菌和真菌這類生物，主要扮演著什麼角色，幫助分解動植物的遺體？",
+    "answer": "分解者",
+    "explain": {
+      "steps": [
+        "細菌和真菌會將動植物的屍體和排泄物分解成簡單的物質，讓養分回到土壤中，提供給植物利用，是很重要的循環喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.523Z",
+    "reviewed": false
+  },
+  {
+    "qId": "soc-g3-location#1",
+    "kpId": "soc-g3-location",
+    "type": "choice",
+    "stem": "你認為「家鄉」最主要是指哪裡？",
+    "answer": "你現在住的地方",
+    "explain": {
+      "steps": [
+        "家鄉通常指我們現在生活和居住的地方，是我們最熟悉、最有感情的地方喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.689Z",
+    "reviewed": false,
+    "choices": [
+      "你現在住的地方",
+      "你爸爸媽媽的故鄉",
+      "你出生的地方",
+      "你最喜歡去玩的地方"
+    ]
+  },
+  {
+    "qId": "soc-g3-location#2",
+    "kpId": "soc-g3-location",
+    "type": "choice",
+    "stem": "我們每天上學、放學，走在路上，最常經過的地方是屬於哪一種行政區呢？",
+    "answer": "村里",
+    "explain": {
+      "steps": [
+        "我們生活的地方會分成不同的區域，像是里或村是最小的單位，裡面有我們熟悉的家和學校。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.689Z",
+    "reviewed": false,
+    "choices": [
+      "國家",
+      "縣市",
+      "村里",
+      "地球"
+    ]
+  },
+  {
+    "qId": "soc-g3-location#3",
+    "kpId": "soc-g3-location",
+    "type": "choice",
+    "stem": "許多地方的名字都很有趣，你覺得「礁溪」這個名字，最可能是因為什麼原因而來呢？",
+    "answer": "這裡有很多礁石和溪流",
+    "explain": {
+      "steps": [
+        "以前的人會根據地方的特色來取名字，像是礁溪就是因為有很多礁石和溪水而得名。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.689Z",
+    "reviewed": false,
+    "choices": [
+      "這裡有很多礁石和溪流",
+      "這裡住了一個叫「礁溪」的人",
+      "這裡的人都喜歡吃礁溪麵",
+      "這裡的動物很喜歡在礁溪玩"
+    ]
+  },
+  {
+    "qId": "soc-g3-location#4",
+    "kpId": "soc-g3-location",
+    "type": "choice",
+    "stem": "如果有一個地方叫做「鹿港」，你覺得這個名字可能跟哪種動物有關係？",
+    "answer": "鹿",
+    "explain": {
+      "steps": [
+        "鹿港以前曾經是梅花鹿聚集的地方，所以人們就用「鹿」這個字來命名，再加上是港口，就成了鹿港。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.689Z",
+    "reviewed": false,
+    "choices": [
+      "老虎",
+      "鹿",
+      "貓",
+      "狗"
+    ]
+  },
+  {
+    "qId": "soc-g3-location#5",
+    "kpId": "soc-g3-location",
+    "type": "choice",
+    "stem": "我們家鄉附近最常見到、常常用來當作地方代表的，會是什麼？",
+    "answer": "特別的建築物",
+    "explain": {
+      "steps": [
+        "每個地方都有一些特別的標誌，可能是古老的廟宇、特別的橋，或是很高的地標，這些都能代表我們的家鄉喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:36.689Z",
+    "reviewed": false,
+    "choices": [
+      "特別的建築物",
+      "某個名人住過的家",
+      "全世界最高的山",
+      "很稀有的動物"
+    ]
+  },
+  {
+    "qId": "sci-g6-lever#1",
+    "kpId": "sci-g6-lever",
+    "type": "choice",
+    "stem": "使用槓桿時，如果想要達到「省力」的效果，施力點到支點的距離（施力臂）和抗力點到支點的距離（抗力臂）應該符合什麼條件？",
+    "answer": "施力臂比抗力臂長",
+    "explain": {
+      "steps": [
+        "槓桿省力的原理是「施力臂越長，越省力」。所以，當施力點到支點的距離比抗力點到支點的距離長時，我們就能用比較小的力氣來移動重物。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.161Z",
+    "reviewed": false,
+    "choices": [
+      "施力臂比抗力臂短",
+      "施力臂比抗力臂長",
+      "施力臂和抗力臂一樣長",
+      "施力臂和抗力臂的長度沒有關係"
+    ]
+  },
+  {
+    "qId": "sci-g6-lever#2",
+    "kpId": "sci-g6-lever",
+    "type": "choice",
+    "stem": "下列哪一種工具在正常使用時，主要目的是為了「省力」？",
+    "answer": "開瓶器",
+    "explain": {
+      "steps": [
+        "開瓶器是屬於第二種槓桿，它的抗力點（瓶蓋）在支點（瓶蓋邊緣）和施力點（手握處）之間。施力臂比抗力臂長，因此使用開瓶器可以省力。掃把、筷子、鑷子都是費力槓桿，目的是為了方便操作或增加速度。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.161Z",
+    "reviewed": false,
+    "choices": [
+      "掃把",
+      "筷子",
+      "開瓶器",
+      "鑷子"
+    ]
+  },
+  {
+    "qId": "sci-g6-lever#3",
+    "kpId": "sci-g6-lever",
+    "type": "choice",
+    "stem": "下列哪一種滑輪，在使用時可以達到「省力」的效果？",
+    "answer": "動滑輪",
+    "explain": {
+      "steps": [
+        "定滑輪只能改變施力的方向，不能省力。動滑輪則可以將施力分散，讓施力變成重物的一半，所以動滑輪可以省力。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.161Z",
+    "reviewed": false,
+    "choices": [
+      "定滑輪",
+      "動滑輪",
+      "定滑輪和動滑輪省力效果一樣",
+      "兩種滑輪都不能省力"
+    ]
+  },
+  {
+    "qId": "sci-g6-lever#4",
+    "kpId": "sci-g6-lever",
+    "type": "choice",
+    "stem": "建築工人要將一包水泥吊到高處，他使用了由一個定滑輪和一個動滑輪組成的滑輪組。這個滑輪組的主要功能是什麼？",
+    "answer": "既省力又改變施力方向",
+    "explain": {
+      "steps": [
+        "滑輪組結合了定滑輪和動滑輪的優點。定滑輪負責改變施力的方向，讓拉動重物更方便；動滑輪則負責將重物的力量分散，達到省力的效果。所以滑輪組通常既能省力又能改變施力方向。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.161Z",
+    "reviewed": false,
+    "choices": [
+      "只改變施力方向",
+      "只省力",
+      "既省力又改變施力方向",
+      "既不省力也不改變施力方向"
+    ]
+  },
+  {
+    "qId": "sci-g6-lever#5",
+    "kpId": "sci-g6-lever",
+    "type": "choice",
+    "stem": "為什麼我們在搬運重物時，常常會使用斜坡、槓桿或滑輪等簡單機械？",
+    "answer": "因為這樣可以讓施加的力氣變小，達到省力的目的",
+    "explain": {
+      "steps": [
+        "簡單機械，像是斜坡、槓桿和滑輪，它們的共同功能之一就是「省力」。雖然移動的距離可能會變長，但我們可以用比較小的力氣來完成搬運重物的工作，讓工作變得更輕鬆。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.161Z",
+    "reviewed": false,
+    "choices": [
+      "因為這樣可以讓搬運的速度變快",
+      "因為這樣可以讓重物變得比較輕",
+      "因為這樣可以讓施加的力氣變小，達到省力的目的",
+      "因為這樣可以讓搬力的高度增加"
+    ]
+  },
+  {
+    "qId": "soc-g3-community#1",
+    "kpId": "soc-g3-community",
+    "type": "choice",
+    "stem": "週末小美和家人到社區裡的什麼地方，可以盪鞦韆、溜滑梯、盡情奔跑玩耍呢？",
+    "answer": "公園",
+    "explain": {
+      "steps": [
+        "公園是提供大家休憩和運動的場所，裡面通常會有遊樂設施，讓小朋友玩耍喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.493Z",
+    "reviewed": false,
+    "choices": [
+      "圖書館",
+      "郵局",
+      "公園",
+      "警察局"
+    ]
+  },
+  {
+    "qId": "soc-g3-community#2",
+    "kpId": "soc-g3-community",
+    "type": "choice",
+    "stem": "想借閱故事書、漫畫，或是找資料寫報告，我們會到社區裡的哪個公共場所？",
+    "answer": "圖書館",
+    "explain": {
+      "steps": [
+        "圖書館收藏了很多書籍和資料，大家都可以免費借閱或在裡面閱讀，增長知識。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.493Z",
+    "reviewed": false,
+    "choices": [
+      "消防隊",
+      "圖書館",
+      "醫院",
+      "菜市場"
+    ]
+  },
+  {
+    "qId": "soc-g3-community#3",
+    "kpId": "soc-g3-community",
+    "type": "choice",
+    "stem": "請問，如果阿嬤想要寄包裹給遠方的親戚，她應該去社區裡的哪裡辦理呢？",
+    "answer": "郵局",
+    "explain": {
+      "steps": [
+        "郵局是負責處理信件、包裹和提供簡易金融服務的公共場所，寄東西、領錢都很方便。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.493Z",
+    "reviewed": false,
+    "choices": [
+      "警察局",
+      "學校",
+      "郵局",
+      "超市"
+    ]
+  },
+  {
+    "qId": "soc-g3-community#4",
+    "kpId": "soc-g3-community",
+    "type": "choice",
+    "stem": "當社區裡發生了偷竊事件，或是有人需要幫助時，我們應該向哪個公共場所求助，尋求警方的幫忙呢？",
+    "answer": "警察局",
+    "explain": {
+      "steps": [
+        "警察局的警察叔叔和阿姨會維護社區的治安，保護大家的安全，遇到困難時可以找他們幫忙。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.493Z",
+    "reviewed": false,
+    "choices": [
+      "消防隊",
+      "醫院",
+      "郵局",
+      "警察局"
+    ]
+  },
+  {
+    "qId": "soc-g3-community#5",
+    "kpId": "soc-g3-community",
+    "type": "choice",
+    "stem": "當社區裡的房子不小心失火了，或是有人被困在樹上需要救援，我們應該打電話給哪個公共場所請求協助？",
+    "answer": "消防隊",
+    "explain": {
+      "steps": [
+        "消防隊的消防員哥哥和姐姐們，負責救火、救護和各種災害的搶救，是保護我們生命財產安全的重要英雄。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:42.493Z",
+    "reviewed": false,
+    "choices": [
+      "警察局",
+      "消防隊",
+      "衛生所",
+      "便利商店"
+    ]
+  },
+  {
+    "qId": "soc-g3-direction#1",
+    "kpId": "soc-g3-direction",
+    "type": "choice",
+    "stem": "太陽從東邊升起，請問早上我們面向太陽時，我們的左手邊是哪個方向？",
+    "answer": "北邊",
+    "explain": {
+      "steps": [
+        "太陽從東邊升起，所以面向太陽就是面向東邊。",
+        "伸出你的雙手，右手邊就是南邊，左手邊就是北邊喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:45.445Z",
+    "reviewed": false,
+    "choices": [
+      "南邊",
+      "北邊",
+      "西邊",
+      "東邊"
+    ]
+  },
+  {
+    "qId": "soc-g3-direction#2",
+    "kpId": "soc-g3-direction",
+    "type": "choice",
+    "stem": "小明放學回家，如果學校在他的南邊，那麼小明要往哪個方向走才能回家？",
+    "answer": "往北邊走",
+    "explain": {
+      "steps": [
+        "想像一下，如果你在學校的南邊，要回家就是要往學校的反方向走。",
+        "學校在南邊，那反方向就是北邊囉！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:45.445Z",
+    "reviewed": false,
+    "choices": [
+      "往北邊走",
+      "往南邊走",
+      "往東邊走",
+      "往西邊走"
+    ]
+  },
+  {
+    "qId": "soc-g3-direction#3",
+    "kpId": "soc-g3-direction",
+    "type": "choice",
+    "stem": "台灣的首都臺北市位於台灣的哪個方向？",
+    "answer": "北方",
+    "explain": {
+      "steps": [
+        "從台灣地圖上看，臺北市在台灣的北邊，是我們重要的首都喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:45.445Z",
+    "reviewed": false,
+    "choices": [
+      "北方",
+      "南方",
+      "東方",
+      "西方"
+    ]
+  },
+  {
+    "qId": "soc-g3-direction#4",
+    "kpId": "soc-g3-direction",
+    "type": "choice",
+    "stem": "從你家出發，往北走會到公園，往東走會到圖書館。請問，如果你從公園回家，需要往哪個方向走？",
+    "answer": "往南邊走",
+    "explain": {
+      "steps": [
+        "如果你往北走才到公園，那麼從公園要回家，就是要走相反的方向。",
+        "往北的相反方向就是往南邊走喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:45.445Z",
+    "reviewed": false,
+    "choices": [
+      "往北邊走",
+      "往南邊走",
+      "往東邊走",
+      "往西邊走"
+    ]
+  },
+  {
+    "qId": "soc-g3-direction#5",
+    "kpId": "soc-g3-direction",
+    "type": "choice",
+    "stem": "台灣四面環海，如果我們在台灣西部的海邊看夕陽，夕陽會從哪個方向落下？",
+    "answer": "西方",
+    "explain": {
+      "steps": [
+        "太陽總是從東方升起，從西方落下。",
+        "所以，在台灣西部的海邊看夕陽，夕陽會從西邊落下喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:45.445Z",
+    "reviewed": false,
+    "choices": [
+      "東方",
+      "南方",
+      "西方",
+      "北方"
+    ]
+  },
+  {
+    "qId": "soc-g4-industry#1",
+    "kpId": "soc-g4-industry",
+    "type": "choice",
+    "stem": "台灣平原地區最常見的農作物，也是我們每天飯桌上不可或缺的主食是什麼？",
+    "answer": "稻米",
+    "explain": {
+      "steps": [
+        "台灣的平原地形適合種植稻米，而且稻米是我們最主要的糧食，所以到處都可以看到稻田喔！",
+        "稻米經過加工就是我們吃的白米飯，是台灣人最主要的主食。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:46.464Z",
+    "reviewed": false,
+    "choices": [
+      "茶葉",
+      "香蕉",
+      "稻米",
+      "高麗菜"
+    ]
+  },
+  {
+    "qId": "soc-g4-industry#2",
+    "kpId": "soc-g4-industry",
+    "type": "choice",
+    "stem": "台灣四面環海，除了出海捕魚，還有一種在魚塭裡人工飼養魚蝦的方式，這種產業叫做什麼？",
+    "answer": "養殖漁業",
+    "explain": {
+      "steps": [
+        "養殖漁業就是人工在特定的水域，例如魚塭，飼養魚、蝦、貝類等水產，這樣我們一年四季都有新鮮的海產可以吃！",
+        "這種方式可以穩定供應海產，不像捕魚會受到天氣或漁獲量的影響。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:46.464Z",
+    "reviewed": false,
+    "choices": [
+      "畜牧業",
+      "養殖漁業",
+      "森林業",
+      "觀光業"
+    ]
+  },
+  {
+    "qId": "soc-g4-industry#3",
+    "kpId": "soc-g4-industry",
+    "type": "choice",
+    "stem": "台灣因為氣候溫暖，地形多樣，可以種植出很多不同種類的水果，所以台灣有一個「________王國」的稱號，請問空格裡應該填入什麼？",
+    "answer": "水果",
+    "explain": {
+      "steps": [
+        "台灣有熱帶、亞熱帶等多種氣候，從平地到高山都能種植各種水果，像是芒果、鳳梨、香蕉、釋迦等等。",
+        "由於盛產多樣美味的水果，因此台灣被稱為「水果王國」。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:46.464Z",
+    "reviewed": false,
+    "choices": [
+      "蔬菜",
+      "稻米",
+      "水果",
+      "花卉"
+    ]
+  },
+  {
+    "qId": "soc-g4-industry#4",
+    "kpId": "soc-g4-industry",
+    "type": "fill",
+    "stem": "早期台灣的山區有很多樹木，人們會把成熟的樹木砍下來製作木材或紙漿，這種利用森林資源的產業叫做「_______業」。",
+    "answer": "森林",
+    "explain": {
+      "steps": [
+        "森林業主要的工作就是管理和利用森林，從樹木的種植、照顧到採伐，都是森林業的範圍。",
+        "現在台灣更重視森林保育和永續利用，讓森林資源可以長久發展。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:46.464Z",
+    "reviewed": false
+  },
+  {
+    "qId": "soc-g4-industry#5",
+    "kpId": "soc-g4-industry",
+    "type": "choice",
+    "stem": "我們每天吃的白米飯、喝的牛奶、穿的棉質衣服，這些都和我們家鄉的哪一種產業最相關？",
+    "answer": "農林漁牧業",
+    "explain": {
+      "steps": [
+        "農林漁牧業提供了我們最基本的食物和一些生活用品的原料。",
+        "例如，米飯來自農業，牛奶來自畜牧業，棉花則來自農業。這些都和我們的生活息息相關，是基礎的在地產業。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:46.464Z",
+    "reviewed": false,
+    "choices": [
+      "農林漁牧業",
+      "服務業",
+      "高科技產業",
+      "觀光業"
+    ]
+  },
+  {
+    "qId": "soc-g4-public-service#1",
+    "kpId": "soc-g4-public-service",
+    "type": "choice",
+    "stem": "請問，我們在哪裡搭乘公車或捷運？",
+    "answer": "車站或捷運站",
+    "explain": {
+      "steps": [
+        "公車和捷運是大家常用的交通工具，它們有固定的站牌或車站，方便大家上下車。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:49.315Z",
+    "reviewed": false,
+    "choices": [
+      "百貨公司",
+      "公園",
+      "車站或捷運站",
+      "學校"
+    ]
+  },
+  {
+    "qId": "soc-g4-public-service#2",
+    "kpId": "soc-g4-public-service",
+    "type": "choice",
+    "stem": "當我們生病或受傷時，可以到哪裡尋求幫助？",
+    "answer": "醫院或診所",
+    "explain": {
+      "steps": [
+        "醫院和診所提供醫療服務，有醫生和護士幫助我們治療疾病和處理受傷。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:49.315Z",
+    "reviewed": false,
+    "choices": [
+      "圖書館",
+      "郵局",
+      "醫院或診所",
+      "警察局"
+    ]
+  },
+  {
+    "qId": "soc-g4-public-service#3",
+    "kpId": "soc-g4-public-service",
+    "type": "choice",
+    "stem": "小朋友每天上學學習新知識的地方是哪裡？",
+    "answer": "學校",
+    "explain": {
+      "steps": [
+        "學校是專門為小朋友設計的學習場所，有老師教導我們各種科目。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:49.315Z",
+    "reviewed": false,
+    "choices": [
+      "市場",
+      "學校",
+      "消防局",
+      "運動中心"
+    ]
+  },
+  {
+    "qId": "soc-g4-public-service#4",
+    "kpId": "soc-g4-public-service",
+    "type": "choice",
+    "stem": "如果遇到危險或需要協助，我們可以打電話給警察局，請問警察局主要提供哪種服務？",
+    "answer": "維護治安",
+    "explain": {
+      "steps": [
+        "警察局負責維護社會的秩序和安全，當我們遇到緊急情況或犯罪事件時，可以向他們求助。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:49.315Z",
+    "reviewed": false,
+    "choices": [
+      "寄信",
+      "維護治安",
+      "借書",
+      "賣東西"
+    ]
+  },
+  {
+    "qId": "soc-g4-public-service#5",
+    "kpId": "soc-g4-public-service",
+    "type": "choice",
+    "stem": "請問，我們如果要寄信、寄包裹或是辦理郵政儲金，會到哪個政府機關辦理？",
+    "answer": "郵局",
+    "explain": {
+      "steps": [
+        "郵局是提供郵政服務的機構，包括寄信、寄包裹、儲蓄等，方便我們的生活。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:49.315Z",
+    "reviewed": false,
+    "choices": [
+      "區公所",
+      "消防局",
+      "郵局",
+      "電影院"
+    ]
+  },
+  {
+    "qId": "soc-g5-landform#1",
+    "kpId": "soc-g5-landform",
+    "type": "choice",
+    "stem": "臺灣中央地帶，南北貫穿全島，是臺灣主要的山脈，請問是哪一個？",
+    "answer": "B. 中央山脈",
+    "explain": {
+      "steps": [
+        "臺灣島上有許多高山，其中中央山脈像臺灣的脊梁一樣，貫穿南北，是臺灣最重要的山脈喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:53.147Z",
+    "reviewed": false,
+    "choices": [
+      "A. 玉山山脈",
+      "B. 中央山脈",
+      "C. 雪山山脈",
+      "D. 阿爾卑斯山脈"
+    ]
+  },
+  {
+    "qId": "soc-g5-landform#2",
+    "kpId": "soc-g5-landform",
+    "type": "choice",
+    "stem": "臺灣大部分地區的氣候屬於哪一種？",
+    "answer": "C. 熱帶季風氣候",
+    "explain": {
+      "steps": [
+        "臺灣因為地理位置的關係，大部分地區屬於熱帶季風氣候，所以夏天會很熱、冬天會比較溫暖，而且有明顯的雨季和乾季喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:53.147Z",
+    "reviewed": false,
+    "choices": [
+      "A. 溫帶氣候",
+      "B. 寒帶氣候",
+      "C. 熱帶季風氣候",
+      "D. 沙漠氣候"
+    ]
+  },
+  {
+    "qId": "soc-g5-landform#3",
+    "kpId": "soc-g5-landform",
+    "type": "choice",
+    "stem": "每年夏天和秋天，臺灣常常會受到哪一種天然災害的影響，帶來強風和豪雨呢？",
+    "answer": "B. 颱風",
+    "explain": {
+      "steps": [
+        "臺灣位在太平洋上，每年夏天和秋天是颱風最常發生的季節。颱風會帶來很大的風和雨，所以我們要特別留意天氣預報，做好防颱準備喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:53.147Z",
+    "reviewed": false,
+    "choices": [
+      "A. 地震",
+      "B. 颱風",
+      "C. 寒流",
+      "D. 龍捲風"
+    ]
+  },
+  {
+    "qId": "soc-g5-landform#4",
+    "kpId": "soc-g5-landform",
+    "type": "choice",
+    "stem": "臺灣的平原主要分布在哪個方向，適合發展農業和人口居住？",
+    "answer": "B. 西部",
+    "explain": {
+      "steps": [
+        "臺灣因為中央山脈的阻擋，大部分的平原都集中在西半部，這裡土地比較平坦、交通方便，所以是臺灣人口最密集，也是發展農業最重要的地方。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:53.147Z",
+    "reviewed": false,
+    "choices": [
+      "A. 東部",
+      "B. 西部",
+      "C. 南部",
+      "D. 北部"
+    ]
+  },
+  {
+    "qId": "soc-g5-landform#5",
+    "kpId": "soc-g5-landform",
+    "type": "choice",
+    "stem": "臺灣北部和南部在冬天降雨的情況有什麼不同呢？",
+    "answer": "A. 北部冬天多雨，南部冬天少雨",
+    "explain": {
+      "steps": [
+        "臺灣的氣候受到東北季風影響。在冬天，東北季風從海上帶來水氣，碰到北部山區容易下雨，所以北部冬天比較濕冷。",
+        "而南部因為有中央山脈阻擋，東北季風不容易到達，所以冬天反而比較乾燥喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:53.147Z",
+    "reviewed": false,
+    "choices": [
+      "A. 北部冬天多雨，南部冬天少雨",
+      "B. 北部冬天少雨，南部冬天多雨",
+      "C. 北部和南部冬天都多雨",
+      "D. 北部和南部冬天都少雨"
+    ]
+  },
+  {
+    "qId": "soc-g5-ethnic#1",
+    "kpId": "soc-g5-ethnic",
+    "type": "choice",
+    "stem": "台灣最常見的語言之一，常在廟會、歌仔戲中聽到的是哪一種？",
+    "answer": "閩南語",
+    "explain": {
+      "steps": [
+        "閩南語是台灣早期移民族群的主要語言，至今仍是台灣社會非常普遍的語言，特別是在傳統文化活動中，例如廟會和歌仔戲，常常會聽到喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:54.288Z",
+    "reviewed": false,
+    "choices": [
+      "客家語",
+      "原住民族語",
+      "閩南語",
+      "英語"
+    ]
+  },
+  {
+    "qId": "soc-g5-ethnic#2",
+    "kpId": "soc-g5-ethnic",
+    "type": "choice",
+    "stem": "台灣原住民族群在過去有許多不同的傳統生活方式，其中哪一種是他們常與大自然共處的方式？",
+    "answer": "狩獵與農耕",
+    "explain": {
+      "steps": [
+        "台灣原住民族群長期以來與自然環境緊密連結，狩獵和農耕是他們重要的生活與文化方式，這與都市高樓生活截然不同。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:54.288Z",
+    "reviewed": false,
+    "choices": [
+      "都市高樓生活",
+      "工廠生產",
+      "狩獵與農耕",
+      "網路購物"
+    ]
+  },
+  {
+    "qId": "soc-g5-ethnic#3",
+    "kpId": "soc-g5-ethnic",
+    "type": "choice",
+    "stem": "台灣有一個族群，他們以勤儉、硬頸的精神聞名，常在特定節日製作「粄條」、「麻糬」等米食，這是哪個族群？",
+    "answer": "客家人",
+    "explain": {
+      "steps": [
+        "客家人在台灣是重要的族群，他們以勤儉的精神聞名，而且有獨特的語言和飲食文化。像是粄條和麻糬就是客家常見的米食喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:54.288Z",
+    "reviewed": false,
+    "choices": [
+      "閩南人",
+      "客家人",
+      "外省人",
+      "原住民"
+    ]
+  },
+  {
+    "qId": "soc-g5-ethnic#4",
+    "kpId": "soc-g5-ethnic",
+    "type": "fill",
+    "stem": "台灣社會有很多不同的族群共同生活，每個族群都有自己的語言、習俗和文化，這種現象叫做「_______文化」。",
+    "answer": "多元",
+    "explain": {
+      "steps": [
+        "台灣有許多不同族群，像是閩南人、客家人、原住民和新住民等。每個族群都有自己的語言、習俗和文化，大家互相尊重、共同生活，這就是「多元文化」的展現喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:54.288Z",
+    "reviewed": false
+  },
+  {
+    "qId": "soc-g5-ethnic#5",
+    "kpId": "soc-g5-ethnic",
+    "type": "choice",
+    "stem": "近年來，有越來越多來自東南亞國家（例如越南、印尼、菲律賓）的朋友來到台灣工作或生活，他們是台灣社會的哪一種新成員？",
+    "answer": "新住民",
+    "explain": {
+      "steps": [
+        "這些從其他國家來到台灣定居或工作的朋友，為台灣社會帶來了更多元的文化和活力，我們稱呼他們為「新住民」。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:54.288Z",
+    "reviewed": false,
+    "choices": [
+      "新住民",
+      "原住民",
+      "外星人",
+      "開拓者"
+    ]
+  },
+  {
+    "qId": "soc-g5-history#1",
+    "kpId": "soc-g5-history",
+    "type": "choice",
+    "stem": "臺灣原住民族群非常多元，請問哪一個族群居住在臺灣東部的海岸和縱谷地區，以精美的木雕和漁獵聞名？",
+    "answer": "阿美族",
+    "explain": {
+      "steps": [
+        "阿美族是臺灣原住民族群中人數最多的一個，主要分布在臺灣東部的花蓮、臺東地區。",
+        "他們以精美的木雕藝術和傳統的捕魚、狩獵文化而聞名喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:57.646Z",
+    "reviewed": false,
+    "choices": [
+      "泰雅族",
+      "阿美族",
+      "布農族",
+      "排灣族"
+    ]
+  },
+  {
+    "qId": "soc-g5-history#2",
+    "kpId": "soc-g5-history",
+    "type": "choice",
+    "stem": "早期來臺灣開墾的漢人，會將開墾後的土地用來種植什麼農作物，並透過製糖外銷賺取利潤呢？",
+    "answer": "甘蔗",
+    "explain": {
+      "steps": [
+        "早期漢人來臺灣開墾，將許多土地用來種植甘蔗。",
+        "他們會把甘蔗製成糖，再把糖賣到其他國家，賺取財富，這也是當時臺灣很重要的經濟活動之一喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:57.646Z",
+    "reviewed": false,
+    "choices": [
+      "稻米",
+      "玉米",
+      "甘蔗",
+      "茶葉"
+    ]
+  },
+  {
+    "qId": "soc-g5-history#3",
+    "kpId": "soc-g5-history",
+    "type": "choice",
+    "stem": "漢人早期來到臺灣開墾時，因為生活習慣和土地利用方式不同，有時候會與原住民族發生衝突。請問當時雙方最常爭奪的是什麼資源？",
+    "answer": "土地",
+    "explain": {
+      "steps": [
+        "漢人與原住民族在生活方式上差異很大。漢人習慣農耕，需要大面積的土地來種田。",
+        "而原住民族則有自己的傳統領域和狩獵區。當漢人進入原住民族的土地開墾時，就容易因為土地利用的觀念不同，而產生摩擦和爭執。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:57.646Z",
+    "reviewed": false,
+    "choices": [
+      "礦產",
+      "森林",
+      "土地",
+      "水源"
+    ]
+  },
+  {
+    "qId": "soc-g5-history#4",
+    "kpId": "soc-g5-history",
+    "type": "choice",
+    "stem": "臺灣原住民族在漢人大量移入前，主要以什麼樣的方式來獲取食物和生活資源？",
+    "answer": "漁獵與採集",
+    "explain": {
+      "steps": [
+        "在漢人大量來到臺灣之前，原住民族主要依靠著大自然的恩賜生活。",
+        "他們會在森林裡打獵、在河邊或海邊捕魚，並採集植物的果實、野菜等等，來滿足生活所需，是非常貼近大自然的生活方式。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:57.646Z",
+    "reviewed": false,
+    "choices": [
+      "漁獵與採集",
+      "商業貿易",
+      "工廠生產",
+      "種植稻米"
+    ]
+  },
+  {
+    "qId": "soc-g5-history#5",
+    "kpId": "soc-g5-history",
+    "type": "choice",
+    "stem": "早期有許多漢人冒著危險從中國渡海來臺灣，他們主要的目的是什麼？",
+    "answer": "尋找新家園與機會",
+    "explain": {
+      "steps": [
+        "早期在中國沿海地區，有些地方的人口太多，土地不夠用，或是生活比較困難。",
+        "所以，很多人就冒著生命危險，搭船來到臺灣，希望在這裡找到新的土地，有更多工作和生活的好機會，讓自己和家人過上更好的日子。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:57.646Z",
+    "reviewed": false,
+    "choices": [
+      "觀光旅遊",
+      "尋找新家園與機會",
+      "躲避戰爭",
+      "學習原住民文化"
+    ]
+  },
+  {
+    "qId": "soc-g6-democracy#1",
+    "kpId": "soc-g6-democracy",
+    "type": "choice",
+    "stem": "在民主社會中，最重要的精神或特色是什麼？",
+    "answer": "公民有權利參與公共事務。",
+    "explain": {
+      "steps": [
+        "民主社會強調人民是國家的主人，所以公民有權利表達意見、參與決定公共事務，這是民主最核心的精神喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:59.816Z",
+    "reviewed": false,
+    "choices": [
+      "政府領袖由少數人指定。",
+      "公民有權利參與公共事務。",
+      "所有決定都由一群菁英來做。",
+      "人民對國家運作沒有發言權。"
+    ]
+  },
+  {
+    "qId": "soc-g6-democracy#2",
+    "kpId": "soc-g6-democracy",
+    "type": "choice",
+    "stem": "在台灣這樣的民主國家中，公民為什麼要去投票選出民意代表呢？",
+    "answer": "讓公民可以選出代表自己意見的人，並表達自己的想法。",
+    "explain": {
+      "steps": [
+        "投票是公民參與公共事務最直接的方式之一。透過投票，我們可以選出代表我們說話的人，讓我們的想法被政府聽到，是很重要的權利和責任喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:59.816Z",
+    "reviewed": false,
+    "choices": [
+      "只是走個形式，沒有實質影響。",
+      "讓公民可以選出代表自己意見的人，並表達自己的想法。",
+      "只有很特別的人才需要投票。",
+      "幫助決定誰會變成名人。"
+    ]
+  },
+  {
+    "qId": "soc-g6-democracy#3",
+    "kpId": "soc-g6-democracy",
+    "type": "choice",
+    "stem": "除了投票之外，身為公民，我們還可以透過哪種方式來參與公共事務，讓社會變得更好呢？",
+    "answer": "參與公共議題的討論會，或連署向政府表達意見。",
+    "explain": {
+      "steps": [
+        "除了投票，我們也可以透過很多方式參與公共事務，例如參加說明會、寫信給政府、連署，或加入志工團體，都是很棒的公民參與方式！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:59.816Z",
+    "reviewed": false,
+    "choices": [
+      "對政府的政策完全不關心。",
+      "隨意散播不實的謠言。",
+      "參與公共議題的討論會，或連署向政府表達意見。",
+      "只關心自己的事情就好。"
+    ]
+  },
+  {
+    "qId": "soc-g6-democracy#4",
+    "kpId": "soc-g6-democracy",
+    "type": "choice",
+    "stem": "在民主社會中，如果遇到大家意見不同的時候，身為公民，哪一種態度是最重要的呢？",
+    "answer": "尊重不同的意見，並保持理性溝通。",
+    "explain": {
+      "steps": [
+        "民主社會的特色就是大家可以有不同的意見。當意見不一樣時，我們要學習尊重別人、耐心聆聽，並用理性的方式好好溝通，才能找到最好的解決辦法喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:59.816Z",
+    "reviewed": false,
+    "choices": [
+      "永遠只同意多數人的意見。",
+      "批評所有事情，但不提出解決方法。",
+      "尊重不同的意見，並保持理性溝通。",
+      "只聽從家人的建議。"
+    ]
+  },
+  {
+    "qId": "soc-g6-democracy#5",
+    "kpId": "soc-g6-democracy",
+    "type": "choice",
+    "stem": "根據台灣的憲法，以下哪一項是公民最基本的權利之一，而且與公民參與公共事務息息相關？",
+    "answer": "言論自由的權利。",
+    "explain": {
+      "steps": [
+        "言論自由是民主社會中非常重要的基本權利。有了言論自由，公民才能自由表達自己的想法、討論公共事務，讓社會更加進步！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:35:59.816Z",
+    "reviewed": false,
+    "choices": [
+      "要求無限量免費點心的權利。",
+      "不用付錢就可以買東西的權利。",
+      "言論自由的權利。",
+      "永遠不用上學的權利。"
+    ]
+  },
+  {
+    "qId": "soc-g6-economy#1",
+    "kpId": "soc-g6-economy",
+    "type": "choice",
+    "stem": "關於生產活動，哪一個敘述是正確的？",
+    "answer": "生產活動會製造出物品或提供服務。",
+    "explain": {
+      "steps": [
+        "生產是指將資源轉變成有價值的產品或服務的過程。",
+        "例如農夫種稻米、老師教書、工廠製作商品，這些都是生產活動，它們會製造出物品或提供服務。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:04.124Z",
+    "reviewed": false,
+    "choices": [
+      "買東西就是一種生產。",
+      "生產活動會製造出物品或提供服務。",
+      "只有工廠製造物品才算生產。",
+      "只有銷售人員才參與生產。"
+    ]
+  },
+  {
+    "qId": "soc-g6-economy#2",
+    "kpId": "soc-g6-economy",
+    "type": "choice",
+    "stem": "小華去文具店買了一枝鉛筆，這是哪一種經濟行為？",
+    "answer": "消費",
+    "explain": {
+      "steps": [
+        "消費是指使用或享用物品及服務來滿足自己的需求。",
+        "小華購買鉛筆並使用它來寫字，是為了滿足學習的需求，所以這是一種消費行為。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:04.124Z",
+    "reviewed": false,
+    "choices": [
+      "生產",
+      "消費",
+      "交換",
+      "儲蓄"
+    ]
+  },
+  {
+    "qId": "soc-g6-economy#3",
+    "kpId": "soc-g6-economy",
+    "type": "choice",
+    "stem": "媽媽只有足夠的錢買一台新電視或一台新冰箱，她最後選擇買冰箱。這說明了什麼經濟概念？",
+    "answer": "資源的稀少性與選擇",
+    "explain": {
+      "steps": [
+        "我們的資源（例如金錢）常常是有限的，但是想買的東西卻很多。",
+        "當資源不夠買所有想要的東西時，我們就必須做出選擇，這就是資源稀少性導致的選擇問題。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:04.124Z",
+    "reviewed": false,
+    "choices": [
+      "生產的效率",
+      "資源的稀少性與選擇",
+      "物品的價值",
+      "服務的重要性"
+    ]
+  },
+  {
+    "qId": "soc-g6-economy#4",
+    "kpId": "soc-g6-economy",
+    "type": "fill",
+    "stem": "當我們擁有的錢或時間等資源無法滿足所有的需要和想要時，就表示資源具有「______ 性」。",
+    "answer": "稀少",
+    "explain": {
+      "steps": [
+        "資源稀少性是經濟學的基本概念，它指的是資源是有限的，而人類的慾望是無限的。",
+        "因為資源有限，所以我們必須做出選擇，決定如何分配和使用這些有限的資源。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:04.124Z",
+    "reviewed": false
+  },
+  {
+    "qId": "soc-g6-economy#5",
+    "kpId": "soc-g6-economy",
+    "type": "choice",
+    "stem": "麵包店製作美味的麵包，需要用到麵粉、烤箱、製作麵包的師傅，以及提供經營麵包店的店面。其中，「製作麵包的師傅」屬於哪一種生產要素？",
+    "answer": "勞力",
+    "explain": {
+      "steps": [
+        "生產要素主要包括土地、勞力、資本和企業家才能。",
+        "製作麵包的師傅是透過體力或智力來參與生產的人力資源，因此屬於勞力這個生產要素。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:04.124Z",
+    "reviewed": false,
+    "choices": [
+      "土地",
+      "勞力",
+      "資本",
+      "企業家才能"
+    ]
+  },
+  {
+    "qId": "soc-g6-world#1",
+    "kpId": "soc-g6-world",
+    "type": "choice",
+    "stem": "台灣和世界上許多國家都有貿易往來。請問台灣出口到其他國家最多的商品，主要和哪一種產業有關？",
+    "answer": "電子科技產品",
+    "explain": {
+      "steps": [
+        "台灣的電子科技產業非常發達，我們製造的許多高科技零件和產品，像是半導體、電腦和手機零件等，都出口到世界各地，是台灣很重要的經濟來源喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:08.078Z",
+    "reviewed": false,
+    "choices": [
+      "農產品",
+      "紡織品",
+      "電子科技產品",
+      "觀光服務"
+    ]
+  },
+  {
+    "qId": "soc-g6-world#2",
+    "kpId": "soc-g6-world",
+    "type": "choice",
+    "stem": "當世界上其他國家發生重大災害時，台灣常常會提供幫助。請問台灣參與國際人道援助，主要是展現哪一種精神？",
+    "answer": "展現負責任的世界公民精神",
+    "explain": {
+      "steps": [
+        "台灣在世界上是一個重要的成員，當其他國家有困難時，我們伸出援手，提供物資或醫療協助，這就是展現我們願意承擔國際責任，幫助別人的愛心，是一個負責任的世界公民的表現喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:08.078Z",
+    "reviewed": false,
+    "choices": [
+      "希望獲得國際名聲",
+      "展現負責任的世界公民精神",
+      "為了賺取更多的金錢",
+      "要求其他國家回報"
+    ]
+  },
+  {
+    "qId": "soc-g6-world#3",
+    "kpId": "soc-g6-world",
+    "type": "fill",
+    "stem": "許多外國美食在台灣很受歡迎，例如義大利麵、日本壽司、韓國炸雞等。這代表台灣和世界各國之間有著頻繁的________交流。",
+    "answer": "文化",
+    "explain": {
+      "steps": [
+        "美食是文化交流很重要的一部分。我們品嚐外國料理，不只認識了不同的口味，也了解了他們的生活方式和文化特色，讓我們的生活更多元有趣。"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:08.078Z",
+    "reviewed": false
+  },
+  {
+    "qId": "soc-g6-world#4",
+    "kpId": "soc-g6-world",
+    "type": "choice",
+    "stem": "每年都有許多台灣人出國旅行或留學，也有很多外國人來台灣觀光或工作。請問這種跨國移動對於台灣和世界的交流有什麼好處？",
+    "answer": "促進文化理解與經濟發展",
+    "explain": {
+      "steps": [
+        "人們跨國移動，不只可以讓不同國家的人互相認識、了解彼此的文化，減少誤會，還能帶來觀光收入和工作機會，促進經濟發展喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:08.078Z",
+    "reviewed": false,
+    "choices": [
+      "增加交通工具的消耗",
+      "讓大家更容易生病",
+      "促進文化理解與經濟發展",
+      "導致各國資源快速耗盡"
+    ]
+  },
+  {
+    "qId": "soc-g6-world#5",
+    "kpId": "soc-g6-world",
+    "type": "choice",
+    "stem": "許多我們日常生活中的電子產品，像是手機、電腦等，裡面都可能有台灣製造的關鍵零件。這說明了台灣在全球產業鏈中扮演著什麼樣的角色？",
+    "answer": "全球重要的供應者",
+    "explain": {
+      "steps": [
+        "台灣在高科技製造領域，尤其是半導體產業，擁有世界領先的技術。我們生產的許多關鍵零組件，是全球許多電子產品不可或缺的部分，所以台灣是全球非常重要的供應夥伴喔！"
+      ]
+    },
+    "source": "generated:gemini-2.5-flash@2026-06-19T03:36:08.078Z",
+    "reviewed": false,
+    "choices": [
+      "主要消費國",
+      "全球重要的供應者",
+      "只負責設計產品",
+      "與全球產業鏈無關"
+    ]
+  }
+]

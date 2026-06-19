@@ -1,0 +1,14 @@
+[
+  { "StepNumber": 0, "ModuleRef": "A0", "StepType": "initial", "StepAction": "收到 GET /api/quiz（subject·grade·count），等待出題", "LinkInputType": ["convergence_or"], "LinkInputNumber": [8], "LinkOutputType": "track", "LinkOutputNumber": [1], "Condition": ["請求進入 QuizGenProvider.generate"], "SubGrafcet": [] },
+  { "StepNumber": 1, "ModuleRef": "A0", "StepType": "normal", "StepAction": "依 subject 是否屬 MECHANICAL_SUBJECTS 分流", "LinkInputType": ["track"], "LinkInputNumber": [0], "LinkOutputType": "divergence_or", "LinkOutputNumber": [2, 4], "Condition": ["機制科（國/數/英）", "事實科（自然/社會）"], "SubGrafcet": [] },
+
+  { "StepNumber": 2, "ModuleRef": "A0", "StepType": "normal", "StepAction": "取該科級 curriculum 知識點，distribute count（洗牌 round-robin）", "LinkInputType": ["divergence_or"], "LinkInputNumber": [1], "LinkOutputType": "track", "LinkOutputNumber": [3], "Condition": ["每個 KP 配到題數"], "SubGrafcet": [] },
+  { "StepNumber": 3, "ModuleRef": "A0", "StepType": "normal", "StepAction": "genForKp 並行叫 Gemini 生題 → sanitizeViz 剝除不一致圖解 → validate 剔除壞題", "LinkInputType": ["track"], "LinkInputNumber": [2], "LinkOutputType": "convergence_or", "LinkOutputNumber": [8], "Condition": ["驗過的機制科題就緒"], "SubGrafcet": [] },
+
+  { "StepNumber": 4, "ModuleRef": "A0", "StepType": "normal", "StepAction": "QuizBankProvider.serve 從種子池取 count 條已確認事實", "LinkInputType": ["divergence_or"], "LinkInputNumber": [1], "LinkOutputType": "track", "LinkOutputNumber": [5], "Condition": ["取得事實種子"], "SubGrafcet": [] },
+  { "StepNumber": 5, "ModuleRef": "A0", "StepType": "normal", "StepAction": "reposeFact 叫 Gemini 重出選擇題，釘答案＝種子答案、驗選項含正解且互異", "LinkInputType": ["track"], "LinkInputNumber": [4], "LinkOutputType": "divergence_or", "LinkOutputNumber": [6, 7], "Condition": ["釘答案＋選項驗證通過", "任一不過"], "SubGrafcet": [] },
+  { "StepNumber": 6, "ModuleRef": "A0", "StepType": "normal", "StepAction": "採用重新包裝的新題（變化選項與語句）", "LinkInputType": ["divergence_or"], "LinkInputNumber": [5], "LinkOutputType": "convergence_or", "LinkOutputNumber": [8], "Condition": ["新題就緒"], "SubGrafcet": [] },
+  { "StepNumber": 7, "ModuleRef": "A0", "StepType": "normal", "StepAction": "fail-safe：退回種子原題（審過的題，絕不出錯答案）", "LinkInputType": ["divergence_or"], "LinkInputNumber": [5], "LinkOutputType": "convergence_or", "LinkOutputNumber": [8], "Condition": ["種子題就緒"], "SubGrafcet": [] },
+
+  { "StepNumber": 8, "ModuleRef": "A0", "StepType": "normal", "StepAction": "攤平 explain 成 QuizServeItem[]，回前端", "LinkInputType": ["convergence_or", "convergence_or", "convergence_or"], "LinkInputNumber": [3, 6, 7], "LinkOutputType": "convergence_or", "LinkOutputNumber": [0], "Condition": ["回到等待下一個請求"], "SubGrafcet": [] }
+]
