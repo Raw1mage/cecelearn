@@ -2,6 +2,11 @@
 
 本檔記錄 cecelearn・小雞老師 的重要變更。格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)。
 
+## [2026-06-20]
+
+### 新增 Added
+- **兒童知識型頻道庫擴充**（`data/channels.json`）：新增 6 個精選頻道並把原本待補的 1 個轉正，頻道庫由 4 active + 1 pending 擴成 11 active、無 pending。新增/轉正清單——佳佳老師說故事（`UCgoiUg4LrO28_S0tBafdpcg`）、均一教育平台 Junyi Academy（`UCbDEamSXQhxqhovhd2NdEyg`）、168好日子（`UCO8pQa9gmYl9QiK-Dw0sDxA`）、呆話西遊 DaihuaXiyou（`UCoLond6sdng1D065BkSNDEA`）、智慧種子兒童永續發展教育頻道（`UCvIZF2yCsD1jktxHc65DQdA`）、SunnySeedlings（`UCRL7jFEEsS8m--3-CFFtzRQ`），以及把 pending 的「烏龍院成語」補上官方 channelId（`UCH_jKFm1vrDVjx9xIGRtvkQ`）轉為 active。channelId 一律抓 YouTube 頻道頁的 `externalId` 取得真實官方 ID，非 handle 推測。小雞老師找影片時命中這些頻道的結果會標 ⭐ 精選並排到最前面。
+
 ## [2026-06-19]
 
 小家教升級：把小雞老師從「窄命令機器人」擴成能真正講解英文、數學題目的家教，並把生圖策略改成可靠的雙軌。

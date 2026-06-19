@@ -64,13 +64,111 @@
       "addedAt": "2026-06-19"
     },
     {
-      "title": "烏龍院成語",
+      "channelId": "UCgoiUg4LrO28_S0tBafdpcg",
+      "title": "佳佳老師說故事",
+      "handle": "@JiaJiaStory",
       "topics": [
-        "成語"
+        "故事",
+        "繪本",
+        "啟蒙",
+        "品德",
+        "生活"
       ],
-      "note": "敖幼祥《烏龍院》成語動畫；尚未確認官方 YouTube 頻道 ID，待補。",
-      "status": "pending",
-      "addedAt": "2026-06-19"
+      "note": "佳佳老師說故事；繪本與兒童故事朗讀，適合 6-9 歲。",
+      "status": "active",
+      "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UCbDEamSXQhxqhovhd2NdEyg",
+      "title": "均一教育平台 Junyi Academy",
+      "handle": "@JunyiAcademy",
+      "topics": [
+        "數學",
+        "自然",
+        "科學",
+        "國語",
+        "知識",
+        "教學"
+      ],
+      "note": "台灣非營利線上教育平台；數學、自然等各科系統化教學。",
+      "status": "active",
+      "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UCO8pQa9gmYl9QiK-Dw0sDxA",
+      "title": "168好日子",
+      "handle": "@168goodday",
+      "topics": [
+        "品德",
+        "故事",
+        "生活教育",
+        "啟蒙"
+      ],
+      "note": "頻道橫幅標題「孝養父母，奉事師長，慈心不殺，人所當為」；品德與生活教育取向。",
+      "status": "active",
+      "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UCoLond6sdng1D065BkSNDEA",
+      "title": "呆話西遊 DaihuaXiyou",
+      "handle": "@DaihuaXiyou",
+      "topics": [
+        "故事",
+        "西遊記",
+        "經典",
+        "動畫",
+        "成語",
+        "啟蒙"
+      ],
+      "note": "西遊記主題動畫故事；中華經典故事啟蒙。",
+      "status": "active",
+      "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UCH_jKFm1vrDVjx9xIGRtvkQ",
+      "title": "烏龍院",
+      "handle": "@烏龍院-q7m",
+      "topics": [
+        "成語",
+        "動畫",
+        "故事",
+        "中華文化",
+        "啟蒙"
+      ],
+      "note": "敖幼祥《烏龍院》官方頻道；成語/中華文化動畫。",
+      "status": "active",
+      "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UCvIZF2yCsD1jktxHc65DQdA",
+      "title": "智慧種子兒童永續發展教育頻道",
+      "handle": "@thewisdommedia",
+      "topics": [
+        "品德",
+        "永續",
+        "生命教育",
+        "故事",
+        "啟蒙",
+        "生活"
+      ],
+      "note": "智慧種子；兒童品德與永續發展教育、生命教育取向。",
+      "status": "active",
+      "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UCRL7jFEEsS8m--3-CFFtzRQ",
+      "title": "SunnySeedlings",
+      "handle": "@SunnySeedlings0304",
+      "topics": [
+        "品德",
+        "故事",
+        "啟蒙",
+        "生活",
+        "生命教育"
+      ],
+      "note": "兒童品德與生命教育取向故事頻道。",
+      "status": "active",
+      "addedAt": "2026-06-20"
     }
   ]
 }
