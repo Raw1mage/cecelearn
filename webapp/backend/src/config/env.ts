@@ -116,8 +116,14 @@ export function loadEnv(): BackendEnv {
     process.env.YOUTUBE_API_KEY || geminiApiKeys[0] || ''
   ).trim()
 
-  // 找影片主要來源：自架 Invidious（零 YouTube 配額）。預設指向同機 ytlite 的 Invidious。
-  // 設為空字串可停用 Invidious、改走 Data API。
+  // 找影片主要來源：自架 Invidious（零 YouTube 配額）。
+  //
+  // 跨機運行期依賴（DD-30，明示化）：預設 http://localhost:1215 指向**同機 ytlite 專案**
+  // 已在跑的 Invidious docker 對外 port——cecelearn 借用它、不自帶一份 infra。代價是找影片
+  // 活在 ytlite 的運行假設裡：(1) ytlite 的 Invidious 容器要在同機跑著；(2) feed 預熱需
+  // Invidious ≥2026.06（頻道 parser）。連不到時 server 啟動會 log warn（見 server.ts
+  // health probe），找影片 fail-soft 退 Data API（若有 YOUTUBE_API_KEY）或影片庫既有內容。
+  // 要讓 cecelearn 自足，改設 INVIDIOUS_API_URL 指向自己的 Invidious；設空字串＝停用、走 Data API。
   const invidiousApiUrl = (
     process.env.INVIDIOUS_API_URL ?? 'http://localhost:1215'
   ).trim()

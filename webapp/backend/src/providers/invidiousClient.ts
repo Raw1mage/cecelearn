@@ -36,6 +36,25 @@ export class InvidiousClient {
     console.log(`[InvidiousClient] base=${this.base}`)
   }
 
+  /** 取設定的 base URL（啟動 health probe / 診斷用）。 */
+  baseUrl(): string {
+    return this.base
+  }
+
+  /**
+   * 啟動 health probe：打 /api/v1/stats 確認自架 Invidious 在線上。
+   * 回 true=可用；false=連不到（呼叫端只 log warn、不崩——找影片會退 Data API / 影片庫）。
+   * 明示化跨機依賴（cecelearn 借用同機 ytlite 的 Invidious）：連不到時讓 log 留下明確證據。
+   */
+  async ping(): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.base}/api/v1/stats`, { signal: AbortSignal.timeout(5000) })
+      return res.ok
+    } catch {
+      return false
+    }
+  }
+
   /** 影片搜尋。回 A1VideoItem[]（thumbnail 用 i.ytimg 直連，不走 Invidious 代理）；失敗回 null。 */
   async search(q: string): Promise<A1VideoItem[] | null> {
     const url =
