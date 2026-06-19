@@ -195,43 +195,45 @@ export function VideoPlayer({
         )}
         {active.title}
       </p>
-      {items.length > 1 && (
+      {(items.length > 1 || showLoadMore || (exhausted && atLast)) && (
         <div className="a1-video-nav">
-          <button
-            type="button"
-            className="a1-action-btn"
-            onClick={() => go(index - 1)}
-            disabled={!ready || index <= 0}
-          >
-            ◀ 上一部
-          </button>
-          <span className="a1-video-counter">
-            {index + 1} / {items.length}
-          </span>
-          <button
-            type="button"
-            className="a1-action-btn"
-            onClick={() => go(index + 1)}
-            disabled={!ready || index >= items.length - 1}
-          >
-            下一部 ▶
-          </button>
+          {items.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="a1-action-btn"
+                onClick={() => go(index - 1)}
+                disabled={!ready || index <= 0}
+              >
+                ◀ 上一部
+              </button>
+              <span className="a1-video-counter">
+                {index + 1} / {items.length}
+              </span>
+              <button
+                type="button"
+                className="a1-action-btn"
+                onClick={() => go(index + 1)}
+                disabled={!ready || index >= items.length - 1}
+              >
+                下一部 ▶
+              </button>
+            </>
+          )}
+          {showLoadMore && (
+            <button
+              type="button"
+              className="a1-action-btn a1-video-more-btn"
+              onClick={() => onLoadMore?.(msgId)}
+              disabled={loadingMore}
+            >
+              {loadingMore ? '找更多影片中…' : '＋ 載入更多'}
+            </button>
+          )}
+          {exhausted && atLast && (
+            <span className="a1-video-more-hint muted">沒有更多影片囉</span>
+          )}
         </div>
-      )}
-      {showLoadMore && (
-        <div className="a1-video-more">
-          <button
-            type="button"
-            className="a1-action-btn"
-            onClick={() => onLoadMore?.(msgId)}
-            disabled={loadingMore}
-          >
-            {loadingMore ? '找更多影片中…' : '＋ 載入更多影片'}
-          </button>
-        </div>
-      )}
-      {exhausted && atLast && (
-        <p className="a1-video-more-hint muted">沒有更多影片囉，這些都看完啦！</p>
       )}
     </div>
   )

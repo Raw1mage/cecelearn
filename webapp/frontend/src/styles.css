@@ -325,11 +325,9 @@ input, textarea, select { width: 100%; border-radius: 0.9rem; border: 1px solid 
 .a1-video-nav .a1-action-btn { width: auto; padding: 0 0.8rem; height: 2rem; font-size: 0.85rem; font-weight: 700; }
 .a1-video-nav .a1-action-btn:disabled { opacity: 0.4; cursor: default; }
 .a1-video-counter { font-size: 0.82rem; color: #9bc1ff; min-width: 3rem; text-align: center; }
-/* 看到最後一支才出現的「載入更多影片」 */
-.a1-video-more { width: 100%; display: flex; }
-.a1-video-more .a1-action-btn { width: auto; padding: 0 1rem; height: 2rem; font-size: 0.85rem; font-weight: 700; }
-.a1-video-more .a1-action-btn:disabled { opacity: 0.5; cursor: default; }
-.a1-video-more-hint { margin: 0; font-size: 0.82rem; }
+/* 載入更多：與「下一部」同列（不換行、不撐出捲動） */
+.a1-video-nav .a1-video-more-btn { margin-left: auto; }
+.a1-video-more-hint { margin: 0 0 0 auto; font-size: 0.82rem; white-space: nowrap; }
 
 /* A1 — 可放大的圖（情境插畫 / 數學 SVG）：點一下開全螢幕浮層 */
 .a1-zoomable { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
