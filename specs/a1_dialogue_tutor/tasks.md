@@ -119,10 +119,10 @@
 - [-] ~~R11.B2 `POST /api/a1/prewarm`：遍歷 channelLibrary active 頻道 → channelLatestVideos → blocklist 硬擋 → 依頻道 topics 寫回 VideoBank~~ 移除：「頻道最新片 × 頻道標籤」灌主題庫＝文不對題 root cause（DD-33）
 - [-] ~~R11.B3 驗證：手動打 prewarm 端點 → channels:4、16 主題共 +525 支寫回庫~~ 廢止：該批 +525 支正是污染來源，已清空。影片庫往後只由真實 query 搜尋累積
 
-### Phase C — 可點主題索引（動態取自 VideoBank，DD-28）
-- [x] R11.C1 前端 client.ts：videoBankSummary 鏡像型別（A1VideoBankTopic/A1VideoBankSummaryResponse）+ videoBankSummary() method；A1Page 載入時 useEffect 打一次取已累積主題（取 count>0、前 8 個）
-- [x] R11.C2 前端快捷 chip 列：videoTopics state + .a1-topic-chips 列，點 chip 送「我想看○○的影片」進對話 → find_video（庫足量毫秒服務）；styles.css 加 .a1-topic-chip 樣式（琥珀色，區別於藍色測驗 chip）
-- [x] R11.C3 驗證：frontend tsc -b EXIT=0 + vite build EXIT=0；backend tsc EXIT=0
+### Phase C — 可點主題索引（動態取自 VideoBank，DD-28）— ⛔ 已移除（DD-34）
+- [-] ~~R11.C1 前端 client.ts：videoBankSummary 鏡像型別 + method；A1Page useEffect 取已累積主題~~ 移除前端 useEffect/state（client.ts method 與後端端點保留作後台檢索）：DD-34
+- [-] ~~R11.C2 前端快捷 chip 列：videoTopics state + .a1-topic-chips 列~~ 移除：主題桶名取自頻道標籤＝主題不明確（英文/生活）、重複（成語兩組）；找影片改全靠對話觸發（DD-34）
+- [-] ~~R11.C3 驗證~~ 重驗於 DD-34：frontend tsc -b EXIT=0 + vite build EXIT=0
 
 ## 4. 收尾 — 文件與驗收
 
