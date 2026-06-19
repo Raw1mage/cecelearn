@@ -66,3 +66,12 @@
 
 ### Modified Capabilities
 - A1 對話 provider 由單一 Gemini → 可選級聯（env 切換，預設不變）。
+
+## Impact
+
+- 受影響碼：`webapp/backend/src/providers/`（新增 a1ChatShared / opencodeBareChatProvider / cascadeChatProvider；重構 geminiChatProvider）、`config/env.ts`、`server.ts`。`contracts/providers.ts` 介面不變。
+- 受影響 API：無新 route；`POST /api/a1/chat` 行為依 `CHAT_PROVIDER` 而定。
+- 上游依賴：opencode daemon 的 `/api/v2/session`、`…/message`（bare agent）— 同機 unix socket。
+- 操作者：cascade 開啟後對話依賴 opencode daemon 在線（掛則自動回 Gemini）；釘的 Claude 帳號需保持登入。
+- 文件：本 plan；對應 opencode `specs/daemon/bare-chat-session`（living）。
+- commit：`d186390`（cecelearn main）。
