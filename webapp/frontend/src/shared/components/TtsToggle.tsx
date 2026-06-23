@@ -1,18 +1,17 @@
-import { useState } from 'react'
-import { isTtsSupported, isTtsEnabled, setTtsEnabled } from '../speech/tts'
+import { isTtsSupported, setTtsEnabled } from '../speech/tts'
+import { usePreferences } from '../preferences/usePreferences'
 
 /**
  * 全域朗讀總開關（放在 app header 標題右邊）。
- * 朗讀狀態是 tts module 的單一真實來源（module-level `enabled`）；
- * 本元件是唯一的切換入口，故本地 state 與 module 不會失步。
+ * UI 狀態讀中央 store 的 voice.ttsEnabled；切換仍透過 setTtsEnabled（寫 store，
+ * store 再回灌 tts module），維持「切換入口與 module 不失步」不變式。
  */
 export function TtsToggle() {
-  const [on, setOn] = useState(isTtsEnabled())
+  const { preferences } = usePreferences()
+  const on = preferences.voice.ttsEnabled
   if (!isTtsSupported()) return null
   const toggle = () => {
-    const next = !on
-    setOn(next)
-    setTtsEnabled(next)
+    setTtsEnabled(!on)
   }
   return (
     <button
