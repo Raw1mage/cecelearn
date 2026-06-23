@@ -10,6 +10,9 @@ import { type VideoState } from '../hooks/useConversation'
  * - 自適應容器寬度（不再鎖死 480px）。
  * - 連續看：後端一次回多支「相關影片」（精選優先），這裡用 ◀ ▶ 在同一個播放窗內前後切換
  *   （loadVideoById，不重打 API）——小朋友看完一支可以接著看下一支相關的。
+ * - 自動接下一部：一支播完（onStateChange ENDED）自動載入佇列裡的下一支續播，但只接
+ *   「已露出的佇列」，播完最後一部就停下（不自動 onLoadMore），避免無限 autoplay 變成
+ *   停不下來的螢幕時間黑洞（6–9 歲兒童 app）。
  *
  * 安全：影片本身已由後端 safeSearch=strict + videoEmbeddable 過濾過；用 nocookie host。
  */
@@ -59,6 +62,8 @@ export function VideoPlayer({
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const playerRef = useRef<any>(null)
+  // go 放 ref：onStateChange（effect 內 closure）要呼叫最新的 go 來自動接下一部。
+  const goRef = useRef<(next: number) => void>(() => {})
   // onPlayingChange 放 ref，effect 只依結果集，避免父層重渲染害 player 一直重建。
   const cbRef = useRef(onPlayingChange)
   cbRef.current = onPlayingChange
@@ -112,7 +117,19 @@ export function VideoPlayer({
           onStateChange: (e: any) => {
             const S = YT.PlayerState
             if (e.data === S.PLAYING) notify(true)
-            else if (e.data === S.PAUSED || e.data === S.ENDED) notify(false)
+            else if (e.data === S.PAUSED) notify(false)
+            else if (e.data === S.ENDED) {
+              // 自動接下一部：佇列裡還有下一支就直接載入續播（同播放窗、不重打 API、
+              // loadVideoById 會自動播 → 隨後的 PLAYING 事件再把麥克風關回去）。
+              // 只接「已露出的佇列」，播完最後一部就停（notify(false) 還麥克風）——
+              // 不自動 onLoadMore，避免無限 autoplay 變成停不下來的螢幕時間黑洞。
+              const next = indexRef.current + 1
+              if (next < idsRef.current.length) {
+                goRef.current(next)
+              } else {
+                notify(false)
+              }
+            }
           },
         },
       })
@@ -146,6 +163,7 @@ export function VideoPlayer({
       }
     }
   }
+  goRef.current = go
 
   if (!state) return null
 

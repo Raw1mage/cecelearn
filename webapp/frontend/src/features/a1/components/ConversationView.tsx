@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type A1ChatMessage } from '../../../shared/api/client'
 import { type IllustrationMap, type VideoMap } from '../hooks/useConversation'
+import { GAME_REGISTRY } from '../../../../../backend/src/shared/gameRegistry'
 import { TurnContent } from './TurnContent'
 import { VideoPlayer } from './VideoPlayer'
 import { StrokeBox } from './StrokeBox'
@@ -54,9 +55,12 @@ export type ConversationViewProps = {
   onLoadMoreVideos: (msgId: string) => void
   /** 影片播放/暫停狀態變化（外層據此暫停/恢復麥克風） */
   onVideoPlayingChange: (playing: boolean) => void
+  /** 小朋友暱稱（偏好 identity.nickname）：有值時用於起始問候稱呼，空字串則不稱呼。 */
+  greetingName?: string
 }
 
-const INTENT_LABEL: Record<string, string> = {
+// base intent label hardcode；遊戲啟動 intent 的 label 由 game registry 衍生（DD-10，單一真實來源）。
+const BASE_INTENT_LABEL: Record<string, string> = {
   lookup: '查字',
   make_words: '造詞',
   make_sentence: '造句',
@@ -66,10 +70,15 @@ const INTENT_LABEL: Record<string, string> = {
   solve_arithmetic: '算術',
   explain: '講解',
   find_video: '找影片',
-  start_dictation: '聽寫',
-  start_idiom: '成語',
   chat: '聊天',
   unclear: '？',
+}
+
+const INTENT_LABEL: Record<string, string> = {
+  ...BASE_INTENT_LABEL,
+  ...Object.fromEntries(
+    GAME_REGISTRY.map((e) => [e.intent, e.conversationLabel]),
+  ),
 }
 
 /** 下載 data URI 圖片（情境插畫存檔，不被洗掉） */
@@ -178,7 +187,7 @@ function MessageIllustration({
  * 每則 tutor 訊息：文字泡泡 reply + inline 富內容（造詞 / 造句 / 故事）
  *                 + inline 筆順(lookup) + inline 情境插畫(造句/故事/畫圖，歷史保留)。
  */
-export function ConversationView({ messages, busy, illustrations, onRedraw, videos, onRetryVideos, onLoadMoreVideos, onVideoPlayingChange }: ConversationViewProps) {
+export function ConversationView({ messages, busy, illustrations, onRedraw, videos, onRetryVideos, onLoadMoreVideos, onVideoPlayingChange, greetingName }: ConversationViewProps) {
   const endRef = useRef<HTMLDivElement | null>(null)
   // 正在朗讀的 tutor 訊息 id（驅動各 bubble 鈕的 重播/停止 樣態）。
   const [playingId, setPlayingId] = useState<string | null>(getPlayingSpeechId())
@@ -199,7 +208,7 @@ export function ConversationView({ messages, busy, illustrations, onRedraw, vide
       {messages.length === 0 && !busy ? (
         <div className="a1-conv-empty">
           <p className="a1-reply-bubble">
-            你好！我是小雞老師，可以說「用蘋果造句」、「花可以組什麼詞」、「蘋果的蘋」、「3 乘 7 怎麼算」、「說一個故事」或「畫一隻貓」。也可以把考卷上的題目唸給我聽，像「This is a cat 是什麼意思」或「小明有 5 顆糖給了弟弟 2 顆還剩幾顆」，我會一步一步講解給你聽喔！想看影片認識新東西也可以說「我想看恐龍的影片」，我幫你找一段來看！
+            你好{greetingName ? `，${greetingName}` : ''}！我是小雞老師，可以說「用蘋果造句」、「花可以組什麼詞」、「蘋果的蘋」、「3 乘 7 怎麼算」、「說一個故事」或「畫一隻貓」。也可以把考卷上的題目唸給我聽，像「This is a cat 是什麼意思」或「小明有 5 顆糖給了弟弟 2 顆還剩幾顆」，我會一步一步講解給你聽喔！想看影片認識新東西也可以說「我想看恐龍的影片」，我幫你找一段來看！
           </p>
         </div>
       ) : (

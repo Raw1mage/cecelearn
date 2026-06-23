@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   apiClient,
   type QuizServeItem,
@@ -9,10 +9,12 @@ import { celebrate } from '../../shared/celebrate'
 import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
 import { useScore } from '../../shared/ScoreContext'
-import { speak } from '../../shared/speech/tts'
+import { addSpeechEndListener, isTtsEnabled, isTtsSupported, speak } from '../../shared/speech/tts'
 import { recognizeOnce } from '../../shared/speech/recognizeOnce'
 import { MathDiagram } from '../a1/components/MathDiagram'
 import { useSpeechCapture } from '../a1/speechCapture'
+import { ArithmeticCard } from '../a3/components/ArithmeticCard'
+import type { Operation } from '../a3/engine'
 
 /**
  * QuizPage —— 學科練習 overlay（出題等作答）。
@@ -29,7 +31,33 @@ type QuizPageProps = {
   onComplete?: (summary: QuizSummary) => void
 }
 
+type ArithmeticExpression = { a: number; b: number; operation: Operation }
+
 const COUNT_OPTIONS = [3, 5, 10]
+
+/** A6 學科練習設定持久化 key（記住科目/年級/題數，跨 session 還原）。 */
+const A6_PREFS_KEY = 'cecelearn:a6-prefs:v1'
+
+type A6Prefs = { subject?: string; grade?: string; count?: number }
+
+/** 讀回 A6 設定（壞值/不可用 fail-soft 回空物件，不擋功能）。 */
+function loadA6Prefs(): A6Prefs {
+  try {
+    const raw = localStorage.getItem(A6_PREFS_KEY)
+    return raw ? (JSON.parse(raw) as A6Prefs) : {}
+  } catch {
+    return {}
+  }
+}
+
+/** 寫回 A6 設定（localStorage 不可用時略過，不擋功能）。 */
+function saveA6Prefs(prefs: A6Prefs) {
+  try {
+    localStorage.setItem(A6_PREFS_KEY, JSON.stringify(prefs))
+  } catch {
+    /* localStorage 不可用：略過持久化 */
+  }
+}
 
 function norm(s: string): string {
   return s.trim().replace(/\s+/g, '').replace(/[。.。！!？?]$/, '')
@@ -43,6 +71,59 @@ function matchesOne(given: string, candidate: string): boolean {
   const na = Number(a)
   const nb = Number(b)
   return Number.isFinite(na) && Number.isFinite(nb) && na === nb
+}
+
+const CHINESE_DIGITS: Record<string, number> = {
+  零: 0,
+  〇: 0,
+  一: 1,
+  二: 2,
+  兩: 2,
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+  七: 7,
+  八: 8,
+  九: 9,
+}
+
+function parseChineseInteger(value: string): number | null {
+  if (!/^[零〇一二兩三四五六七八九十百]+$/.test(value)) return null
+  if (!/[十百]/.test(value) && value.length > 1) {
+    return Number(value.split('').map((char) => CHINESE_DIGITS[char]).join(''))
+  }
+  let total = 0
+  let current = 0
+  for (const char of value) {
+    if (char === '百') {
+      total += (current || 1) * 100
+      current = 0
+    } else if (char === '十') {
+      total += (current || 1) * 10
+      current = 0
+    } else {
+      current = CHINESE_DIGITS[char]
+    }
+  }
+  return total + current
+}
+
+function normalizeSpokenAnswer(value: string): string {
+  const cleaned = norm(value)
+    .replace(/^(答案是|答案|我選|選|是|等於)/, '')
+    .replace(/(個|顆|隻|本|元|公分|公尺|毫米|mm|cm|m)$/i, '')
+  const parsed = parseChineseInteger(cleaned)
+  return parsed === null ? cleaned : String(parsed)
+}
+
+function parseArithmeticExpression(item: QuizServeItem): ArithmeticExpression | null {
+  if (item.subject !== 'math') return null
+  const text = `${item.viz?.equation ?? ''} ${item.stem}`
+  const match = text.match(/(\d+)\s*([+\-−×*÷/])\s*(\d+)/)
+  if (!match) return null
+  const opMap: Record<string, Operation> = { '+': '+', '-': '-', '−': '-', '×': '*', '*': '*', '÷': '/', '/': '/' }
+  return { a: Number(match[1]), operation: opMap[match[2]] ?? '+', b: Number(match[3]) }
 }
 
 /**
@@ -64,6 +145,7 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
   const { addScore } = useScore()
   // 小朋友不會用中文輸入法 → 填空題允許「用說的」。借用 A1 主辨識（不在 Provider 內時退回獨立辨識）。
   const capture = useSpeechCapture()
+  const autoPromptedQuestionRef = useRef('')
   const [phase, setPhase] = useState<Phase>('setup')
   const [error, setError] = useState('')
   const [listening, setListening] = useState(false)
@@ -73,7 +155,11 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
   const [ranges, setRanges] = useState<QuizRange[]>([])
   const [subject, setSubject] = useState('')
   const [grade, setGrade] = useState('')
-  const [count, setCount] = useState(5)
+  // 題數 lazy-init：還原上次選擇（不在 COUNT_OPTIONS 內則退 5）。
+  const [count, setCount] = useState(() => {
+    const c = loadA6Prefs().count
+    return typeof c === 'number' && COUNT_OPTIONS.includes(c) ? c : 5
+  })
 
   // 測驗狀態
   const [items, setItems] = useState<QuizServeItem[]>([])
@@ -81,21 +167,30 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
   const [input, setInput] = useState('')
   const [picked, setPicked] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [judging, setJudging] = useState(false)
   const [correct, setCorrect] = useState(false)
+  const [judgeFeedback, setJudgeFeedback] = useState('')
   const [numCorrect, setNumCorrect] = useState(0)
   const [combo, setCombo] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
 
   const item = items[idx] ?? null
 
-  // 載入可選範圍；預設第一個有料的（目前是數學・3年級）
+  // 載入可選範圍；優先還原上次選擇（須仍在 ranges 內，否則退回第一個有料的）。
   useEffect(() => {
     apiClient
       .getQuizRanges()
       .then((res) => {
         const rs = res.ranges ?? []
         setRanges(rs)
-        if (rs.length > 0) {
+        if (rs.length === 0) return
+        const saved = loadA6Prefs()
+        // 還原須驗證該 subject×grade 組合仍存在於 ranges（題庫可能變動），否則退預設。
+        const restored = rs.find((r) => r.subject === saved.subject && r.grade === saved.grade)
+        if (restored) {
+          setSubject(restored.subject)
+          setGrade(restored.grade)
+        } else {
           setSubject(rs[0].subject)
           setGrade(rs[0].grade)
         }
@@ -121,6 +216,8 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
       setInput('')
       setPicked(null)
       setSubmitted(false)
+      setJudging(false)
+      setJudgeFeedback('')
       setMicHint('')
       setNumCorrect(0)
       setCombo(0)
@@ -132,32 +229,9 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
     }
   }
 
-  // 用說的作答：英文科聽 en-US，其餘（國語/數學）聽中文。聽到就填進輸入框，讓小朋友能改。
-  async function listen() {
-    if (!item || submitted || listening) return
-    const lang = item.subject === 'english' ? 'en-US' : 'cmn-Hant-TW'
-    setListening(true)
-    setMicHint('')
-    try {
-      const transcript = capture
-        ? await capture.captureOnce({ lang })
-        : await recognizeOnce(lang)
-      const said = transcript.trim()
-      if (said) setInput(said)
-      else setMicHint('沒聽清楚，再說一次好嗎？')
-    } catch {
-      setMicHint('沒聽到，再按一次麥克風喔')
-    } finally {
-      setListening(false)
-    }
-  }
-
-  function submit() {
-    if (!item || submitted) return
-    const given = item.type === 'choice' ? picked ?? '' : input
-    if (!given.trim()) return
-    const ok = judge(item, given)
+  const finishSubmit = useCallback((ok: boolean, feedback = '') => {
     setCorrect(ok)
+    setJudgeFeedback(feedback)
     setSubmitted(true)
     if (ok) {
       const nc = combo + 1
@@ -170,7 +244,102 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
     } else {
       setCombo(0)
     }
-  }
+  }, [addScore, combo])
+
+  const submitAnswer = useCallback(async (answerOverride?: string) => {
+    if (!item || submitted || judging) return
+    const given = answerOverride ?? (item.type === 'choice' ? picked ?? '' : input)
+    if (!given.trim()) return
+    setJudging(true)
+    setMicHint('')
+    try {
+      if (item.subject === 'math') {
+        const judged = await apiClient.judgeQuizAnswer(item, given)
+        if (!judged.ok) {
+          setMicHint(judged.message)
+          return
+        }
+        if (item.type !== 'choice') setInput(judged.normalizedAnswer)
+        finishSubmit(judged.correct, judged.feedback)
+        return
+      }
+      finishSubmit(judge(item, given))
+    } finally {
+      setJudging(false)
+    }
+  }, [finishSubmit, input, item, judging, picked, submitted])
+
+  // 用說的作答：英文科聽 en-US，其餘（國語/數學）聽中文。數學題聽到後直接送 AI 判題。
+  const listen = useCallback(async () => {
+    if (!item || submitted || listening || judging) return
+    const lang = item.subject === 'english' ? 'en-US' : 'cmn-Hant-TW'
+    setListening(true)
+    setMicHint('')
+    try {
+      const transcript = capture
+        ? await capture.captureOnce({ lang })
+        : await recognizeOnce(lang)
+      const said = transcript.trim()
+      if (said) {
+        if (item.subject === 'math') {
+          const normalized = normalizeSpokenAnswer(said)
+          if (item.type !== 'choice') setInput(normalized)
+          await submitAnswer(normalized)
+          return
+        }
+        if (item.type === 'choice' && item.choices?.length) {
+          const normalizedSaid = normalizeSpokenAnswer(said)
+          const choice = item.choices.find((candidate) => matchesOne(normalizedSaid, candidate) || normalizeSpokenAnswer(candidate) === normalizedSaid)
+          if (choice) setPicked(choice)
+          else setMicHint(`聽到「${said}」，請點一下答案或再說一次。`)
+        } else {
+          setInput(normalizeSpokenAnswer(said))
+        }
+      }
+      else setMicHint('沒聽清楚，再說一次好嗎？')
+    } catch {
+      setMicHint('沒聽到，再按一次麥克風喔')
+    } finally {
+      setListening(false)
+    }
+  }, [capture, item, judging, listening, submitAnswer, submitted])
+
+  useEffect(() => {
+    if (phase !== 'quiz' || !item || item.subject !== 'math' || submitted) return
+    const questionKey = `${idx}:${item.id}`
+    if (autoPromptedQuestionRef.current === questionKey) return
+    autoPromptedQuestionRef.current = questionKey
+
+    let cancelled = false
+    const startListening = () => {
+      if (cancelled) return
+      void listen()
+    }
+
+    setMicHint('聽完題目後，直接說答案。')
+    if (isTtsSupported() && isTtsEnabled()) {
+      const removeSpeechEndListener = addSpeechEndListener(() => {
+        removeSpeechEndListener()
+        window.setTimeout(startListening, 250)
+      })
+      speak(item.stem, { id: `quiz-${item.id}` })
+      const fallbackTimer = window.setTimeout(() => {
+        removeSpeechEndListener()
+        startListening()
+      }, Math.min(15_000, Math.max(3_000, item.stem.length * 260)))
+      return () => {
+        cancelled = true
+        removeSpeechEndListener()
+        window.clearTimeout(fallbackTimer)
+      }
+    }
+
+    const timer = window.setTimeout(startListening, 300)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [idx, item, listen, phase, submitted])
 
   function next() {
     if (idx < items.length - 1) {
@@ -178,6 +347,8 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
       setInput('')
       setPicked(null)
       setSubmitted(false)
+      setJudging(false)
+      setJudgeFeedback('')
       setMicHint('')
     } else {
       setPhase('result')
@@ -187,6 +358,7 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
   }
 
   const subjectName = ranges.find((r) => r.subject === subject)?.subjectName ?? subject
+  const arithmeticExpression = item ? parseArithmeticExpression(item) : null
 
   return (
     <div className="feature-page a6-quiz-page">
@@ -202,9 +374,11 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
                 <select
                   value={subject}
                   onChange={(e) => {
-                    setSubject(e.target.value)
-                    const g = ranges.find((r) => r.subject === e.target.value)?.grade
+                    const s = e.target.value
+                    setSubject(s)
+                    const g = ranges.find((r) => r.subject === s)?.grade
                     if (g) setGrade(g)
+                    saveA6Prefs({ subject: s, grade: g ?? grade, count })
                   }}
                 >
                   {subjects.map(([s, name]) => (
@@ -214,7 +388,13 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
               </label>
               <label style={{ display: 'grid', gap: '0.25rem' }}>
                 <span className="muted">年級</span>
-                <select value={grade} onChange={(e) => setGrade(e.target.value)}>
+                <select
+                  value={grade}
+                  onChange={(e) => {
+                    setGrade(e.target.value)
+                    saveA6Prefs({ subject, grade: e.target.value, count })
+                  }}
+                >
                   {gradesForSubject.map((g) => (
                     <option key={g} value={g}>{g}</option>
                   ))}
@@ -222,7 +402,14 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
               </label>
               <label style={{ display: 'grid', gap: '0.25rem' }}>
                 <span className="muted">題數</span>
-                <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
+                <select
+                  value={count}
+                  onChange={(e) => {
+                    const c = Number(e.target.value)
+                    setCount(c)
+                    saveA6Prefs({ subject, grade, count: c })
+                  }}
+                >
                   {COUNT_OPTIONS.map((c) => (
                     <option key={c} value={c}>{c} 題</option>
                   ))}
@@ -288,7 +475,7 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
                   <button
                     key={c}
                     type="button"
-                    disabled={submitted}
+                    disabled={submitted || judging}
                     onClick={() => setPicked(c)}
                     style={{
                       padding: '0.75rem 1rem',
@@ -311,9 +498,9 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input
                   value={input}
-                  disabled={submitted}
+                  disabled={submitted || judging}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') void submitAnswer() }}
                   placeholder="把答案打進來，或按麥克風用說的…"
                   style={{
                     flex: 1,
@@ -327,7 +514,7 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
                 <button
                   type="button"
                   className={`a1-en-speak${listening ? ' a1-en-speak--active' : ''}`}
-                  disabled={submitted || listening}
+                  disabled={submitted || listening || judging}
                   onClick={() => void listen()}
                   aria-label="用說的作答"
                   title="用說的作答"
@@ -349,9 +536,23 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
                   <span style={{ marginLeft: '0.5rem', fontWeight: 400 }}>正確答案：{item.answer}</span>
                 )}
               </p>
+              {judgeFeedback && <p className="muted" style={{ margin: '0.25rem 0 0.75rem' }}>{judgeFeedback}</p>}
               {/* tally 圖即題目，上方已顯示；解說區不再重畫同一張圖（DD：避免重複＋撐長到要捲動）。
                   count/groups 是作答後才揭曉的解法圖解，保留。 */}
               {item.viz && item.viz.kind !== 'tally' && <MathDiagram viz={item.viz} />}
+              {arithmeticExpression && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <ArithmeticCard
+                    key={`${item.id}-${arithmeticExpression.a}-${arithmeticExpression.operation}-${arithmeticExpression.b}`}
+                    a={arithmeticExpression.a}
+                    b={arithmeticExpression.b}
+                    operation={arithmeticExpression.operation}
+                    compact
+                    narrate
+                    autoStart
+                  />
+                </div>
+              )}
               {item.steps.length > 0 && (
                 <ol style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem', lineHeight: 1.7 }}>
                   {item.steps.map((s, i) => <li key={i}>{s}</li>)}
@@ -362,7 +563,7 @@ export function QuizPage({ onClose, onComplete }: QuizPageProps = {}) {
 
           <div className="toolbar-row" style={{ marginTop: '1rem' }}>
             {!submitted ? (
-              <Button onClick={submit} disabled={item.type === 'choice' ? !picked : !input.trim()}>送出答案</Button>
+              <Button onClick={() => void submitAnswer()} disabled={judging || (item.type === 'choice' ? !picked : !input.trim())}>{judging ? 'AI 判題中…' : '送出答案'}</Button>
             ) : (
               <Button onClick={next}>{idx < items.length - 1 ? '下一題 →' : '看成績 ✓'}</Button>
             )}

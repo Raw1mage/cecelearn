@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { speak } from '../../../shared/speech/tts'
 import { buildVertical, type AnimStep, type Operation, type VRow } from '../engine'
 
 export type ArithmeticCardProps = {
@@ -7,6 +8,7 @@ export type ArithmeticCardProps = {
   operation: Operation
   autoStart?: boolean
   compact?: boolean
+  narrate?: boolean
   onClose?: () => void
 }
 
@@ -88,7 +90,7 @@ function CarryRow({ digits, width, pulling, pullDistance }: { digits: string[]; 
   )
 }
 
-export function ArithmeticCard({ a, b, operation, autoStart = true, compact = false, onClose }: ArithmeticCardProps) {
+export function ArithmeticCard({ a, b, operation, autoStart = true, compact = false, narrate = false, onClose }: ArithmeticCardProps) {
   const [speed, setSpeed] = useState(compact ? 1500 : 2500)
   const [allRows, setAllRows] = useState<VRow[]>([])
   const [allSteps, setAllSteps] = useState<AnimStep[]>([])
@@ -183,12 +185,15 @@ export function ArithmeticCard({ a, b, operation, autoStart = true, compact = fa
       } else {
         setDropCell(null)
       }
-      if (step.note) setNoteLog((prev) => [...prev, step.note])
+      if (step.note) {
+        setNoteLog((prev) => [...prev, step.note])
+        if (narrate) speak(step.note, { id: `a3-step-${a}-${b}-${operation}-${stepIndex}` })
+      }
       setStepIndex((index) => index + 1)
     }, delay)
 
     return () => window.clearTimeout(timer)
-  }, [allSteps, stepIndex, isPaused, isRunning, speed, operation])
+  }, [a, allSteps, b, narrate, operation, stepIndex, isPaused, isRunning, speed])
 
   function cancel() {
     setIsRunning(false)
