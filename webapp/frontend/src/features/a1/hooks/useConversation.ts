@@ -9,6 +9,7 @@ import {
 } from '../../../shared/api/client'
 import { speak } from '../../../shared/speech/tts'
 import { buildTutorSpeech } from '../buildTutorSpeech'
+import { overlayForIntent as registryOverlayForIntent } from '../../../../../backend/src/shared/gameRegistry'
 
 /** 送後端的 history 上限（R5：避免 contents[] 無限膨脹）。只裁送出，不裁顯示。 */
 const HISTORY_LIMIT = 16
@@ -127,12 +128,10 @@ function enrichForModel(m: A1ChatMessage): A1ChatMessage {
   return m
 }
 
-/** 新 intent → overlay 種類映射（DD-4）。非觸發 intent 回 null。 */
+/** intent → overlay 種類映射（DD-4）。改讀共用 game registry（單一真實來源，DD-5/INV-4）；
+ * 非啟動 intent 查無回 null，不 silent fallback。 */
 function overlayForIntent(intent: A1ChatResponse['intent']): QuizMode | null {
-  if (intent === 'start_dictation') return 'dictation'
-  if (intent === 'start_idiom') return 'idiom'
-  if (intent === 'start_quiz') return 'quiz'
-  return null
+  return registryOverlayForIntent(intent) as QuizMode | null
 }
 
 export function useConversation() {
@@ -186,7 +185,8 @@ export function useConversation() {
       // 顯示保留全部訊息（不裁）；只在送後端時裁 history。
       setMessages((cur) => [...cur, userMsg])
       setBusy(true)
-      setStatus('小雞老師想一想…')
+      // 思考中只靠 busy 轉圈呈現，不再輸出「想一想」文字（footer card 多餘字樣）。
+      setStatus('')
 
       try {
         const outgoing = [...messages, userMsg].slice(-HISTORY_LIMIT).map(enrichForModel)

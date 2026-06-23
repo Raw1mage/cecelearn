@@ -1,4 +1,5 @@
 import type { A1ChatResponse, A1Intent } from '../contracts/providers.js'
+import { allIntentEnum, gamePromptLines } from '../shared/gameRegistry.js'
 
 /* ------------------------------------------------------------------ */
 /*  共用：小雞老師 system prompt + intent 解析                          */
@@ -50,10 +51,9 @@ intent 只能是以下其中一個（封閉集合）：
   · query：餵給 YouTube 的搜尋詞，繁體中文、教育向、適齡，盡量精準。請主動加上「兒童」「給小朋友」「科普」「介紹」之類的詞讓結果更安全更適齡（例：「恐龍 介紹 兒童」「太陽系 科普 小朋友」「為什麼會打雷 科學 兒童」）。
   · topic：小朋友想認識的主題，用簡短中文（如「恐龍」「太陽系」）。
   · reply：一句期待的引導語（例：「好呀！我幫你找一段恐龍的影片，我們一起看！」）。前端會在對話裡開一個小播放窗。
-- "start_dictation"：小朋友想玩/練習「聽寫」測驗（聽詞語寫出來）。常見如「我要練習聽寫」「考我聽寫」「來玩聽寫」「開始聽寫」。→ 只填 reply，用一句期待的引導語（例：「好呀！我們來玩聽寫，仔細聽喔！」）。前端會打開聽寫測驗畫面。
-- "start_idiom"：小朋友想玩/練習「成語」測驗。常見如「來玩成語」「成語練習」「考我成語」「我要玩成語遊戲」。→ 只填 reply，用一句期待的引導語（例：「好呀！我們來玩成語小遊戲！」）。前端會打開成語測驗畫面。
-- "start_quiz"：小朋友想要你「出題給他做／考他／練習某學科」——數學、國語、英文的練習題，且**要他自己作答**（不是要你講解）。常見如「出一題數學給我算」「考我乘法」「出三題給我練習」「我要做數學練習」「給我一些國語題目」。→ 只填 reply，用一句期待的引導語（例：「好呀！我出幾題給你練習，準備好了嗎？」）。前端會打開練習測驗畫面（小朋友一題一題作答、即時批改、最後給成績）。
-  · 與 "explain" 的關鍵差別：explain 是「小朋友拿一道**已知題目**來問怎麼解」（你要講解）；start_quiz 是「小朋友要你**出新題**讓他**自己做**」（你不可先講解或先給答案）。判斷不準時，看是否要小朋友親自作答——要作答就走 start_quiz。
+${gamePromptLines()}
+  · "start_quiz" 與 "explain" 的關鍵差別：explain 是「小朋友拿一道**已知題目**來問怎麼解」（你要講解）；start_quiz 是「小朋友要你**出新題**讓他**自己做**」（你不可先講解或先給答案）。判斷不準時，看是否要小朋友親自作答——要作答就走 start_quiz。
+  · "start_idiom"（成語選擇題）與 "start_crossword"（成語填字闖關）的區別：只要提到「填字／闖關／格子」就走 start_crossword；單純「玩成語／成語練習」走 start_idiom。
 - "chat"：一般閒聊、打招呼、問你是誰。→ 只填 reply。介紹自己時要呈現完整守備範圍（中文、英文、數學、各科功課都能陪），不要只說「學字／學中文」。
 - "unclear"：聽不清楚或無法歸類。→ reply 溫柔引導小朋友換個方式說，舉例要橫跨多科（例：「你可以說『用蘋果造句』、『3 乘 7 怎麼算』，或把功課題目唸給我聽喔！」）。
 
@@ -116,7 +116,8 @@ export const INTENT_JSON_SCHEMA = {
   properties: {
     intent: {
       type: 'string',
-      enum: ['lookup', 'make_words', 'make_sentence', 'tell_story', 'continue_story', 'draw', 'solve_arithmetic', 'explain', 'find_video', 'start_dictation', 'start_idiom', 'start_quiz', 'chat', 'unclear'],
+      // 單一真實來源：game registry（INV-1，與 geminiChatProvider 同源）
+      enum: allIntentEnum(),
     },
     reply: { type: 'string' },
     lookup: {

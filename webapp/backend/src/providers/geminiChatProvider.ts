@@ -5,6 +5,7 @@ import type {
   DialogueChatProvider,
 } from '../contracts/providers.js'
 import { SYSTEM_PROMPT, LOOKUP_HINT, STORY_HINT, buildA1Response, type ParsedReply } from './a1ChatShared.js'
+import { allIntentEnum } from '../shared/gameRegistry.js'
 
 const GEMINI_CHAT_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
@@ -24,7 +25,8 @@ const RESPONSE_SCHEMA = {
   properties: {
     intent: {
       type: 'STRING',
-      enum: ['lookup', 'make_words', 'make_sentence', 'tell_story', 'continue_story', 'draw', 'solve_arithmetic', 'explain', 'find_video', 'start_dictation', 'start_idiom', 'start_quiz', 'chat', 'unclear'],
+      // 單一真實來源：game registry（INV-1，與 a1ChatShared INTENT_JSON_SCHEMA 同源）
+      enum: allIntentEnum(),
     },
     reply: { type: 'STRING' },
     lookup: {
