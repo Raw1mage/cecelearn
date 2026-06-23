@@ -1,4 +1,8 @@
 :root {
+  /* 字級縮放基準（DD-7）：rem 相對 root font-size，故在 root 乘上 --app-font-scale，
+     全站 rem 字級隨偏好等比縮放（單點落地，不逐元件硬改）。預設 1（100%）。 */
+  --app-font-scale: 1;
+  font-size: calc(100% * var(--app-font-scale));
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -8,6 +12,16 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 深色主題（DD-7）：專案既有配色本身偏深，dark 再壓暗背景並維持文字可讀。
+   既有樣式未建立色彩變數體系，故最小可行：覆寫 root 背景/文字主色。 */
+[data-theme="dark"] {
+  color: #dbe6f5;
+  background: #04070f;
+}
+[data-theme="dark"] body {
+  background: radial-gradient(circle at top, rgba(40, 84, 190, 0.22), transparent 30%), linear-gradient(180deg, #04060d 0%, #070c18 100%);
 }
 * { box-sizing: border-box; }
 body {
@@ -23,6 +37,38 @@ a { color: inherit; }
 .app-tts-toggle:hover { background: rgba(117,167,255,0.22); }
 .app-tts-toggle--active { background: #3b82ff; color: #fff; }
 .app-score { display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 999px; background: rgba(251,191,36,0.15); color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+
+/* 全站個人化設定面板（齒輪 → 全螢幕 overlay，比照 a1-quiz-overlay 模式） */
+.app-settings-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 4vmin 1rem; overflow-y: auto; background: rgba(4,8,18,0.82); backdrop-filter: blur(6px); animation: a1-lightbox-in 0.16s ease-out; }
+.app-settings-overlay__close { position: fixed; top: max(0.6rem, env(safe-area-inset-top)); right: max(0.6rem, env(safe-area-inset-right)); z-index: 1002; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 1.1rem; cursor: pointer; transition: background 0.15s; }
+.app-settings-overlay__close:hover { background: rgba(0,0,0,0.78); }
+.app-settings-panel { width: min(560px, 100%); margin: auto 0; border: 1px solid rgba(139,170,255,0.2); border-radius: 1.25rem; padding: 1.5rem; background: rgba(12, 21, 39, 0.96); box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 1rem; }
+.app-settings-title { margin: 0; font-size: 1.4rem; }
+.app-settings-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.app-settings-tab { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid rgba(139,170,255,0.2); background: rgba(15, 23, 42, 0.7); color: #dbe8ff; cursor: pointer; font-size: 0.92rem; transition: background 0.15s, border-color 0.15s; }
+.app-settings-tab:hover { background: rgba(117,167,255,0.18); }
+.app-settings-tab--active { background: #3f82ff; color: #fff; border-color: #3f82ff; }
+.app-settings-body { display: flex; flex-direction: column; }
+.app-settings-section { display: flex; flex-direction: column; gap: 1rem; }
+.app-settings-row { display: flex; align-items: center; gap: 0.85rem; }
+.app-settings-row--stack { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+.app-settings-row--toggle { justify-content: space-between; }
+.app-settings-label { flex-shrink: 0; min-width: 5.5rem; color: #9bc1ff; font-size: 0.92rem; }
+.app-settings-row--stack .app-settings-label { min-width: 0; }
+.app-settings-row input[type="text"], .app-settings-row select { flex: 1; min-width: 0; margin: 0; }
+.app-settings-row input[type="range"] { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; }
+.app-settings-hint { font-size: 0.78rem; color: #6b7fa0; }
+.app-settings-segment { display: flex; gap: 0.4rem; }
+.app-settings-segment-btn { flex: 1; padding: 0.55rem 0.5rem; border-radius: 0.7rem; border: 1px solid rgba(139,170,255,0.2); background: rgba(15, 23, 42, 0.7); color: #dbe8ff; cursor: pointer; font-size: 0.9rem; transition: background 0.15s, border-color 0.15s; }
+.app-settings-segment-btn:hover { background: rgba(117,167,255,0.18); }
+.app-settings-segment-btn--active { background: #3f82ff; color: #fff; border-color: #3f82ff; }
+.app-settings-switch { flex-shrink: 0; position: relative; width: 3rem; height: 1.7rem; border: 0; border-radius: 999px; background: rgba(117,167,255,0.22); cursor: pointer; transition: background 0.15s; padding: 0; }
+.app-settings-switch--on { background: #3b82ff; }
+.app-settings-switch__knob { position: absolute; top: 0.2rem; left: 0.2rem; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #fff; transition: transform 0.15s; }
+.app-settings-switch--on .app-settings-switch__knob { transform: translateX(1.3rem); }
+.app-settings-footer { display: flex; justify-content: flex-end; padding-top: 0.5rem; border-top: 1px solid rgba(139,170,255,0.12); }
+.app-settings-reset { padding: 0.6rem 1.1rem; border-radius: 0.8rem; border: 1px solid rgba(248,113,113,0.4); background: rgba(248,113,113,0.12); color: #fca5a5; cursor: pointer; font-weight: 600; transition: background 0.15s; }
+.app-settings-reset:hover { background: rgba(248,113,113,0.22); }
 button, input, textarea, select { font: inherit; }
 #root { min-height: 100vh; }
 .app-frame { width: min(1200px, calc(100% - 2rem)); margin: 0 auto; padding-bottom: 3rem; }
@@ -785,4 +831,117 @@ html.a5-active .a5-page {
 }
 @media (max-width: 480px) {
   .a1-chip-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== A7 成語填字闖關 ===== */
+.a7-page { --a7-cell-size: 3.2rem; }
+.a7-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.a7-hint-text { margin: 0 0 1rem; color: #9bb2d6; }
+.a7-board {
+  display: grid;
+  gap: 4px;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  width: max-content;
+  max-width: 100%;
+}
+.a7-cell {
+  width: var(--a7-cell-size);
+  height: var(--a7-cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  padding: 0;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.a7-cell--empty { background: transparent; border: none; pointer-events: none; }
+.a7-cell--given {
+  background: rgba(117,167,255,0.14);
+  border: 1.5px solid rgba(139,170,255,0.3);
+  color: #e5eefc;
+  cursor: default;
+}
+.a7-cell--blank {
+  background: rgba(255,255,255,0.06);
+  border: 2px dashed rgba(148,163,184,0.55);
+  color: #fbbf24;
+  cursor: pointer;
+}
+.a7-cell--blank.a7-cell--open:hover { background: rgba(99,102,241,0.18); border-color: rgba(129,140,248,0.8); }
+.a7-cell--cross { border-color: rgba(251,191,36,0.6); }
+.a7-cell--solved {
+  background: rgba(52,211,153,0.25);
+  border-color: rgba(52,211,153,0.7);
+  border-style: solid;
+  color: #d1fae5;
+}
+.a7-cell--locked { color: #93c5fd; cursor: default; }
+.a7-cell--selected {
+  border-color: #fbbf24;
+  border-style: solid;
+  background: rgba(251,191,36,0.22);
+  color: #fde68a;
+  animation: a7-cell-glow 1.1s ease-in-out infinite;
+}
+@keyframes a7-cell-glow {
+  0%, 100% { box-shadow: 0 0 6px 1px rgba(251,191,36,0.45); }
+  50% { box-shadow: 0 0 16px 4px rgba(251,191,36,0.85); }
+}
+.a7-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+.a7-tile {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  border: 1.5px solid rgba(139,170,255,0.4);
+  background: rgba(117,167,255,0.16);
+  color: #e5eefc;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s, background 0.15s, border-color 0.15s;
+}
+.a7-tile:hover:not(:disabled) { transform: translateY(-2px); background: rgba(117,167,255,0.28); }
+.a7-tile--selected { border-color: #fbbf24; background: rgba(251,191,36,0.25); box-shadow: 0 0 10px rgba(251,191,36,0.4); }
+.a7-tile--used { opacity: 0.25; cursor: default; }
+.a7-teaching {
+  background: rgba(52,211,153,0.1);
+  border: 1px solid rgba(52,211,153,0.3);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.a7-teaching__head { display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem; }
+.a7-teaching__meaning { margin: 0.4rem 0 0; }
+.a7-teaching__meaning--loading { color: #9bb2d6; font-style: italic; }
+.a7-teaching__example { margin: 0.4rem 0 0; color: #9bb2d6; }
+.a7-clear-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: rgba(251,191,36,0.14);
+  border: 1px solid rgba(251,191,36,0.45);
+  border-radius: 0.75rem;
+  padding: 0.7rem 1rem;
+  margin: 0 0 1rem;
+}
+.a7-clear-banner__title { font-size: 1.15rem; font-weight: 700; color: #fde68a; }
+.a7-clear-banner__hint { font-size: 0.95rem; color: #cbd5e1; }
+@media (max-width: 480px) {
+  .a7-page { --a7-cell-size: 2.6rem; }
+  .a7-cell { font-size: 1.25rem; }
+  .a7-tile { width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
 }

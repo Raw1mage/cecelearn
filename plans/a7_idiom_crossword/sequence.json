@@ -1,0 +1,85 @@
+[
+  {
+    "id": "P1",
+    "name": "Generate And Render Puzzle",
+    "description": "進入 /a7 → 後端排盤 → 前端渲染或顯示生成失敗。componentRef 追溯 idef0 A1/A2。",
+    "grafcetSteps": [0, 1, 2, 9],
+    "participants": [
+      { "id": "Child", "label": "Child (6-9)", "kind": "actor" },
+      { "id": "A7Page", "label": "A7Page (features/a7)", "componentRef": "A2", "kind": "frontend" },
+      { "id": "ApiClient", "label": "shared/api/client", "componentRef": "A2", "kind": "frontend" },
+      { "id": "Server", "label": "backend server.ts /api/a7/puzzle", "componentRef": "A1", "kind": "backend" },
+      { "id": "Provider", "label": "idiomCrosswordProvider", "componentRef": "A1", "kind": "backend" },
+      { "id": "IdiomDb", "label": "idioms.json", "componentRef": "A1", "kind": "data" }
+    ],
+    "messages": [
+      { "id": "MSG1", "from": "Child", "to": "A7Page", "label": "open /a7", "type": "event" },
+      { "id": "MSG2", "from": "A7Page", "to": "ApiClient", "label": "getCrosswordPuzzle(level, difficulty)", "type": "call" },
+      { "id": "MSG3", "from": "ApiClient", "to": "Server", "label": "GET /api/a7/puzzle", "type": "call" },
+      { "id": "MSG4", "from": "Server", "to": "Provider", "label": "generate(level, difficulty)", "type": "call" },
+      { "id": "MSG5", "from": "Provider", "to": "IdiomDb", "label": "load four-char idioms + examples", "type": "call" },
+      { "id": "MSG6", "from": "Provider", "to": "Provider", "label": "buildCharIndex + arrange cross board (<= MAX_ATTEMPTS)", "type": "self" },
+      { "id": "MSG7", "from": "Provider", "to": "Server", "label": "Puzzle | null", "type": "return" },
+      { "id": "MSG8", "from": "Server", "to": "ApiClient", "label": "{ok:true, puzzle} | {ok:false, error}", "type": "return" },
+      { "id": "MSG9", "from": "ApiClient", "to": "A7Page", "label": "puzzle or error", "type": "return" },
+      { "id": "MSG10", "from": "A7Page", "to": "Child", "label": "render board+tray (step 2) OR error+retry (step 9)", "type": "event" }
+    ]
+  },
+  {
+    "id": "P2",
+    "name": "Fill Cell And Complete Slot",
+    "description": "選字填格 → 即時校驗單槽 → 完成則揭曉教學並朗讀。componentRef 追溯 A3/A4/A5。",
+    "grafcetSteps": [3, 4, 5],
+    "participants": [
+      { "id": "Child", "label": "Child (6-9)", "kind": "actor" },
+      { "id": "A7Page", "label": "A7Page", "componentRef": "A2", "kind": "frontend" },
+      { "id": "useCrossword", "label": "useCrossword hook", "componentRef": "A3", "kind": "frontend" },
+      { "id": "Tts", "label": "shared/speech/tts", "componentRef": "A5", "kind": "frontend" }
+    ],
+    "messages": [
+      { "id": "MSG11", "from": "Child", "to": "A7Page", "label": "tap tray char then tap blank cell", "type": "event" },
+      { "id": "MSG12", "from": "A7Page", "to": "useCrossword", "label": "place(char, cell)", "type": "call" },
+      { "id": "MSG13", "from": "useCrossword", "to": "useCrossword", "label": "validate affected slot (concat == idiom?)", "type": "self" },
+      { "id": "MSG14", "from": "useCrossword", "to": "A7Page", "label": "slot completed signal", "type": "return" },
+      { "id": "MSG15", "from": "A7Page", "to": "Child", "label": "highlight slot + show meaning/example card", "type": "event" },
+      { "id": "MSG16", "from": "A7Page", "to": "Tts", "label": "speak(idiom + example)", "type": "call" }
+    ]
+  },
+  {
+    "id": "P3",
+    "name": "Hint And Reset",
+    "description": "免費提示揭一字並鎖定；重置本關清空非給定格。componentRef 追溯 A3。",
+    "grafcetSteps": [3],
+    "participants": [
+      { "id": "Child", "label": "Child (6-9)", "kind": "actor" },
+      { "id": "A7Page", "label": "A7Page", "componentRef": "A2", "kind": "frontend" },
+      { "id": "useCrossword", "label": "useCrossword hook", "componentRef": "A3", "kind": "frontend" }
+    ],
+    "messages": [
+      { "id": "MSG17", "from": "Child", "to": "A7Page", "label": "tap hint", "type": "event" },
+      { "id": "MSG18", "from": "A7Page", "to": "useCrossword", "label": "hint() -> fill one unsolved blank + lock", "type": "call" },
+      { "id": "MSG19", "from": "Child", "to": "A7Page", "label": "tap reset level", "type": "event" },
+      { "id": "MSG20", "from": "A7Page", "to": "useCrossword", "label": "reset() -> clear non-given blanks, restore tray", "type": "call" }
+    ]
+  },
+  {
+    "id": "P4",
+    "name": "Level Cleared And Next",
+    "description": "全槽完成 → 加分慶祝 → 下一關回 P1。componentRef 追溯 A5/A2。",
+    "grafcetSteps": [6, 7, 1],
+    "participants": [
+      { "id": "Child", "label": "Child (6-9)", "kind": "actor" },
+      { "id": "A7Page", "label": "A7Page", "componentRef": "A5", "kind": "frontend" },
+      { "id": "useCrossword", "label": "useCrossword hook", "componentRef": "A3", "kind": "frontend" },
+      { "id": "Score", "label": "ScoreContext", "componentRef": "A5", "kind": "frontend" },
+      { "id": "ApiClient", "label": "shared/api/client", "componentRef": "A2", "kind": "frontend" }
+    ],
+    "messages": [
+      { "id": "MSG21", "from": "useCrossword", "to": "A7Page", "label": "all slots completed", "type": "return" },
+      { "id": "MSG22", "from": "A7Page", "to": "Score", "label": "addScore(points)", "type": "call" },
+      { "id": "MSG23", "from": "A7Page", "to": "Child", "label": "celebrate() + level cleared card", "type": "event" },
+      { "id": "MSG24", "from": "Child", "to": "A7Page", "label": "tap next level", "type": "event" },
+      { "id": "MSG25", "from": "A7Page", "to": "ApiClient", "label": "getCrosswordPuzzle(level+1) (loops to P1)", "type": "call" }
+    ]
+  }
+]

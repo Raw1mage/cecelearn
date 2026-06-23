@@ -5,6 +5,7 @@ import { initAccessLog, logAccess } from './logging/accessLog.js'
 import { initRequestLog, logRequest, createRequestId, logUpstream } from './logging/requestLog.js'
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
+import { createA7Module } from './modules/a7.js'
 import { GeminiChatProvider } from './providers/geminiChatProvider.js'
 import { OpencodeBareChatProvider } from './providers/opencodeBareChatProvider.js'
 import { CascadeChatProvider } from './providers/cascadeChatProvider.js'
@@ -20,11 +21,15 @@ import { Blocklist } from './providers/blocklist.js'
 import { ImagenVertexProvider } from './providers/imagenVertexProvider.js'
 import type { DialogueChatProvider, SceneIllustrationProvider } from './contracts/providers.js'
 import { IdiomQuizEngine } from './providers/idiomQuizEngine.js'
+import { IdiomCrosswordEngine } from './providers/idiomCrosswordProvider.js'
+import { IdiomExplainEngine } from './providers/idiomExplainProvider.js'
+import { UtteranceCompleteEngine } from './providers/utteranceCompleteProvider.js'
 import { MoeWordLookupProvider } from './providers/moeProvider.js'
 import { VocabQuizEngine } from './providers/vocabQuizEngine.js'
 import { QuizBankProvider } from './providers/quizBankProvider.js'
 import { QuizGenProvider } from './providers/quizGenProvider.js'
 import { QuizIconProvider } from './providers/quizIconProvider.js'
+import { QuizAnswerJudgeProvider } from './providers/quizAnswerJudgeProvider.js'
 import { GenBank, type GenTable } from './providers/genbank.js'
 import { CachedIllustrationProvider } from './providers/cachedIllustrationProvider.js'
 import { createReadStream, existsSync } from 'node:fs'
@@ -89,14 +94,19 @@ const a1 = createA1Module(
   channelLibrary,
   videoBank,
   blocklist,
+  new UtteranceCompleteEngine(env.geminiApiKeys),
 )
 const idiomEngine = new IdiomQuizEngine()
 const a2 = createA2Module(idiomEngine)
+const crosswordEngine = new IdiomCrosswordEngine()
+const explainEngine = new IdiomExplainEngine(env.geminiApiKeys)
+const a7 = createA7Module(crosswordEngine, explainEngine)
 const vocabEngine = new VocabQuizEngine(env.geminiApiKeys)
 const quizBank = new QuizBankProvider() // 事實科（自然/社會）事實種子池
 // 練習題單元物件插畫圖庫（複合生圖）：build 預生 + runtime 用 image provider 補沒有的（天條 #11 已批准）
 const quizIcons = new QuizIconProvider(buildImageProvider())
 const quizGen = new QuizGenProvider(env.geminiApiKeys, quizBank, quizIcons, genBank) // 全科 runtime 動態生 + 題庫累積
+const quizJudge = new QuizAnswerJudgeProvider(env.geminiApiKeys)
 
 function sendJson(response: import('node:http').ServerResponse, statusCode: number, body: unknown) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })
@@ -186,6 +196,29 @@ const server = createServer(async (request, response) => {
       return
     }
     const result = await a1.chat(messages, hint)
+    send(result.ok ? 200 : 502, result, raw)
+    return
+  }
+
+  if (url === '/api/a1/utterance-complete' && method === 'POST') {
+    const raw = await readBody(request)
+    let text = ''
+    let quietRepeatCount = 0
+    try {
+      const payload = JSON.parse(raw || '{}') as { text?: string; quietRepeatCount?: number }
+      if (typeof payload.text === 'string') text = payload.text
+      if (typeof payload.quietRepeatCount === 'number' && Number.isFinite(payload.quietRepeatCount)) {
+        quietRepeatCount = Math.max(0, Math.min(10, Math.floor(payload.quietRepeatCount)))
+      }
+    } catch {
+      send(400, { ok: false, error: 'UTTERANCE_BAD_REQUEST', message: '沒有要判斷的內容。' }, raw)
+      return
+    }
+    const startedAt = Date.now()
+    const result = await a1.utteranceComplete(text, quietRepeatCount)
+    console.log(
+      `[UtteranceCompleteAPI] quietRepeat=${quietRepeatCount} ok=${result.ok} complete=${result.ok ? result.complete : 'n/a'} elapsed=${Date.now() - startedAt}ms len=${text.length}`,
+    )
     send(result.ok ? 200 : 502, result, raw)
     return
   }
@@ -319,6 +352,27 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  // A7 成語交叉填字：生成一個關卡（純本地演算法，零後端成本）。失敗顯式回 {ok:false}（DD-9）。
+  if (url.startsWith('/api/a7/puzzle') && method === 'GET') {
+    const qs = new URLSearchParams(url.split('?')[1] ?? '')
+    const levelRaw = Number(qs.get('level'))
+    const level = Number.isFinite(levelRaw) && levelRaw > 0 ? Math.floor(levelRaw) : 1
+    const diffRaw = qs.get('difficulty')
+    const difficulty = diffRaw === 'easy' || diffRaw === 'normal' || diffRaw === 'hard' ? diffRaw : undefined
+    const result = a7.generatePuzzle({ level, difficulty })
+    send(result.ok ? 200 : 500, result)
+    return
+  }
+
+  // A7 成語解釋：揭曉時按需查，Gemini 適齡白話生成（DD-10）。失敗顯式回 {ok:false}。
+  if (url === '/api/a7/explain' && method === 'POST') {
+    const raw = await readBody(request)
+    const payload = JSON.parse(raw || '{}') as { idiom?: string }
+    const result = await a7.explainIdiom(payload.idiom ?? '')
+    send(result.ok ? 200 : 502, result)
+    return
+  }
+
   if (url === '/api/a5/prepare' && method === 'POST') {
     const raw = await readBody(request)
     const payload = JSON.parse(raw || '{}') as {
@@ -447,6 +501,19 @@ const server = createServer(async (request, response) => {
   // 出題範圍：全科 runtime 動態生（機制科從知識點、事實科從種子池）
   if (url === '/api/quiz/meta' && method === 'GET') {
     send(200, { ok: true, ranges: quizGen.meta() })
+    return
+  }
+
+  // AI 判題：數學語音答案交由 Gemini 判斷等價性（單位、中文數字、語音近似）。失敗顯式回 ok:false。
+  if (url === '/api/quiz/judge' && method === 'POST') {
+    const raw = await readBody(request)
+    try {
+      const payload = JSON.parse(raw || '{}') as Parameters<typeof quizJudge.judge>[0]
+      const result = await quizJudge.judge(payload)
+      send(result.ok ? 200 : 502, result, raw)
+    } catch {
+      send(400, { ok: false, error: 'QUIZ_JUDGE_BAD_REQUEST', message: '判題資料格式不正確。' }, raw)
+    }
     return
   }
 

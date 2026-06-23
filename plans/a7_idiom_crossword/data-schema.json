@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "a7_idiom_crossword/data-schema.json",
+  "title": "A7 Idiom Crossword Contracts",
+  "description": "成語交叉填字遊戲（a7）對外契約。新增型別將鏡像至 webapp/backend/src/contracts/providers.ts 與前端 shared/api/client.ts。座標以稀疏 cells 表示（DD-8）。",
+  "definitions": {
+    "A7Cell": {
+      "type": "object",
+      "description": "盤面上一個格子（對外題目視角）。given=true 直接顯示 char；given=false 為 blank（char 不外洩，前端等玩家填）。",
+      "properties": {
+        "r": { "type": "integer", "description": "row 座標（可為 0..maxRow）" },
+        "c": { "type": "integer", "description": "col 座標（可為 0..maxCol）" },
+        "given": { "type": "boolean", "description": "true=給定字（直接顯示）；false=待填空格" },
+        "char": {
+          "type": ["string", "null"],
+          "description": "given=true 時為該格正解字；given=false 時為 null（不外洩答案）"
+        },
+        "slotIdxs": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "佔用此格的 slot index（長度 2 即交叉點）"
+        }
+      },
+      "required": ["r", "c", "given", "slotIdxs"],
+      "additionalProperties": false
+    },
+    "A7Slot": {
+      "type": "object",
+      "description": "一條成語槽（橫或直）。cells 依成語字序排列的座標。教學資料 example/meaning 隨槽附帶。",
+      "properties": {
+        "idx": { "type": "integer", "description": "slot 索引（與 cell.slotIdxs 對應）" },
+        "dir": { "type": "string", "enum": ["H", "V"], "description": "H=橫（左→右）；V=直（上→下）" },
+        "cells": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "r": { "type": "integer" },
+              "c": { "type": "integer" }
+            },
+            "required": ["r", "c"],
+            "additionalProperties": false
+          },
+          "description": "依字序的座標序列（四字成語長度 4）"
+        },
+        "idiom": { "type": "string", "description": "該槽的目標成語（答案；前端校驗用，亦可選擇不外洩改後端校驗——MVP 前端校驗，見 DD-5）" },
+        "example": { "type": "string", "description": "教學例句（idioms.json examples 之一；DD-6）" },
+        "meaning": { "type": ["string", "null"], "description": "成語釋義（MVP 可為 null，例句兜底；DD-6）" }
+      },
+      "required": ["idx", "dir", "cells", "idiom", "example"],
+      "additionalProperties": false
+    },
+    "A7GridBounds": {
+      "type": "object",
+      "description": "盤面座標範圍，供前端 CSS grid 佈局。",
+      "properties": {
+        "minRow": { "type": "integer" },
+        "maxRow": { "type": "integer" },
+        "minCol": { "type": "integer" },
+        "maxCol": { "type": "integer" }
+      },
+      "required": ["minRow", "maxRow", "minCol", "maxCol"],
+      "additionalProperties": false
+    },
+    "A7CrosswordPuzzle": {
+      "type": "object",
+      "description": "一個完整關卡（成功生成）。tray 字數必等於 blank 數（INV-4）。",
+      "properties": {
+        "puzzleId": { "type": "string", "description": "本關識別碼（如 xw-<timestamp>-<rand>）" },
+        "level": { "type": "integer", "description": "關號（前端遞增傳入或後端回傳）" },
+        "cells": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/A7Cell" },
+          "description": "盤面所有格（稀疏；DD-8）"
+        },
+        "slots": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/A7Slot" },
+          "minItems": 2,
+          "description": "≥2 條成語（spec 要求）"
+        },
+        "tray": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "底部備選字（所有 blank 正解字打散；MVP 無誘答，DD-4）"
+        },
+        "gridBounds": { "$ref": "#/definitions/A7GridBounds" }
+      },
+      "required": ["puzzleId", "level", "cells", "slots", "tray", "gridBounds"],
+      "additionalProperties": false
+    },
+    "A7PuzzleSuccessResponse": {
+      "type": "object",
+      "description": "GET /api/a7/puzzle 成功回應。",
+      "properties": {
+        "ok": { "type": "boolean", "enum": [true] },
+        "puzzle": { "$ref": "#/definitions/A7CrosswordPuzzle" }
+      },
+      "required": ["ok", "puzzle"],
+      "additionalProperties": false
+    },
+    "A7ErrorResponse": {
+      "type": "object",
+      "description": "生成失敗顯式回報（DD-9，不 silent fallback）。對齊既有 A1ErrorResponse 形狀。",
+      "properties": {
+        "ok": { "type": "boolean", "enum": [false] },
+        "error": { "type": "string", "description": "錯誤碼，如 GENERATION_FAILED" },
+        "message": { "type": "string", "description": "人類可讀訊息" }
+      },
+      "required": ["ok", "error", "message"],
+      "additionalProperties": false
+    },
+    "A7PuzzleRequestQuery": {
+      "type": "object",
+      "description": "GET /api/a7/puzzle 查詢參數（皆可選）。",
+      "properties": {
+        "level": { "type": "integer", "description": "關號（影響回傳 level 與未來難度）" },
+        "difficulty": {
+          "type": "string",
+          "enum": ["easy", "normal", "hard"],
+          "description": "難度（MVP 預設 easy/normal；影響成語條數與 blank 數）"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

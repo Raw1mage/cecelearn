@@ -1,0 +1,22 @@
+{
+  "diagram_title": "Render Crossword Board (A2)",
+  "node_reference": "A2",
+  "activities": [
+    { "id": "A21", "title": "Compute Grid Layout Bounds", "description": "依 cells 座標算 min/max row col，建立 CSS grid 佈局", "decomposition": null },
+    { "id": "A22", "title": "Paint Given And Blank Cells", "description": "given 格顯示字、blank 格畫空框，標記交叉點", "decomposition": null },
+    { "id": "A23", "title": "Render Character Tray", "description": "底部備選字塊依 tray 渲染，標記已用/可選", "decomposition": null },
+    { "id": "A24", "title": "Bind Interaction Handlers", "description": "綁定 cell 與 tray 的點擊事件到填字狀態 hook", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "C1", "source": "EXTERNAL", "target": "A21:input", "label": "Crossword Puzzle", "type": "input" },
+    { "id": "C2", "source": "A21:output", "target": "A22:input", "label": "Grid Layout Bounds", "type": "input" },
+    { "id": "C3", "source": "EXTERNAL", "target": "A22:input", "label": "Crossword Puzzle", "type": "input" },
+    { "id": "C4", "source": "A22:output", "target": "A24:input", "label": "Painted Board Cells", "type": "input" },
+    { "id": "C5", "source": "EXTERNAL", "target": "A23:input", "label": "Crossword Puzzle", "type": "input" },
+    { "id": "C6", "source": "A23:output", "target": "A24:input", "label": "Rendered Tray Tiles", "type": "input" },
+    { "id": "C7", "source": "EXTERNAL", "target": "A24:control", "label": "Fill State Hook Contract", "type": "control" },
+    { "id": "C8", "source": "A24:output", "target": "EXTERNAL", "label": "Rendered Board And Tray", "type": "output" },
+    { "id": "C9", "source": "EXTERNAL", "target": "A21:mechanism", "label": "React Board Renderer", "type": "mechanism" },
+    { "id": "C10", "source": "EXTERNAL", "target": "A22:mechanism", "label": "Theme Style Variables", "type": "mechanism" }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "diagram_title": "Generate Crossword Puzzle (A1)",
+  "node_reference": "A1",
+  "activities": [
+    { "id": "A11", "title": "Build Character Reverse Index", "description": "掃描 idioms.json 建 char→成語清單反向索引（charIndex）", "decomposition": null },
+    { "id": "A12", "title": "Seed First Idiom Placement", "description": "隨機挑首條成語水平擺放於原點", "decomposition": null },
+    { "id": "A13", "title": "Find Crossing Idiom Candidate", "description": "用 charIndex 找與盤上字交叉、正交可擺的下一條成語", "decomposition": null },
+    { "id": "A14", "title": "Verify Placement Compatibility", "description": "crossOK：重疊格字相同且不平行黏連才接受", "decomposition": null },
+    { "id": "A15", "title": "Assign Given And Blank Cells", "description": "交叉字設 given、其餘隨機挑 1-2 字設 blank", "decomposition": null },
+    { "id": "A16", "title": "Assemble Tray And Slot Teaching", "description": "blank 字打散成 tray、每槽附例句釋義，組出 Puzzle", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "B1", "source": "EXTERNAL", "target": "A11:input", "label": "Idiom Database", "type": "input" },
+    { "id": "B2", "source": "A11:output", "target": "A13:control", "label": "Character Reverse Index", "type": "control" },
+    { "id": "B3", "source": "EXTERNAL", "target": "A12:input", "label": "Idiom Database", "type": "input" },
+    { "id": "B4", "source": "EXTERNAL", "target": "A12:control", "label": "Difficulty And Level Request", "type": "control" },
+    { "id": "B5", "source": "A12:output", "target": "A13:input", "label": "Seed Board State", "type": "input" },
+    { "id": "B6", "source": "A13:output", "target": "A14:input", "label": "Candidate Placement", "type": "input" },
+    { "id": "B7", "source": "A14:output", "target": "A13:control", "label": "Placement Rejected Retry Signal", "type": "control" },
+    { "id": "B8", "source": "A14:output", "target": "A15:input", "label": "Accepted Solution Board", "type": "input" },
+    { "id": "B9", "source": "EXTERNAL", "target": "A15:control", "label": "Blank Selection Rule", "type": "control" },
+    { "id": "B10", "source": "A15:output", "target": "A16:input", "label": "Given And Blank Board", "type": "input" },
+    { "id": "B11", "source": "EXTERNAL", "target": "A16:input", "label": "Idiom Database", "type": "input" },
+    { "id": "B12", "source": "A16:output", "target": "EXTERNAL", "label": "Crossword Puzzle", "type": "output" },
+    { "id": "B13", "source": "EXTERNAL", "target": "A11:mechanism", "label": "Crossword Generator Provider", "type": "mechanism" },
+    { "id": "B14", "source": "EXTERNAL", "target": "A14:mechanism", "label": "Cross Compatibility Function", "type": "mechanism" }
+  ]
+}

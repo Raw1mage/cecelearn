@@ -1,0 +1,101 @@
+[
+  {
+    "id": "TV-1",
+    "requirement": "進入遊戲與生成關卡 / Scenario: 首次進入 a7 自動生成第一關",
+    "description": "後端生成器對小盤面的可解性 oracle：把每個 blank 填回 cell.char 後每條 slot 拼字 == idiom。",
+    "input": { "endpoint": "GET /api/a7/puzzle", "query": { "level": 1, "difficulty": "easy" } },
+    "expectedShape": {
+      "ok": true,
+      "puzzle": {
+        "puzzleId": "string",
+        "level": 1,
+        "slots": ">=2",
+        "trayLength": "== blank cell count (INV-4)",
+        "cells": "sparse, given cells carry char, blank cells char=null",
+        "gridBounds": "minRow<=maxRow, minCol<=maxCol"
+      }
+    },
+    "assertInvariants": ["INV-1", "INV-2", "INV-3", "INV-4"]
+  },
+  {
+    "id": "TV-2",
+    "requirement": "交叉點一致性 (INV-2/INV-3)",
+    "description": "範例盤面：慈悲為懷(H) 與 為所欲為(V) 在『為』字交叉。交叉點『為』必為 given 且兩槽該位置字相同。",
+    "input": {
+      "placements": [
+        { "idiom": "慈悲為懷", "dir": "H", "r0": 0, "c0": 0 },
+        { "idiom": "為所欲為", "dir": "V", "r0": 0, "c0": 2 }
+      ]
+    },
+    "expected": {
+      "intersectionCell": { "r": 0, "c": 2, "char": "為", "given": true, "slotIdxsLength": 2 },
+      "crossOK": true
+    }
+  },
+  {
+    "id": "TV-3",
+    "requirement": "填字互動 / Scenario: 選字並填入空格 + 即時校驗單條成語完成",
+    "description": "把正解字依序填入某 slot 的所有 blank，最後一格填入後該 slot 標完成。",
+    "input": {
+      "slot": { "idx": 0, "idiom": "慈悲為懷", "cells": [[0,0],[0,1],[0,2],[0,3]], "given": [[0,2]] },
+      "trayPlacements": [
+        { "char": "慈", "cell": [0,0] },
+        { "char": "悲", "cell": [0,1] },
+        { "char": "懷", "cell": [0,3] }
+      ]
+    },
+    "expected": { "slotConcat": "慈悲為懷", "slotCompleted": true }
+  },
+  {
+    "id": "TV-4",
+    "requirement": "填字互動 / Scenario: 填錯不標完成",
+    "description": "slot 填滿但拼字 != idiom 時不標完成、保持可改。",
+    "input": {
+      "slot": { "idx": 0, "idiom": "慈悲為懷", "cells": [[0,0],[0,1],[0,2],[0,3]] },
+      "filled": ["慈", "悲", "為", "欲"]
+    },
+    "expected": { "slotConcat": "慈悲為欲", "slotCompleted": false }
+  },
+  {
+    "id": "TV-5",
+    "requirement": "填字互動 / Scenario: 清除已填的字",
+    "description": "點已填 cell → 字退回 tray、cell 回空格。",
+    "input": { "cell": [0,0], "before": { "char": "慈", "trayHas慈": false }, "action": "clear" },
+    "expected": { "cellChar": null, "trayHas慈": true }
+  },
+  {
+    "id": "TV-6",
+    "requirement": "提示 / Scenario: 免費提示揭一字",
+    "description": "點提示 → 挑一個未正確填入的 blank 自動填正解並鎖定，對應 tray 字標已用。",
+    "input": { "unsolvedBlanks": [[0,0],[0,1]], "action": "hint" },
+    "expected": { "filledOne": true, "filledCellLocked": true, "trayTileMarkedUsed": true }
+  },
+  {
+    "id": "TV-7",
+    "requirement": "成語教學揭曉 / Scenario: 完成成語後顯示釋義與例句",
+    "description": "slot 完成 → 顯示 example（必）+ meaning（可空兜底）+ 可朗讀。",
+    "input": { "slot": { "idiom": "掩耳盜鈴", "example": "如果不去努力，只會用謊言自欺，就是掩耳盜鈴。", "meaning": null } },
+    "expected": { "showsExample": true, "fallbackWhenNoMeaning": "example", "ttsCallable": true }
+  },
+  {
+    "id": "TV-8",
+    "requirement": "過關與回饋 / Scenario: 完成整個盤面過關",
+    "description": "所有 slot 完成 → celebrate + addScore + 過關卡片。",
+    "input": { "totalSlots": 3, "completedSlots": 3 },
+    "expected": { "celebrateCalled": true, "addScoreCalled": true, "showsLevelClearedCard": true }
+  },
+  {
+    "id": "TV-9",
+    "requirement": "過關與回饋 / Scenario: 重置本關",
+    "description": "重置 → 非給定 blank 清空、tray 還原、完成標記清除，但同一關卡（puzzleId 不變）。",
+    "input": { "action": "reset", "puzzleId": "xw-abc" },
+    "expected": { "blanksCleared": true, "trayRestored": true, "completionCleared": true, "samePuzzleId": "xw-abc" }
+  },
+  {
+    "id": "TV-10",
+    "requirement": "生成失敗 / Scenario: 後端無法生成合法關卡",
+    "description": "MAX_ATTEMPTS 內排不出 → 顯式錯誤，不回殘缺盤。",
+    "input": { "endpoint": "GET /api/a7/puzzle", "forceFailure": true },
+    "expected": { "ok": false, "error": "GENERATION_FAILED", "message": "string", "noPartialPuzzle": true }
+  }
+]

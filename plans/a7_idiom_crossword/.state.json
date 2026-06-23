@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "state": "verified",
+  "profile": [],
+  "history": [
+    {
+      "from": null,
+      "to": "proposed",
+      "at": "2026-06-21T11:39:43.538Z",
+      "by": "pkcs12",
+      "mode": "new",
+      "reason": "initial spec created via plan-init.ts"
+    },
+    {
+      "from": "proposed",
+      "to": "designed",
+      "at": "2026-06-21T11:53:30.926Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "spec/design/data-schema/sequence/idef0/grafcet 齊備並通過 drawmiat 驗證；design.md 補 Trade-offs；sequence.json 改陣列形狀"
+    },
+    {
+      "from": "designed",
+      "to": "planned",
+      "at": "2026-06-21T11:55:51.496Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "tasks.md（6 phases）+ handoff.md（Required Reads/Stop Gates In Force）+ test-vectors/errors(Error Catalogue)/observability(Events/Metrics) 齊備並修正標題"
+    },
+    {
+      "at": "2026-06-21T12:40:08.441Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:08.539Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:08.634Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:08.726Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:08.817Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:08.911Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:09.008Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:09.103Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:09.203Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "at": "2026-06-21T12:40:09.293Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "post-task sync, clean",
+      "result": "clean",
+      "commit": "1e9e518c0672ffcd1b4b75675a5124ed96146540"
+    },
+    {
+      "from": "planned",
+      "to": "implementing",
+      "at": "2026-06-21T12:53:01.151Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "第一個 task 已勾選，正式進入 implementing"
+    },
+    {
+      "from": "implementing",
+      "to": "verified",
+      "at": "2026-06-21T12:53:27.628Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "tasks 1.1–6.4 全勾；前後端 tsc --noEmit EXIT=0；curl /api/a7/puzzle 形狀符合 data-schema；webctl restart 後手動驗收 Acceptance Checks 全通過；architecture.md 已同步 A7 區段"
+    }
+  ]
+}

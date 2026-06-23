@@ -1,0 +1,11 @@
+[
+  {"StepNumber":0,"ModuleRef":"A1","StepType":"initial","StepAction":"Wait For Game Entry","LinkInputType":[],"LinkInputNumber":[],"LinkOutputNumber":[1],"LinkOutputType":"track","Condition":["a7 route opened"],"SubGrafcet":[]},
+  {"StepNumber":1,"ModuleRef":"A1","StepType":"normal","StepAction":"Request And Generate Puzzle","LinkInputType":["convergence_or"],"LinkInputNumber":[0,9,7],"LinkOutputNumber":[2,9],"LinkOutputType":"divergence_or","Condition":[],"SubGrafcet":[]},
+  {"StepNumber":2,"ModuleRef":"A2","StepType":"normal","StepAction":"Render Board And Tray","LinkInputType":["divergence_or"],"LinkInputNumber":[1],"LinkOutputNumber":[3],"LinkOutputType":"track","Condition":["puzzle generated ok"],"SubGrafcet":[]},
+  {"StepNumber":9,"ModuleRef":"A1","StepType":"normal","StepAction":"Show Generation Error And Retry Prompt","LinkInputType":["divergence_or"],"LinkInputNumber":[1],"LinkOutputNumber":[1],"LinkOutputType":"track","Condition":["puzzle generation failed"],"SubGrafcet":[]},
+  {"StepNumber":3,"ModuleRef":"A3","StepType":"normal","StepAction":"Await Player Fill Or Hint Action","LinkInputType":["convergence_or"],"LinkInputNumber":[2,4,5],"LinkOutputNumber":[4],"LinkOutputType":"track","Condition":["cell filled or cleared or hint used"],"SubGrafcet":[]},
+  {"StepNumber":4,"ModuleRef":"A4","StepType":"normal","StepAction":"Validate Affected Slot Completion","LinkInputType":["track"],"LinkInputNumber":[3],"LinkOutputNumber":[5,3],"LinkOutputType":"divergence_or","Condition":[],"SubGrafcet":[]},
+  {"StepNumber":5,"ModuleRef":"A5","StepType":"normal","StepAction":"Reveal Idiom Meaning Example And Speak","LinkInputType":["divergence_or"],"LinkInputNumber":[4],"LinkOutputNumber":[6,3],"LinkOutputType":"divergence_or","Condition":["slot completed correctly"],"SubGrafcet":[]},
+  {"StepNumber":6,"ModuleRef":"A5","StepType":"normal","StepAction":"Celebrate Level Cleared And Add Score","LinkInputType":["divergence_or"],"LinkInputNumber":[5],"LinkOutputNumber":[7],"LinkOutputType":"track","Condition":["all slots completed"],"SubGrafcet":[]},
+  {"StepNumber":7,"ModuleRef":"A5","StepType":"normal","StepAction":"Show Level Cleared Card","LinkInputType":["track"],"LinkInputNumber":[6],"LinkOutputNumber":[1],"LinkOutputType":"track","Condition":["next level requested"],"SubGrafcet":[]}
+]

@@ -35,6 +35,49 @@ export type A2QuizResponse = {
   items: A2QuizItem[]
 }
 
+/* A7 — Idiom Crossword（鏡像 backend contracts） */
+
+export type A7Cell = {
+  r: number
+  c: number
+  given: boolean
+  char: string | null
+  slotIdxs: number[]
+}
+
+export type A7Slot = {
+  idx: number
+  dir: 'H' | 'V'
+  cells: { r: number; c: number }[]
+  idiom: string
+  example: string
+  meaning: string | null
+}
+
+export type A7GridBounds = {
+  minRow: number
+  maxRow: number
+  minCol: number
+  maxCol: number
+}
+
+export type A7CrosswordPuzzle = {
+  puzzleId: string
+  level: number
+  cells: A7Cell[]
+  slots: A7Slot[]
+  tray: string[]
+  gridBounds: A7GridBounds
+}
+
+export type A7PuzzleResponse =
+  | { ok: true; puzzle: A7CrosswordPuzzle }
+  | { ok: false; error: string; message: string }
+
+export type A7ExplainResponse =
+  | { ok: true; idiom: string; meaning: string }
+  | { ok: false; error: string; message: string }
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
     headers: {
@@ -184,8 +227,9 @@ export type A1LookupPayload = {
   idioms?: A1LookupWord[]
 }
 
-/** overlay 測驗種類；對應 useConversation 的 activeOverlay 狀態（DD-4） */
-export type QuizMode = 'dictation' | 'idiom' | 'quiz'
+/** overlay 測驗種類；對應 useConversation 的 activeOverlay 狀態（DD-4）。
+ * 與 game registry 的 OverlayKind 對齊（game_launch_framework）。 */
+export type QuizMode = 'dictation' | 'idiom' | 'quiz' | 'crossword'
 
 /** 測驗完成回流對話的成績總結（DD-6） */
 export type QuizSummary = {
@@ -208,6 +252,10 @@ export type QuizServeItem = {
   steps: string[]
   viz?: A1MathViz
 }
+
+export type QuizJudgeResponse =
+  | { ok: true; correct: boolean; normalizedAnswer: string; feedback: string }
+  | A1ErrorResponse
 
 /** 學科練習可選範圍（哪些科目×年級有題目） */
 export type QuizRange = {
@@ -259,6 +307,10 @@ export type A1ReadQuestionResponse = {
   ok: true
   question: string
 }
+
+export type A1UtteranceCompleteResponse =
+  | { ok: true; complete: boolean }
+  | A1ErrorResponse
 
 export type A1ErrorResponse = {
   ok: false
@@ -322,6 +374,11 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ imageBase64, mimeType }),
     }),
+  utteranceComplete: (text: string, quietRepeatCount = 0) =>
+    request<A1UtteranceCompleteResponse>('/a1/utterance-complete', {
+      method: 'POST',
+      body: JSON.stringify({ text, quietRepeatCount }),
+    }),
   searchVideos: (query: string, topic?: string, limit?: number) =>
     request<A1VideoSearchResponse | A1ErrorResponse>('/a1/videos', {
       method: 'POST',
@@ -342,4 +399,29 @@ export const apiClient = {
     params.set('count', String(opts.count))
     return request<{ ok: boolean; items: QuizServeItem[] }>(`/quiz?${params}`)
   },
+  judgeQuizAnswer: (item: QuizServeItem, studentAnswer: string) =>
+    request<QuizJudgeResponse>('/quiz/judge', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject: item.subject,
+        type: item.type,
+        stem: item.stem,
+        answer: item.answer,
+        acceptableAnswers: item.acceptableAnswers,
+        choices: item.choices,
+        studentAnswer,
+      }),
+    }),
+  getCrosswordPuzzle: (level?: number, difficulty?: 'easy' | 'normal' | 'hard') => {
+    const params = new URLSearchParams()
+    if (typeof level === 'number') params.set('level', String(level))
+    if (difficulty) params.set('difficulty', difficulty)
+    const qs = params.toString()
+    return request<A7PuzzleResponse>(`/a7/puzzle${qs ? `?${qs}` : ''}`)
+  },
+  explainIdiom: (idiom: string) =>
+    request<A7ExplainResponse>('/a7/explain', {
+      method: 'POST',
+      body: JSON.stringify({ idiom }),
+    }),
 }

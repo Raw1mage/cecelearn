@@ -34,21 +34,9 @@ export interface WordLookupProvider {
 /* A1 — Dialogue Tutor (chat + illustrate)
  * 契約對齊 specs/a1_dialogue_tutor/data-schema.json。所有 Gemini 呼叫經後端 proxy。 */
 
-export type A1Intent =
-  | 'lookup'
-  | 'make_words'
-  | 'make_sentence'
-  | 'tell_story'
-  | 'continue_story'
-  | 'draw'
-  | 'solve_arithmetic'
-  | 'explain'
-  | 'find_video'
-  | 'start_dictation'
-  | 'start_idiom'
-  | 'start_quiz'
-  | 'chat'
-  | 'unclear'
+// A1Intent = base intent（語意異質，hardcode）+ launch intent（遊戲啟動，由 game registry 衍生）。
+// 單一真實來源見 src/shared/gameRegistry.ts（game_launch_framework）。
+export type A1Intent = import('../shared/gameRegistry.js').AllIntent
 
 /** 英文跟讀練習的單字（subject=english 時附帶）：單字 + 中文意思。 */
 export type A1EnglishWord = {
@@ -280,6 +268,25 @@ export interface IdiomQuizProvider {
   generate(idioms: string[], questionCount: number): A2QuizResponse
 }
 
+/* 語音「這句話講完了嗎」判定（utterance-complete）：前端中性句停頓超過一次短窗後升級問後端 */
+export type A1UtteranceCompleteRequest = {
+  text: string   // 目前累積到的辨識文字（可能是半句或整句）
+  quietRepeatCount?: number // 同一段文字在無新語音後第幾次重問；0/undefined 代表第一次
+}
+
+export type UtteranceCompleteOptions = {
+  quietRepeatCount?: number
+}
+
+export type UtteranceCompleteResponse =
+  | { ok: true; complete: boolean }
+  | A1ErrorResponse
+
+export interface UtteranceCompleteProvider {
+  /** 判斷 text 語意上是否「已經講完、可送出」。complete=false 代表明顯還沒講完，前端應續聽。 */
+  judge(text: string, options?: UtteranceCompleteOptions): Promise<UtteranceCompleteResponse>
+}
+
 export interface QuestionVisionProvider {
   readQuestion(
     imageBase64: string,
@@ -316,4 +323,82 @@ export type A5QuizOptions = {
   lessons?: string[]
   customChars?: string
   questionCount: number
+}
+
+/* A7 — Idiom Crossword（成語交叉填字遊戲）
+ * 契約對齊 plans/a7_idiom_crossword/data-schema.json。
+ * 盤面以稀疏 cells 表示（DD-8）；交叉點一律 given（DD-3）；tray 字數==blank 數，無誘答（DD-4/INV-4）。 */
+
+/** 盤面一格（對外題目視角）。given=true 直接顯示 char；given=false 為 blank（char=null，不外洩答案）。 */
+export type A7Cell = {
+  r: number
+  c: number
+  given: boolean
+  char: string | null    // given 才帶正解字；blank 為 null
+  slotIdxs: number[]      // 佔用此格的 slot index（長度 2 即交叉點）
+}
+
+/** 一條成語槽（橫或直）。cells 依字序座標。教學資料 example/meaning 隨槽附帶。 */
+export type A7Slot = {
+  idx: number
+  dir: 'H' | 'V'          // H=橫（左→右）；V=直（上→下）
+  cells: { r: number; c: number }[]   // 依字序的座標序列（四字成語長度 4）
+  idiom: string           // 目標成語（前端校驗用，DD-5）
+  example: string         // 教學例句（DD-6）
+  meaning: string | null  // 釋義（MVP 可 null，例句兜底）
+}
+
+/** 盤面座標範圍，供前端 CSS grid 佈局。 */
+export type A7GridBounds = {
+  minRow: number
+  maxRow: number
+  minCol: number
+  maxCol: number
+}
+
+/** 一個完整關卡。tray 字數必等於 blank 數（INV-4）。 */
+export type A7CrosswordPuzzle = {
+  puzzleId: string
+  level: number
+  cells: A7Cell[]         // 稀疏（DD-8）
+  slots: A7Slot[]         // ≥2 條成語
+  tray: string[]          // 所有 blank 正解字打散（無誘答）
+  gridBounds: A7GridBounds
+}
+
+export type A7PuzzleSuccessResponse = {
+  ok: true
+  puzzle: A7CrosswordPuzzle
+}
+
+/** 生成失敗顯式回報（DD-9，不 silent fallback）。對齊 A1ErrorResponse 形狀。 */
+export type A7ErrorResponse = {
+  ok: false
+  error: string           // 如 GENERATION_FAILED / IDIOM_DB_EMPTY
+  message: string
+}
+
+export type A7PuzzleResponse = A7PuzzleSuccessResponse | A7ErrorResponse
+
+/** 生成參數（皆可選）。 */
+export type A7PuzzleOptions = {
+  level?: number
+  difficulty?: 'easy' | 'normal' | 'hard'
+}
+
+export interface IdiomCrosswordProvider {
+  generate(options: A7PuzzleOptions): A7PuzzleResponse
+}
+
+/** 成語適齡解釋（揭曉時按需查，Gemini 白話生成，DD-10）。 */
+export type A7ExplainSuccessResponse = {
+  ok: true
+  idiom: string
+  meaning: string         // 6–9 歲聽得懂的白話解釋
+}
+
+export type A7ExplainResponse = A7ExplainSuccessResponse | A7ErrorResponse
+
+export interface IdiomExplainProvider {
+  explain(idiom: string): Promise<A7ExplainResponse>
 }

@@ -1,0 +1,27 @@
+{
+  "diagram_title": "Operate Idiom Crossword Game (A0)",
+  "node_reference": "A0",
+  "activities": [
+    { "id": "A1", "title": "Generate Crossword Puzzle", "description": "後端從 idioms.json 排出可解的十字交叉成語盤", "decomposition": "A1" },
+    { "id": "A2", "title": "Render Crossword Board", "description": "前端把 Puzzle 渲染成交叉盤與備選字塊", "decomposition": "A2" },
+    { "id": "A3", "title": "Process Fill Interaction", "description": "選字、填格、清除、提示等玩家互動", "decomposition": null },
+    { "id": "A4", "title": "Validate Idiom Completion", "description": "校驗單條成語與整盤是否完成", "decomposition": null },
+    { "id": "A5", "title": "Reveal Idiom Teaching", "description": "完成成語後揭曉釋義例句並朗讀，過關回饋", "decomposition": null }
+  ],
+  "arrows": [
+    { "id": "AR1", "source": "EXTERNAL", "target": "A1:input", "label": "Idiom Database", "type": "input" },
+    { "id": "AR2", "source": "EXTERNAL", "target": "A1:control", "label": "Difficulty And Level Request", "type": "control" },
+    { "id": "AR3", "source": "EXTERNAL", "target": "A1:mechanism", "label": "Crossword Generator Provider", "type": "mechanism" },
+    { "id": "AR4", "source": "A1:output", "target": "A2:input", "label": "Crossword Puzzle", "type": "output" },
+    { "id": "AR5", "source": "EXTERNAL", "target": "A2:mechanism", "label": "React Board Renderer", "type": "mechanism" },
+    { "id": "AR6", "source": "A2:output", "target": "A3:input", "label": "Rendered Board And Tray", "type": "output" },
+    { "id": "AR7", "source": "EXTERNAL", "target": "A3:input", "label": "Child Tap And Hint Action", "type": "input" },
+    { "id": "AR8", "source": "EXTERNAL", "target": "A3:mechanism", "label": "Fill State Hook", "type": "mechanism" },
+    { "id": "AR9", "source": "A3:output", "target": "A4:input", "label": "Filled Cell State", "type": "input" },
+    { "id": "AR10", "source": "EXTERNAL", "target": "A4:control", "label": "Slot Target Idiom", "type": "control" },
+    { "id": "AR11", "source": "A4:output", "target": "A5:input", "label": "Completed Slot Signal", "type": "input" },
+    { "id": "AR12", "source": "EXTERNAL", "target": "A5:mechanism", "label": "Text To Speech And Score Context", "type": "mechanism" },
+    { "id": "AR13", "source": "A5:output", "target": "EXTERNAL", "label": "Teaching Card And Level Cleared Reward", "type": "output" },
+    { "id": "AR14", "source": "A4:output", "target": "A3:control", "label": "Slot Incomplete Retry Signal", "type": "control" }
+  ]
+}
