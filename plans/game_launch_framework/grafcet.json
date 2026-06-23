@@ -1,0 +1,12 @@
+[
+  {"StepNumber":0,"StepType":"initial","StepAction":"Idle: 對話畫面待命","Condition":["小朋友說/輸入一句話"],"LinkOutputNumber":[1],"LinkOutputType":"track","LinkInputNumber":[5,9],"LinkInputType":"convergence_or"},
+  {"StepNumber":1,"StepType":"normal","StepAction":"送 chat provider 做 intent 分類（enum 來自 GAME_REGISTRY）","Condition":["回 {intent, reply}"],"LinkOutputNumber":[2],"LinkOutputType":"track"},
+  {"StepNumber":2,"StepType":"normal","StepAction":"插入引導語 tutor 泡泡 + TTS 朗讀","Condition":["reply 已顯示"],"LinkOutputNumber":[3],"LinkOutputType":"track"},
+  {"StepNumber":3,"StepType":"normal","StepAction":"overlayForIntent(intent) 查 registry","Condition":["overlayKind != null","非啟動 intent / unclear"],"LinkOutputNumber":[4,5],"LinkOutputType":"divergence_or"},
+  {"StepNumber":4,"StepType":"normal","StepAction":"launch intent 命中：取得 overlayKind","Condition":["進入掛載"],"LinkOutputNumber":[6],"LinkOutputType":"track"},
+  {"StepNumber":5,"StepType":"normal","StepAction":"非啟動 intent（含 unclear）：不開 overlay","Condition":["回 Idle"],"LinkOutputNumber":[0],"LinkOutputType":"track"},
+  {"StepNumber":6,"StepType":"normal","StepAction":"overlayRegistry 取元件，setActiveOverlay(kind)，暫停麥克風（DD-5）","Condition":["overlay 開啟"],"LinkOutputNumber":[7],"LinkOutputType":"track"},
+  {"StepNumber":7,"StepType":"normal","StepAction":"遊戲進行中（玩法在各 feature 元件）","Condition":["過關 onComplete","✕ 關閉 onClose"],"LinkOutputNumber":[8,9],"LinkOutputType":"divergence_or"},
+  {"StepNumber":8,"StepType":"normal","StepAction":"onComplete：插入結算摘要回對話","Condition":["關閉 overlay"],"LinkOutputNumber":[9],"LinkOutputType":"track"},
+  {"StepNumber":9,"StepType":"normal","StepAction":"closeOverlay：恢復麥克風狀態，回 Idle","Condition":["回到對話待命"],"LinkOutputNumber":[0],"LinkOutputType":"track","LinkInputNumber":[7,8],"LinkInputType":"convergence_or"}
+]

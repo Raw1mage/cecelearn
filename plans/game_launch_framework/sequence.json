@@ -1,0 +1,53 @@
+[
+  {
+    "id": "P1",
+    "name": "Voice Launch a7 Crossword",
+    "moduleRef": "A0",
+    "summary": "小朋友說「玩成語填字」→ 後端 intent 分類 start_crossword → 前端查 registry 開 a7 overlay",
+    "messages": [
+      { "id": "MSG1", "from": "Child", "to": "A1Page", "text": "說/輸入「玩成語填字」", "componentRef": "A1" },
+      { "id": "MSG2", "from": "A1Page", "to": "useConversation.sendTurn", "text": "送出 turn", "componentRef": "A1" },
+      { "id": "MSG3", "from": "useConversation", "to": "chat provider", "text": "POST chat（schema enum 含 start_crossword，來自 allIntentEnum）", "componentRef": "A1" },
+      { "id": "MSG4", "from": "chat provider", "to": "useConversation", "text": "回 {intent:'start_crossword', reply:'好呀！我們來玩成語填字！'}", "componentRef": "A1" },
+      { "id": "MSG5", "from": "useConversation", "to": "overlayForIntent", "text": "查 registry → 'crossword'", "componentRef": "A2" },
+      { "id": "MSG6", "from": "useConversation", "to": "A1Page", "text": "setActiveOverlay('crossword')，暫停麥克風", "componentRef": "A3" },
+      { "id": "MSG7", "from": "A1Page", "to": "overlayRegistry", "text": "overlayComponent('crossword') → A7Page", "componentRef": "A3" },
+      { "id": "MSG8", "from": "A7Page", "to": "Child", "text": "全螢幕開啟成語填字（overlay 模式，接 onClose/onComplete）", "componentRef": "A3" }
+    ]
+  },
+  {
+    "id": "P2",
+    "name": "Regression — Voice Launch idiom (existing)",
+    "moduleRef": "A0",
+    "summary": "說「來玩成語」→ start_idiom → 開 idiom overlay（registry 驅動後行為等價）",
+    "messages": [
+      { "id": "MSG1", "from": "Child", "to": "A1Page", "text": "輸入「來玩成語」", "componentRef": "A1" },
+      { "id": "MSG2", "from": "chat provider", "to": "useConversation", "text": "回 {intent:'start_idiom', reply}", "componentRef": "A1" },
+      { "id": "MSG3", "from": "useConversation", "to": "overlayForIntent", "text": "查 registry → 'idiom'", "componentRef": "A2" },
+      { "id": "MSG4", "from": "A1Page", "to": "overlayRegistry", "text": "overlayComponent('idiom') → A2Page", "componentRef": "A3" }
+    ]
+  },
+  {
+    "id": "P3",
+    "name": "Non-launch intent — no overlay",
+    "moduleRef": "A0",
+    "summary": "含糊輸入 unclear → registry 查無 → 不開 overlay（INV-4 / DD-5）",
+    "messages": [
+      { "id": "MSG1", "from": "Child", "to": "A1Page", "text": "輸入「嗯嗯那個」", "componentRef": "A1" },
+      { "id": "MSG2", "from": "chat provider", "to": "useConversation", "text": "回 {intent:'unclear', reply:溫柔引導}", "componentRef": "A1" },
+      { "id": "MSG3", "from": "useConversation", "to": "overlayForIntent", "text": "查 registry → null", "componentRef": "A2" },
+      { "id": "MSG4", "from": "useConversation", "to": "A1Page", "text": "不 setActiveOverlay（no-op，留在對話）", "componentRef": "A3" }
+    ]
+  },
+  {
+    "id": "P4",
+    "name": "Close overlay restores mic",
+    "moduleRef": "A0",
+    "summary": "遊戲過關 onComplete / ✕ onClose → closeOverlay 恢復麥克風狀態",
+    "messages": [
+      { "id": "MSG1", "from": "A7Page", "to": "A1Page", "text": "onComplete（結算）或 onClose（✕）", "componentRef": "A3" },
+      { "id": "MSG2", "from": "A1Page", "to": "useConversation", "text": "closeOverlay()", "componentRef": "A3" },
+      { "id": "MSG3", "from": "useConversation", "to": "A1Page", "text": "setActiveOverlay(null)，恢復先前麥克風狀態（DD-5）", "componentRef": "A3" }
+    ]
+  }
+]

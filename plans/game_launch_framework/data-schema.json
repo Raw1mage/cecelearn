@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "game_launch_framework data contracts",
+  "description": "前後端共用 game registry 的型別契約。對齊 design.md taxonomy。",
+  "definitions": {
+    "LaunchIntent": {
+      "type": "string",
+      "description": "對應某個 game entry 的後端啟動意圖名。registry 所有 entry 的 intent 集合。非啟動 intent（base）不在此集合。",
+      "pattern": "^start_[a-z_]+$",
+      "examples": ["start_dictation", "start_idiom", "start_quiz", "start_crossword"]
+    },
+    "OverlayKind": {
+      "type": "string",
+      "description": "全螢幕遊戲容器種類，等同 GameEntry.id。前端 overlayRegistry 用它對映到 React 元件。",
+      "examples": ["dictation", "idiom", "quiz", "crossword"]
+    },
+    "GameEntry": {
+      "type": "object",
+      "description": "一筆可語音/點擊啟動的遊戲的完整啟動定義（不含玩法、不含 React 元件引用，後端可安全 import）。",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "intent",
+        "label",
+        "emoji",
+        "triggerExamples",
+        "intentDescription",
+        "conversationLabel"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "穩定識別，等同 overlayKind（如 'crossword'）。",
+          "pattern": "^[a-z][a-z_]*$"
+        },
+        "intent": {
+          "$ref": "#/definitions/LaunchIntent",
+          "description": "對應的後端啟動意圖名。"
+        },
+        "label": {
+          "type": "string",
+          "description": "首頁入口鈕中文短詞（如 '成語填字'）。"
+        },
+        "emoji": {
+          "type": "string",
+          "description": "入口鈕 emoji（如 '🧩'）。"
+        },
+        "triggerExamples": {
+          "type": "array",
+          "description": "prompt 觸發詞範例，給模型學會把口語對應到此 launch intent。至少一個。",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "intentDescription": {
+          "type": "string",
+          "description": "給 a1 system prompt 的一句意圖說明（如 '小朋友想玩成語填字交叉遊戲'）。"
+        },
+        "conversationLabel": {
+          "type": "string",
+          "description": "ConversationView 顯示的 intent 中文標籤（如 '成語填字'）。"
+        }
+      }
+    },
+    "GameRegistry": {
+      "type": "array",
+      "description": "GAME_REGISTRY：全系統唯一的可啟動遊戲清單（編譯期常數，執行期不可變）。",
+      "items": { "$ref": "#/definitions/GameEntry" },
+      "minItems": 1
+    },
+    "GameChip": {
+      "type": "object",
+      "description": "首頁入口鈕資料（由 gameChips() 從 registry 衍生，供前端渲染 quick-chip）。",
+      "additionalProperties": false,
+      "required": ["overlayKind", "emoji", "label"],
+      "properties": {
+        "overlayKind": { "$ref": "#/definitions/OverlayKind" },
+        "emoji": { "type": "string" },
+        "label": { "type": "string" }
+      }
+    }
+  },
+  "derivations": {
+    "launchIntents": {
+      "input": "GameRegistry",
+      "output": "LaunchIntent[]",
+      "note": "registry.map(e => e.intent)"
+    },
+    "allIntentEnum": {
+      "input": "BASE_INTENTS + GameRegistry",
+      "output": "string[]",
+      "note": "兩個 chat provider schema enum 同源（INV-1）。= [...BASE_INTENTS, ...launchIntents()]"
+    },
+    "gamePromptLines": {
+      "input": "GameRegistry",
+      "output": "string",
+      "note": "每筆 entry 產 intentDescription + triggerExamples 範例段，併入 a1 system prompt"
+    },
+    "overlayForIntent": {
+      "input": "GameRegistry + intent",
+      "output": "OverlayKind | null",
+      "note": "查表；查無回 null，不 silent fallback（DD-5/INV-4）"
+    },
+    "gameChips": {
+      "input": "GameRegistry",
+      "output": "GameChip[]",
+      "note": "首頁入口鈕；數量 == registry 長度（INV-2）"
+    },
+    "overlayComponent": {
+      "input": "frontend overlayRegistry + OverlayKind",
+      "output": "ReactComponent",
+      "note": "前端側第二張表（DD-2/DD-3），不進共用 registry"
+    }
+  },
+  "invariants": [
+    "INV-1 兩 provider enum 相等（同源 allIntentEnum）",
+    "INV-2 首頁入口鈕數 == registry entry 數",
+    "INV-3 每 entry.intent 可查得 overlayKind 且該 overlayKind 在 overlayRegistry 有元件",
+    "INV-4 base intent 絕不映射任何 overlay",
+    "INV-5 移除一筆 entry → intent/入口鈕/overlay 同步消失"
+  ]
+}

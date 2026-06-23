@@ -2,6 +2,18 @@
 
 本檔記錄 cecelearn・小雞老師 的重要變更。格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)。
 
+## [2026-06-21]
+
+### 新增 Added
+- **通用語音啟動遊戲機制（game_launch_framework）**：建立單一 game registry（`webapp/backend/src/shared/gameRegistry.ts`，前後端共用），把原本散在 6 處（後端 intent enum×2、prompt 範例、前端 `overlayForIntent`、A1Page render switch、首頁 quick-chips）的遊戲接入點收斂到單一真實來源。
+  · **a7 改 overlay 化**：成語填字從獨立 route 改成全螢幕 overlay，並新增 `start_crossword` intent，小朋友可直接說「玩成語填字／來填字／成語闖關」用語音啟動，與聽寫（`start_dictation`）、成語選擇題（`start_idiom`）、數學練習（`start_quiz`）走同一條啟動路徑。
+  · **新遊戲＝加一筆 registry entry**：日後新增遊戲只要在 registry 補一筆，即自動具備語音 intent、首頁入口鈕、全螢幕 overlay 三者一致，不必再散改多處。
+  · 既有三遊戲遷移至 registry 驅動（行為等價），後端 intent 分類器（`opencodeBareChatProvider` / `geminiChatProvider` / `a1ChatShared`）與前端（`overlayRegistry` / `useConversation` / `A1Page` / `ConversationStream`）皆由 registry 衍生。
+- **成語填字闖關（a7 遊戲模組）**：全新獨立遊戲模組，國風十字交叉成語填字盤。點首頁「🧩 成語填字」進 `/a7`，演算法即時生成關卡——以 `charIndex`（單字→成語反向索引）從 `idioms.json` 的 1641 條四字成語排出十字交叉盤，交叉點一律 given（消除歧義）、tray 無誘答，**保證可解**。小朋友點底部備選字塊填入空格，填對一條成語即揭曉例句並 TTS 朗讀，過關沿用 `celebrate()` 灑花＋計分，再進下一關。
+  · **零後端成本**：除首次抓題庫外，關卡生成、校驗、過關全在前端完成，與 a2 成語選擇題並存、不互相影響。
+  · 後端 `IdiomCrosswordProvider`（`providers/idiomCrosswordProvider.ts`）+ `modules/a7.ts` 薄封裝 + `GET /api/a7/puzzle`；排盤失敗顯式回 `{ok:false}`，不 silent fallback。
+  · 前端 `features/a7/`（`CrosswordBoard` 佈局、`useCrossword` 狀態機、字塊填入/校驗/揭曉/過關），契約集中於 `contracts/providers.ts` 與 `shared/api/client.ts`。
+
 ## [2026-06-20]
 
 ### 新增 Added

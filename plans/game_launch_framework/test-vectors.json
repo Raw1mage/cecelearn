@@ -1,0 +1,74 @@
+[
+  {
+    "id": "TV-1",
+    "requirement": "語音啟動 a7（新增）/ Scenario 玩成語填字",
+    "input": { "utterance": "玩成語填字" },
+    "expected": { "intent": "start_crossword", "overlayKind": "crossword" }
+  },
+  {
+    "id": "TV-2",
+    "requirement": "語音啟動 a7（觸發詞變體）",
+    "input": { "utterance": "來填字" },
+    "expected": { "intent": "start_crossword", "overlayKind": "crossword" }
+  },
+  {
+    "id": "TV-3",
+    "requirement": "語音啟動 a7（闖關變體）",
+    "input": { "utterance": "成語闖關" },
+    "expected": { "intent": "start_crossword", "overlayKind": "crossword" }
+  },
+  {
+    "id": "TV-4",
+    "requirement": "迴歸 — 成語選擇題（與填字區隔，DD-8）",
+    "input": { "utterance": "來玩成語" },
+    "expected": { "intent": "start_idiom", "overlayKind": "idiom" }
+  },
+  {
+    "id": "TV-5",
+    "requirement": "迴歸 — 聽寫",
+    "input": { "utterance": "我要練習聽寫" },
+    "expected": { "intent": "start_dictation", "overlayKind": "dictation" }
+  },
+  {
+    "id": "TV-6",
+    "requirement": "迴歸 — 數學練習",
+    "input": { "utterance": "出一題數學給我算" },
+    "expected": { "intent": "start_quiz", "overlayKind": "quiz" }
+  },
+  {
+    "id": "TV-7",
+    "requirement": "未知意圖不誤啟動（INV-4 / DD-5）",
+    "input": { "utterance": "嗯嗯那個" },
+    "expected": { "intent": "unclear", "overlayKind": null }
+  },
+  {
+    "id": "TV-8",
+    "requirement": "非啟動 intent 不開 overlay（造句）",
+    "input": { "utterance": "用蘋果造句" },
+    "expected": { "intent": "make_sentence", "overlayKind": null }
+  },
+  {
+    "id": "TV-9",
+    "requirement": "registry 衍生 — allIntentEnum 含全部 launch intent",
+    "input": { "registry": ["dictation", "idiom", "quiz", "crossword"] },
+    "expected": { "enumIncludes": ["start_dictation", "start_idiom", "start_quiz", "start_crossword"], "providersEqual": true }
+  },
+  {
+    "id": "TV-10",
+    "requirement": "INV-2 入口鈕數 == registry entry 數",
+    "input": { "registryLength": 4 },
+    "expected": { "chipCount": 4 }
+  },
+  {
+    "id": "TV-11",
+    "requirement": "INV-5 移除一筆 entry 同步消失（單一來源）",
+    "input": { "removeEntry": "crossword" },
+    "expected": { "intentInEnum": false, "chipPresent": false, "overlayForIntentReturns": null }
+  },
+  {
+    "id": "TV-12",
+    "requirement": "INV-3 每 overlayKind 有對應元件",
+    "input": { "overlayKinds": ["dictation", "idiom", "quiz", "crossword"] },
+    "expected": { "allHaveComponent": true }
+  }
+]
