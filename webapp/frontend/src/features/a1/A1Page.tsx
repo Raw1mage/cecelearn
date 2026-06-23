@@ -3,9 +3,8 @@ import { useConversation } from "./hooks/useConversation";
 import { SpeechCaptureContext, type SpeechCapture } from "./speechCapture";
 import { ConversationView } from "./components/ConversationView";
 import { Panel } from "../../shared/components/Panel";
-import { A5Page } from "../a5/A5Page";
-import { A2Page } from "../a2/A2Page";
-import { QuizPage } from "../a6/QuizPage";
+import { overlayComponent } from "./overlayRegistry";
+import { gameChips } from "../../../../backend/src/shared/gameRegistry";
 import {
   isTtsSupported,
   isWithinSpeechGuard,
@@ -13,9 +12,12 @@ import {
   addSpeechEndListener,
   cancelSpeech,
   isSpeaking,
+  unlockTTS,
 } from "../../shared/speech/tts";
 import { getSpeechRecognitionConstructor } from "./hanziWriterAdapter";
 import { apiClient } from "../../shared/api/client";
+import { getPreferences } from "../../shared/preferences/store";
+import { usePreferences } from "../../shared/preferences/usePreferences";
 
 /**
  * 把拍到的照片縮到最長邊 1280px、輸出 JPEG（品質 0.72），回 { base64, mimeType }。
@@ -84,6 +86,16 @@ export function A1Page() {
     onQuizComplete,
   } = useConversation();
 
+  const { preferences } = usePreferences();
+  // 麥克風進場預設（DD-8）：mount 時凍結 ui.micDefaultOn 當「進場是否聆聽」初值。
+  // 只供初值——bootstrap 據此決定是否自動開麥；運行時使用者仍可手動切換，
+  // 不在此回灌 wantListeningRef（避免偏好強制奪走麥克風控制權）。
+  const micDefaultOnRef = useRef(getPreferences().ui.micDefaultOn);
+  // 半雙工模式（barge-in 關閉）即時鏡像：barge-in 判斷在語音核心 useEffect 閉包內（mount
+  // 一次），用 ref 即時讀最新偏好。每次 render 同步，不進依賴避免重建語音核心。
+  const halfDuplexRef = useRef(getPreferences().voice.halfDuplex);
+  halfDuplexRef.current = preferences.voice.halfDuplex;
+
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [speechReady, setSpeechReady] = useState(false);
@@ -102,6 +114,10 @@ export function A1Page() {
   // 啟動 commitTimerRef 的「靜默寬限窗」，逾時（小朋友真的停夠久）才整段送出。
   // 句中停頓不再被瀏覽器 VAD 的 isFinal 誤判成「講完了」而提早送半句。
   const pendingTranscriptRef = useRef("");
+  // 半句保全（DD-38 B1）：當前「還沒被瀏覽器定稿（final）」的 interim 暫存。
+  // session 中途 abort/重啟時，這段未定稿語音不會跟著 final 一起被保住——故在 onend
+  // 把它 promote 進 pendingTranscriptRef，並在 commit 時一併送，避免半句歸零重唸。
+  const interimTranscriptRef = useRef("");
   const commitTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lookupRef = useRef<(value: string) => Promise<void>>(null!);
   // 丟棄累積中的語音段（外力打斷時呼叫，由語音核心 useEffect 注入實作）。
@@ -150,16 +166,52 @@ export function A1Page() {
     let childHasFloor = false;
     let removeSpeechEndListener: (() => void) | undefined;
     const VAD_THRESHOLD = 0.015;
-    // 靜默寬限窗（DD-24）：收到 final 後再等這麼久沒有新語音，才把累積的整段話送出。
-    // 小朋友句中停頓思考時，瀏覽器 VAD 會吐 isFinal；只要寬限窗內又開口（interim/final）
-    // 就重置計時、繼續累積，不會把半句話提早送出。給足夠長讓孩子把話講完。
-    const SILENCE_COMMIT_MS = 2500;
+    // 單一原則（DD-38，取代 DD-24/早期分級窗）：話講多講少最終都要送 AI，那就邊送邊判斷。
+    // 前端只做一件事——偵測到停頓 0.6 秒，就把累積的字送給 AI 判斷「講完了沒」；前端完全
+    // 不猜內容。不分長短，一律邊聽邊累積邊顯示，永不截斷、永不因字數上限中途送出。
+    // 判斷力 100% 在 AI（後端 utterance-complete）：短指令一聽就知道完了→快回，
+    // 半句頓一下→知道還有→繼續聽。
+    // 流程：每次新語音 → 累積、回填輸入框、重排 0.6 秒靜默計時。停夠久 → 問 AI「講完了沒」。
+    // complete→送；not-complete→繼續耐心聽；後端不可用時不由前端用長窗猜測收尾。
+    const SILENCE_MS = 600; // 停頓 0.6 秒就把累積的字送給 AI 判斷（前端不猜內容）
+    const PATIENT_MS = 700; // AI 判「還沒講完」→ 短等後再把同段文字交給後端確認
 
-    // 把累積的整段話送出（小朋友真的停夠久了）。清空緩衝、上觸發鎖、導向對話送出。
+    // 安靜重試計數（DD-39，修正 force-complete 永不觸發的回歸）。
+    // notDoneStreak＝小朋友停下來後、同一段話在「Gemini 不可用」時被連續重新評估的次數。
+    // sawNewSpeechSinceProbe＝上次 probe 之後是否有新語音事件進來（armCommitByContent 設）。
+    // 關鍵改動——用「有沒有新語音事件」而非「文字逐字相等」判斷是否重置 streak：interim 高頻
+    // 微抖不該把 streak 歸零。原回歸是失敗路徑（429/timeout/502）從不遞增 streak，導致送後端的
+    // quietRepeatCount 永遠是 0，後端 FORCE_COMPLETE_AFTER_QUIET_REPEATS 安全網永遠等不到
+    // （log 實測 force-complete=0）→ Gemini 慢/掛時整段語音永不送出。
+    let sawNewSpeechSinceProbe = false;
+    let notDoneStreak = 0;
+    let probing = false;
+
+    // 「邊聽邊解讀」的判斷對象＝已定稿 final（pending）＋ 還沒定稿的 interim 合併文字。
+    // 關鍵：不等 Chrome 把 interim 轉成 final（它的內部 endpointer 常拖 1.5–3s 且不可控），
+    // interim 一停（無新語音）就拿這份合併文字去問 AI——這才是「語畢即送」的快路徑。
+    function currentFullText() {
+      return (
+        pendingTranscriptRef.current +
+        " " +
+        interimTranscriptRef.current
+      ).trim();
+    }
+
+    // 把累積的整段話送出（判定整段講完了）。清空緩衝、上觸發鎖、導向對話送出。
     function commitPending() {
       commitTimerRef.current = undefined;
-      const full = pendingTranscriptRef.current.trim();
+      // 送出前把還沒定稿的 interim 也併入（避免最後半句沒進 final 而漏送）。
+      const full = (
+        pendingTranscriptRef.current +
+        " " +
+        interimTranscriptRef.current
+      ).trim();
       pendingTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+      sawNewSpeechSinceProbe = false;
+      notDoneStreak = 0;
+      probing = false;
       // 本段結束：交還發言權，下一輪重新評估 echo 軟閘（barge-in 狀態不殘留）。
       childHasFloor = false;
       if (!full || triggeredRef.current) return;
@@ -167,10 +219,91 @@ export function A1Page() {
       void lookupRef.current(full);
     }
 
-    // 重置靜默寬限計時：每次偵測到新語音（interim 或 final）就呼叫，延後送出。
-    function armCommitTimer() {
+    // 停夠久（疑似一個停頓）→ 問解讀者「整段講完了沒」，由它決定送或繼續聽。
+    function probeAndDecide(text: string) {
+      if (triggeredRef.current) return;
+      // 已有一個 probe 在飛：別開第二個，但要「重排」而非丟棄——否則 interim 高頻觸發的
+      // 計時器若落在 probe 視窗內被這裡吞掉，又沒人重排，迴圈就死了（小孩一停就永不送出）。
+      if (probing) {
+        armSilence(SILENCE_MS);
+        return;
+      }
+      if (!text) return;
+      probing = true;
+      // quietRepeatCount＝目前累積的安靜重試次數。streak 不再用「文字逐字相等」判斷
+      //（interim 微抖會把它一直歸零，導致永遠送 0、後端 force-complete 永不觸發）；改由
+      // armCommitByContent 在有新語音時歸零、本函式在 probe 未完成/失敗時遞增（見下方 then/catch）。
+      const quietRepeatCount = notDoneStreak;
+      const probeStartedAt = performance.now();
+      void apiClient
+        .utteranceComplete(text, quietRepeatCount)
+        .then((res) => {
+          probing = false;
+          console.debug(
+            `[A1Speech] utteranceComplete quietRepeat=${quietRepeatCount} complete=${res.ok ? res.complete : 'n/a'} elapsed=${Math.round(performance.now() - probeStartedAt)}ms len=${text.length}`,
+          );
+          // 問的過程中已被送出/丟棄 → 放棄。
+          if (triggeredRef.current) return;
+          const current = currentFullText();
+          if (!current) return;
+          // 問的過程中內容又變了（interim 高頻更新很常見）：別丟棄迴圈——重排計時，
+          // 等下一次停頓再用新文字問。否則這裡靜默 return 會讓「小孩一停就永不送出」。
+          if (current !== text) {
+            armSilence(SILENCE_MS);
+            return;
+          }
+          if (res.ok && res.complete) {
+            commitPending();
+          } else if (res.ok) {
+            // 解讀者判「還沒講完」→ 繼續耐心聽，不送、不截斷。沒有新語音進來就遞增 streak，
+            // 讓「同段安靜重試」次數真的往上走（後端據此 force-complete，避免無限不送）。
+            if (!sawNewSpeechSinceProbe) notDoneStreak += 1;
+            sawNewSpeechSinceProbe = false;
+            armSilence(PATIENT_MS);
+          } else {
+            // 解讀者不可用（429/timeout/502）→ 不靠前端長窗猜內容，但仍遞增 streak 後快速重試：
+            // 同段安靜重問累積到 FORCE_COMPLETE_AFTER_QUIET_REPEATS 時，後端會強制判 complete
+            // 並送出（這才是 Gemini 慢/掛時語音仍送得出去的安全網；修正前 streak 永遠 0 → 永不送）。
+            if (!sawNewSpeechSinceProbe) notDoneStreak += 1;
+            sawNewSpeechSinceProbe = false;
+            armSilence(PATIENT_MS);
+          }
+        })
+        .catch(() => {
+          probing = false;
+          console.debug(
+            `[A1Speech] utteranceComplete failed quietRepeat=${quietRepeatCount} elapsed=${Math.round(performance.now() - probeStartedAt)}ms len=${text.length}`,
+          );
+          if (triggeredRef.current) return;
+          // 網路層 throw（fetch reject）也視為一次安靜重試，遞增 streak 後重排，讓安全網能收斂。
+          if (!sawNewSpeechSinceProbe) notDoneStreak += 1;
+          sawNewSpeechSinceProbe = false;
+          armSilence(PATIENT_MS);
+        });
+    }
+
+    // 重排靜默計時：停夠久（無新語音）才去問解讀者「講完沒」。每次新語音都會重排，
+    // 所以只要還在講就永遠不會去問、更不會送——句中停頓持續延後，整段不被截斷。
+    function armSilence(ms: number) {
       if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
-      commitTimerRef.current = setTimeout(commitPending, SILENCE_COMMIT_MS);
+      commitTimerRef.current = setTimeout(() => {
+        commitTimerRef.current = undefined;
+        probeAndDecide(currentFullText());
+      }, ms);
+    }
+
+    // 收到新語音後安排送出評估。前端「不猜內容」——統一停頓 SILENCE_MS 就把累積的字
+    // （final＋interim 合併，見 currentFullText）送給 AI 判斷（probeAndDecide）。
+    // 關鍵：interim 也算數——不等 Chrome 把 interim 轉 final（它的 endpointer 常拖 1.5–3s
+    // 不可控）；只要 interim 一停（SILENCE_MS 內無新語音）就拿合併文字去問，這才是「語畢即送」。
+    // 判斷「講完了沒」100% 在 AI：短指令一聽就知道完了→快回，半句頓一下→知道還有→繼續聽。
+    function armCommitByContent() {
+      const text = currentFullText();
+      if (!text) return;
+      // 有新語音事件進來：標記之，讓進行中/下一次 probe 把 notDoneStreak 歸零（孩子還在講，
+      // 安靜重試計數不該累積）。只有「停下來、沒有新語音」的重問才會推高 streak → 觸發後端兜底。
+      sawNewSpeechSinceProbe = true;
+      armSilence(SILENCE_MS);
     }
 
     // 丟棄累積中的這段話（外力打斷：停麥克風 / 開 overlay / 播影片 / 跟讀借用 / 送出後）。
@@ -180,6 +313,10 @@ export function A1Page() {
         commitTimerRef.current = undefined;
       }
       pendingTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+      sawNewSpeechSinceProbe = false;
+      notDoneStreak = 0;
+      probing = false;
       childHasFloor = false;
     }
     discardPendingRef.current = discardPending;
@@ -402,6 +539,17 @@ export function A1Page() {
         setStatus(triggeredRef.current ? "查詢中..." : samsungManualPrompt);
         return;
       }
+      // B1（半句保全）：session 結束時，把還沒定稿的 interim promote 進 pending——
+      // 否則 abort/重啟（TTS 後 restartSession、watchdog、Chrome 自發 onend）會把這段
+      // in-flight 半句連同 session 一起丟掉，小朋友得重唸。promote 後續聽會接在它後面。
+      if (interimTranscriptRef.current) {
+        pendingTranscriptRef.current = (
+          pendingTranscriptRef.current +
+          " " +
+          interimTranscriptRef.current
+        ).trim();
+        interimTranscriptRef.current = "";
+      }
       if (!wantListeningRef.current) {
         setListening(false);
         setStatus("");
@@ -456,7 +604,6 @@ export function A1Page() {
       }
 
       if (triggeredRef.current) return;
-      if (transcript.length > 50) return;
 
       if (isSamsungManualMode) {
         if (!latest.isFinal || !transcript) return;
@@ -476,6 +623,13 @@ export function A1Page() {
       // 判定這段辨識是否為小雞自己的回音（朗讀中或尾窗內才需判，且尚未取得發言權時）。
       const duringGuard = isWithinSpeechGuard();
       if (duringGuard && !childHasFloor) {
+        // 半雙工模式：朗讀中一律不接受語音插話（Web Speech API 無法辨語者，現場其他人
+        // 講話會被誤判成小朋友插話而中斷朗讀）。朗讀中的辨識結果全部丟棄，不取得發言權、
+        // 不 cancelSpeech；要中斷小雞老師改按「停止」鈕。
+        if (halfDuplexRef.current) {
+          setQuery(pendingTranscriptRef.current.trim());
+          return;
+        }
         if (isLikelySelfEcho(transcript)) {
           // 是小雞自己的話被收回 → 丟棄，不動已累積真實語音。
           setQuery(pendingTranscriptRef.current.trim());
@@ -487,12 +641,21 @@ export function A1Page() {
       }
 
       if (!latest.isFinal) {
-        // 已取得發言權後，interim 一律照常累積（小雞已停、不會再有自己的回音）。
-        const preview = (pendingTranscriptRef.current + transcript).trim();
+        // interim（未定稿）：暫存進 interimTranscriptRef（B1：session 中斷時不會跟著
+        // final 一起被保住，故獨立保存、onend 時 promote），即時回填輸入框、依內容排程。
+        // 已取得發言權後一律照常處理（小雞已停、不會再有自己的回音）。
+        interimTranscriptRef.current = transcript;
+        const preview = (
+          pendingTranscriptRef.current +
+          " " +
+          transcript
+        ).trim();
         setQuery(preview);
-        if (preview) armCommitTimer();
+        if (preview) armCommitByContent();
         return;
       }
+      // final 進來：這段 interim 已定稿，清掉 interim 暫存（內容會併入 pending）。
+      interimTranscriptRef.current = "";
       if (!transcript) return;
 
       // echo 軟閘（DD-11）：尚未取得發言權、又落在朗讀尾窗或文字吻合最近朗讀 → 丟棄回音。
@@ -502,19 +665,14 @@ export function A1Page() {
         return;
       }
 
-      // 收到一個 final 片段：累積、續上寬限計時，但「不」立即送出。
-      // 小朋友可能只是句中換氣；只有寬限窗內都沒有新語音，commitPending 才會送整段。
+      // 收到一個 final 片段：累積、回填輸入框，安排「停夠久後問解讀者講完沒」。
+      // 不分長短、不設字數上限——一律邊聽邊累積邊顯示，永不因累積過長而中途送出
+      // （那正是「沒聽完就送字」）。送不送一律由 probeAndDecide → 後端解讀者決定。
       // 片段間補空白避免黏字（中文也無妨，送出端會 trim）。
       pendingTranscriptRef.current =
         (pendingTranscriptRef.current + " " + transcript).trim();
-      // 超長保護：累積過長直接送出，不再等（避免無限累積）。
-      if (pendingTranscriptRef.current.length > 200) {
-        if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
-        commitPending();
-        return;
-      }
       setQuery(pendingTranscriptRef.current);
-      armCommitTimer();
+      armCommitByContent();
     };
 
     recognitionRef.current = recognition;
@@ -545,9 +703,12 @@ export function A1Page() {
         source.connect(analyser);
 
         setSpeechReady(true);
-        wantListeningRef.current = true;
-        // Start recognition immediately — one beep on page load is acceptable.
-        startRecognition();
+        // 進場是否聆聽：偏好 ui.micDefaultOn 只決定初值（DD-8）。預設開→立即聆聽
+        //（可接受載入時一聲提示音）；預設關→待命，使用者手動點麥克風才開。
+        if (micDefaultOnRef.current) {
+          wantListeningRef.current = true;
+          startRecognition();
+        }
       })
       .catch(() => {
         setStatus("無法取得麥克風權限，請在設定中允許。");
@@ -642,6 +803,25 @@ export function A1Page() {
     if (!isTtsSupported()) return;
     const id = setInterval(() => setSpeaking(isSpeaking()), 250);
     return () => clearInterval(id);
+  }, []);
+
+  // mobile TTS 解鎖（Samsung Internet / Android Chrome / iOS Safari）：自動朗讀走在
+  // await apiClient.chat() 之後、已脫離手勢同步堆疊，引擎不會解鎖、speak() 被靜默丟棄
+  // （沒聲音）。在頁面第一個使用者手勢（任何點擊/觸控）同步呼叫 unlockTTS() 播一段近靜音
+  // utterance 解鎖；解鎖後自動朗讀才有聲音。一次性，解鎖後即移除監聽。
+  useEffect(() => {
+    if (!isTtsSupported()) return;
+    const onFirstGesture = () => {
+      unlockTTS();
+      window.removeEventListener("pointerdown", onFirstGesture);
+      window.removeEventListener("touchstart", onFirstGesture);
+    };
+    window.addEventListener("pointerdown", onFirstGesture);
+    window.addEventListener("touchstart", onFirstGesture);
+    return () => {
+      window.removeEventListener("pointerdown", onFirstGesture);
+      window.removeEventListener("touchstart", onFirstGesture);
+    };
   }, []);
 
   /** Kill switch：強制中止小雞老師的語音輸出（朗讀打斷不了的逃生口）。 */
@@ -777,6 +957,7 @@ export function A1Page() {
             onRetryVideos={retryVideos}
             onLoadMoreVideos={loadMoreVideos}
             onVideoPlayingChange={handleVideoPlayingChange}
+            greetingName={preferences.identity.nickname}
           />
         </Panel>
 
@@ -875,27 +1056,16 @@ export function A1Page() {
               </button>
             </div>
           <div className="a1-quick-chips">
-            <button
-              type="button"
-              className="a1-quick-chip"
-              onClick={() => openOverlay("dictation")}
-            >
-              ✏️ 聽寫
-            </button>
-            <button
-              type="button"
-              className="a1-quick-chip"
-              onClick={() => openOverlay("idiom")}
-            >
-              🧩 成語
-            </button>
-            <button
-              type="button"
-              className="a1-quick-chip"
-              onClick={() => openOverlay("quiz")}
-            >
-              📝 練習
-            </button>
+            {gameChips().map((chip) => (
+              <button
+                key={chip.overlayKind}
+                type="button"
+                className="a1-quick-chip"
+                onClick={() => openOverlay(chip.overlayKind)}
+              >
+                {chip.emoji} {chip.label}
+              </button>
+            ))}
           </div>
           {displayStatus ? (
             <p className="muted" style={{ marginTop: "0.5rem" }}>
@@ -905,27 +1075,25 @@ export function A1Page() {
         </Panel>
       </div>
 
-      {activeOverlay && (
-        <div className="a1-quiz-overlay" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="a1-quiz-overlay__close"
-            onClick={closeOverlay}
-            aria-label="關閉並回到小雞老師"
-          >
-            ✕
-          </button>
-          <div className="a1-quiz-overlay__body">
-            {activeOverlay === "dictation" ? (
-              <A5Page onClose={closeOverlay} onComplete={onQuizComplete} />
-            ) : activeOverlay === "idiom" ? (
-              <A2Page onClose={closeOverlay} onComplete={onQuizComplete} />
-            ) : (
-              <QuizPage onClose={closeOverlay} onComplete={onQuizComplete} />
-            )}
+      {activeOverlay && (() => {
+        const OverlayComp = overlayComponent(activeOverlay);
+        if (!OverlayComp) return null;
+        return (
+          <div className="a1-quiz-overlay" role="dialog" aria-modal="true">
+            <button
+              type="button"
+              className="a1-quiz-overlay__close"
+              onClick={closeOverlay}
+              aria-label="關閉並回到小雞老師"
+            >
+              ✕
+            </button>
+            <div className="a1-quiz-overlay__body">
+              <OverlayComp onClose={closeOverlay} onComplete={onQuizComplete} />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
     </SpeechCaptureContext.Provider>
   );

@@ -14,12 +14,16 @@ import type {
   DialogueChatProvider,
   QuestionVisionProvider,
   SceneIllustrationProvider,
+  UtteranceCompleteProvider,
+  UtteranceCompleteResponse,
   VideoSearchProvider,
   WordLookupProvider,
 } from '../contracts/providers.js'
 import type { ChildChannelLibrary } from '../providers/childChannelLibrary.js'
 import type { VideoBank } from '../providers/videoBank.js'
 import type { Blocklist } from '../providers/blocklist.js'
+
+const FORCE_COMPLETE_AFTER_QUIET_REPEATS = 1
 
 export function createA1Module(
   provider: WordLookupProvider,
@@ -30,8 +34,22 @@ export function createA1Module(
   channelLibrary?: ChildChannelLibrary,
   videoBank?: VideoBank,
   blocklist?: Blocklist,
+  utteranceProvider?: UtteranceCompleteProvider,
 ) {
   return {
+    utteranceComplete(text: string, quietRepeatCount = 0): Promise<UtteranceCompleteResponse> {
+      if (text.trim() && quietRepeatCount >= FORCE_COMPLETE_AFTER_QUIET_REPEATS) {
+        return Promise.resolve({ ok: true, complete: true })
+      }
+      if (!utteranceProvider) {
+        return Promise.resolve({
+          ok: false,
+          error: 'UTTERANCE_NOT_CONFIGURED',
+          message: '判斷功能還沒準備好。',
+        })
+      }
+      return utteranceProvider.judge(text, { quietRepeatCount })
+    },
     lookup(query: string): Promise<A1LookupResponse> {
       return Promise.resolve(provider.lookup(query))
     },
