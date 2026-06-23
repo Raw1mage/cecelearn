@@ -3,7 +3,19 @@
  * 家教回覆朗讀；可開關，預設開（DD-9）。零後端成本。
  */
 
-let enabled = true
+import { getPreferences, setPreference, subscribe } from '../preferences/store'
+
+/**
+ * TTS 總開關 module 鏡像（DD-4）。真實來源是中央 store 的 voice.ttsEnabled；
+ * 這裡保留 module-level 變數供高頻同步讀取（echo gate 等）。
+ * 啟動時從 store 初始化，並訂閱 store 變化同步（值變才更新，防環 R1）。
+ */
+let enabled = getPreferences().voice.ttsEnabled
+subscribe((prefs) => {
+  if (prefs.voice.ttsEnabled === enabled) return
+  enabled = prefs.voice.ttsEnabled
+  if (!enabled) cancelSpeech()
+})
 let zhVoice: SpeechSynthesisVoice | null = null
 let enVoice: SpeechSynthesisVoice | null = null
 
@@ -159,6 +171,30 @@ export function isTtsSupported(): boolean {
 }
 
 /**
+ * mobile TTS 解鎖（Samsung Internet / Android Chrome / iOS Safari）。
+ * 這些瀏覽器要求 speechSynthesis.speak() 第一次必須在「使用者手勢同步堆疊」內呼叫，
+ * 否則整個引擎不解鎖、之後所有 speak() 被靜默丟棄（不報錯、沒聲音）。
+ * A1 的自動朗讀走在 await apiClient.chat() 之後、已脫離手勢堆疊，因此必須在第一個
+ * 使用者手勢（點麥克風/任何點擊）同步呼叫此函式播一段近靜音 utterance 解鎖。
+ * 必須同步呼叫——不可放在 await/Promise 之後。
+ */
+let ttsUnlocked = false
+export function unlockTTS(): void {
+  if (ttsUnlocked || !isTtsSupported()) return
+  try {
+    const utter = new SpeechSynthesisUtterance(' ')
+    utter.volume = 0.01
+    utter.lang = 'zh-TW'
+    if (!zhVoice) zhVoice = pickVoice()
+    if (zhVoice) utter.voice = zhVoice
+    window.speechSynthesis.speak(utter)
+    ttsUnlocked = true
+  } catch {
+    /* 解鎖失敗不擋功能；下一次手勢會再試 */
+  }
+}
+
+/**
  * 朗讀一個英文單字／句子（英文跟讀練習用）。放慢給小朋友聽清楚。
  * 不受朗讀總開關 enabled 影響——這是使用者「明確點擊聆聽」的動作。
  */
@@ -185,8 +221,9 @@ export function speakEnglish(text: string): void {
 }
 
 export function setTtsEnabled(value: boolean): void {
-  enabled = value
-  if (!value) cancelSpeech()
+  // 真實來源是 store；寫 store 後 subscriber 會回灌 module enabled（並在關閉時 cancelSpeech）。
+  // 值未變時 store 的 equality guard 會略過 notify，避免無謂環路（R1）。
+  setPreference({ voice: { ttsEnabled: value } })
 }
 
 export function isTtsEnabled(): boolean {

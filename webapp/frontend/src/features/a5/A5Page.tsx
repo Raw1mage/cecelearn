@@ -5,13 +5,17 @@ import { Button } from '../../shared/components/Button'
 import { Panel } from '../../shared/components/Panel'
 import { useScore } from '../../shared/ScoreContext'
 import { speak, isTTSSupported, unlockTTS, newSpeechSession, stopSpeaking } from './tts'
+import { getPreferences, setPreference } from '../../shared/preferences/store'
 
 const TTS_PREFS_KEY = 'cecelearn-tts-prefs'
-function loadTTSPrefs() {
-  try { const r = localStorage.getItem(TTS_PREFS_KEY); return r ? JSON.parse(r) as { rate: number; pitch: number } : { rate: 0.8, pitch: 1 } }
-  catch { return { rate: 0.8, pitch: 1 } }
+// rate/pitch 優先讀中央 store（voice.rate/pitch）；舊 key 已於 store 啟動時一次性遷移併入。
+function loadTTSPrefs(): { rate: number; pitch: number } {
+  const v = getPreferences().voice
+  return { rate: v.rate, pitch: v.pitch }
 }
+// 寫回中央 store；同時保留舊 key 寫入相容（向後相容 DD-5）。
 function saveTTSPrefs(p: { rate: number; pitch: number }) {
+  setPreference({ voice: { rate: p.rate, pitch: p.pitch } })
   try { localStorage.setItem(TTS_PREFS_KEY, JSON.stringify(p)) } catch { /* ignore */ }
 }
 import { gradeHandwriting } from './grader'
