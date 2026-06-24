@@ -34,9 +34,6 @@ const SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search'
 const MAX_RESULTS = 12
 const MAX_ATTEMPTS = 5
 const RETRY_DELAY_MS = 200
-// 影片庫門檻：某主題已累積 >= 這個數量的影片，就直接從庫內服務、不再打 YouTube API。
-// 一次搜尋最多進 12 支 → 通常一個主題搜一次就跨過門檻，之後永遠免 API（漸漸不需要 API）。
-const BANK_SERVE_MIN = 5
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
@@ -101,18 +98,20 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
   }
 
   /**
-   * serve 時用頻道庫即時重算 curated 旗標，並穩定把精選排前。
-   * 先硬擋家長黑名單（DD-26）：命中黑名單的頻道一律剔除，優先於白名單加權。
+   * serve 時做兩件事，但**不重排序**：
+   *  1. 黑名單硬擋（DD-26）：命中家長黑名單的頻道一律剔除。
+   *  2. curated 旗標：命中精選頻道庫的標記 curated=true（前端用來標精選徽章）。
+   * 刻意保留 yt-dlp 回來的相關度原序——之前把 curated 無條件 sort 到最前，會讓任何
+   * 搜尋的第一支永遠是訂閱頻道（前端播放窗顯示最前面那支）→「不管搜什麼都只有佳佳老師」。
+   * 精選只是徽章提示，不該凌駕搜尋相關度。安全靠黑名單硬擋這一道閘。
    */
   private flagAndSort(items: A1VideoItem[]): A1VideoItem[] {
     const safe = this.blocklist ? this.blocklist.filter(items) : items
     const curatedIds = this.library?.activeIds()
-    const flagged = safe.map((it) => ({
+    return safe.map((it) => ({
       ...it,
       curated: curatedIds ? curatedIds.has(it.channelId) : false,
     }))
-    flagged.sort((a, b) => Number(b.curated) - Number(a.curated))
-    return flagged
   }
 
   async search(
@@ -131,15 +130,10 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       return { ok: false, error: 'VIDEO_BAD_REQUEST', message: '我還不知道要找什麼影片耶。' }
     }
 
-    // 1) 先查影片庫：此主題已累積足夠 → 直接服務，不打 API（漸漸不需要 API）。
-    //    載入更多（fetchLimit > 庫內量）時不走庫捷徑，逕行外部搜尋多抓一些。
-    if (this.bank && this.bank.size(category) >= Math.max(BANK_SERVE_MIN, fetchLimit)) {
-      const items = this.flagAndSort(this.bank.get(category) as A1VideoItem[])
-      log('a1.video.bank_hit', { category, count: items.length, ms: Date.now() - start })
-      return { ok: true, query: q, items }
-    }
-
-    // 2) 庫內不足 → 搜尋。來源：yt-dlp 為主（被動函式、零配額），不可用才退 Data API。
+    // 1) serve 路徑一律先搜新鮮網路結果——yt-dlp 是零配額被動函式，沒有「省額度」的
+    //    理由去吐庫內舊資料。影片庫不再參與 serve 短路，只在「網路整個搜失敗」時當
+    //    離線安全網（見步驟 3）。這樣每次都忠實反映當下的搜尋詞，不會固化污染、不會「庫滿」。
+    //    來源：yt-dlp 為主（被動函式、零配額），不可用才退 Data API（safeSearch=strict）。
     let raw: A1VideoItem[] | null = null
     let usedSource = ''
     if (this.ytdlp) {
@@ -154,11 +148,12 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       }
     }
 
-    // 都搜不到 → 退而求其次給庫內既有；再不行回 kid-friendly 錯誤。
+    // 離線安全網：只有當網路整個搜失敗（yt-dlp 與 Data API 都拿不到任何結果）時，
+    // 才退而求其次吐庫內既有，讓對話不至於開天窗；正常情況永遠走上面的新鮮搜尋。
     if (!raw || raw.length === 0) {
       if (this.bank && this.bank.size(category) > 0) {
         const items = this.flagAndSort(this.bank.get(category) as A1VideoItem[])
-        log('a1.video.bank_only', { category, count: items.length })
+        log('a1.video.bank_fallback', { category, count: items.length })
         return { ok: true, query: q, items }
       }
       if (!this.ytdlp && !this.apiKey) {
