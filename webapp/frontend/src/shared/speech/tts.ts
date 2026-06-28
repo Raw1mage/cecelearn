@@ -202,6 +202,7 @@ export function speakEnglish(text: string): void {
   if (!text || !isTtsSupported()) return
   const synth = window.speechSynthesis
   synth.cancel()
+  if (synth.paused) synth.resume()
   recordSpeechText(text)
   if (!enVoice) enVoice = pickEnVoice()
   const utter = new SpeechSynthesisUtterance(text)
@@ -272,6 +273,7 @@ export function speak(text: string, opts?: { id?: string; force?: boolean }): vo
   if ((!enabled && !opts?.force) || !text || !isTtsSupported()) return
   const synth = window.speechSynthesis
   synth.cancel()
+  if (synth.paused) synth.resume()
   recordSpeechText(text)
   if (!zhVoice) zhVoice = pickVoice()
   const utter = new SpeechSynthesisUtterance(text)

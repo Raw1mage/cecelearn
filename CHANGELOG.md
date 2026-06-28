@@ -2,7 +2,24 @@
 
 本檔記錄 cecelearn・小雞老師 的重要變更。格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)。
 
-## [2026-06-24]
+## [2026-06-29]
+
+### 新增 Added
+- **英文單字練習（a6 遊戲模組）**：全新英語學習模組，補上國語字詞（A1）、成語（A2/A7）、數學（A3）之外的英文版圖。**看圖 → 聽發音 → 手寫拼字**多感官互動：`GET /api/a6/quiz` 供詞庫（國小／國中／高中學段 × 年級 × 難度），單字插圖走 `CachedIllustrationProvider`（Gemini/Imagen，命中回庫圖零 token），發音用 Web Speech TTS `en-US`，手寫板 `EnglishWritingPad` 以**筆畫覆蓋度比對（>80%）**判對。透過 game registry 新 intent `start_english_vocab`，小朋友說「我要練習英文單字／考我英文單字」即以全螢幕卡片 overlay 啟動，與聽寫／成語／數學／填字走同一條語音啟動路徑。答對 `celebrateRandom` 灑花＋計分＋XP 升級。後端 `modules/a6.ts`，前端 `features/a6/`（`A6VocabCard` + `components/EnglishWritingPad`）。
+- **答對獎勵短片**（a6）：拼對後在卡片內播一支切題的兒童短片當獎勵。以 `{word} for kids` 走後端找影片（套兒童安全＋信任頻道閘），取真實 videoId 用 **YouTube IFrame Player API** 播放；**偏好 2 分鐘內**短片（最短優先），遇「擁有者禁止站外嵌入」（YouTube 101/150）/已移除自動換下一支候選。影片**撐到卡片寬度（16:9）**取代插圖；播放時收起寫字板、保留 keyword 大小寫字母格當複習。
+- **XP／等級系統**（`shared/preferences`）：偏好加 `xp`/`level`，`addXp()` 處理累積與升級；a6 答對 +10 XP，滿 100 升級。
+- **慶祝動畫升級** `celebrateRandom`（`shared/celebrate.ts`）：隨機多型態灑花（中央大爆炸／彩虹雨／左右雙煙火／對角連噴），統一 `zIndex:9999` 確保繪在 `.a6-overlay` 之上。
+- **英文信任頻道入庫**（`data/channels.json`）：新增 4 個 active 英文頻道——Alphablocks（`UC_qs3c0ehDvZkbiEbOj6Drg`）、Rock 'N Learn（`UCExx109KH5msQR0n52ZzyAw`）、Super Simple ABCs（`UCp5Nhw2YMCMUemXC1oWTkkA`）、Phonics Reading（`UC6QcqYGpOp3WKjGIlbvvzRg`），頻道庫擴成 15 active。topics 含中英關鍵詞，中文搜尋亦可命中。
+
+### 變更 Changed
+- **找影片：信任頻道改「白名單優先過濾」**（`youtubeVideoProvider.ts` `preferTrusted`）：信任邊界放在**頻道**層——搜尋結果裡只要有信任頻道（active）的片，就**只服務那些、免逐片審直接給孩子看**；一支都沒命中才整批照原樣回（`safeSearch`＋黑名單仍在），不開天窗（**白名單優先、空時才補**）。這是對**已按相關度排好的結果做過濾**、非強制置頂，故不重蹈先前刻意移除的「不管搜什麼第一支都是訂閱頻道」排序蓋相關度問題。套即時搜尋與離線影片庫兩路徑。（先前 active 頻道只標 ⭐ 徽章、不影響服務內容。）
+- **影片搜尋結果帶時長**：`A1VideoItem` 加 `durationSec`；`ytDlpVideoProvider` 從 flat `--dump-json` 的 `duration` 帶出（Data API 後備無 → `undefined`）。供 a6 獎勵片「2 分鐘內優先、最短優先」選片。
+- **題目卡適應頁寬**：a6 卡片 `max-width` 620 → `min(900px, 94vw)`（桌機/平板放大、手機照常滿版）；寫字板改 `ResizeObserver` 量測寫字區寬度自適應縮放（clamp 320–820），畫布以解析度當寬、指標座標按比例換算，放大不影響手寫辨識。
+
+### 修正 Fixed
+- **gameRegistry 文字污染**：成語填字意圖描述「跟 start_idiom 的成語選擇題**不同**」被誤改成「**同**」（語意反掉，會誤導意圖分類器把填字當成選擇題）、`GameEntry.conversationLabel` 註解「顯示**的** intent」被改成「顯示 **the** intent」——皆還原。
+- **a6 獎勵影片無法播放**：原以 YouTube 早已停用的 `listType=search` 搜尋式嵌入（必定「無法播放這部影片」）且把單字當 videoId；改為取真實 videoId 走 IFrame Player API（含上述禁嵌自動換片）。並修「有聲沒畫面」——`.a6-media-section` 補 `width:100%`，避免寫字區收起後媒體區塌成 0 寬、16:9 算出 0 高。
+- **TTS 暫停後接不下去**（`shared/speech/tts.ts`）：`speechSynthesis` 被行動裝置暫停後 `synth.paused` 時補 `resume()`，避免語音卡住。
 
 ### 修正 Fixed
 - **找影片文不對題**：小朋友說「看一段搞笑貓咪的影片」卻一律只出現佳佳老師這類已訂閱頻道的幼教片。同一症狀有三層成因，逐一修正：

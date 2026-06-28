@@ -114,6 +114,22 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     }))
   }
 
+  /**
+   * 白名單頻道信任閘（家長決策）：信任邊界在「頻道」這層——只要結果來自精選頻道庫
+   * （active）就免逐片審、直接給孩子看。策略＝**白名單優先、空時才補**：
+   *  - 這次搜尋結果裡若有任何信任頻道的片 → 只留那些（其餘濾掉）。
+   *  - 一支信任頻道都沒命中 → 整批照原樣回（safeSearch+黑名單仍在），不開天窗。
+   * 注意：這是對「已按相關度排好的結果」做**過濾**，不是把訂閱頻道硬塞到頂——
+   * 信任頻道的片本來就因相關才出現在結果裡，故不重蹈「不管搜什麼都只有某頻道」。
+   * 無頻道庫（activeIds 空）時不過濾，退化成原行為。
+   */
+  private preferTrusted(items: A1VideoItem[]): A1VideoItem[] {
+    const ids = this.library?.activeIds()
+    if (!ids || ids.size === 0) return items
+    const trusted = items.filter((it) => ids.has(it.channelId))
+    return trusted.length > 0 ? trusted : items
+  }
+
   async search(
     query: string,
     topic?: string,
@@ -152,7 +168,7 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     // 才退而求其次吐庫內既有，讓對話不至於開天窗；正常情況永遠走上面的新鮮搜尋。
     if (!raw || raw.length === 0) {
       if (this.bank && this.bank.size(category) > 0) {
-        const items = this.flagAndSort(this.bank.get(category) as A1VideoItem[])
+        const items = this.preferTrusted(this.flagAndSort(this.bank.get(category) as A1VideoItem[]))
         log('a1.video.bank_fallback', { category, count: items.length })
         return { ok: true, query: q, items }
       }
@@ -162,15 +178,19 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
       return { ok: false, error: 'VIDEO_UPSTREAM', message: '我現在找不到影片耶，等一下再試試看好嗎？' }
     }
 
-    // 3) 精選旗標＋穩定排前（內含黑名單硬擋）。yt-dlp 無頻道層 family-friendly 欄位，
-    //    兒童安全靠精選白名單（排前）+ 家長黑名單（硬擋）兩道閘；Data API 後備自帶 safeSearch=strict。
-    const items = this.flagAndSort(raw)
+    // 3) 精選旗標（內含黑名單硬擋）＋白名單頻道信任閘。yt-dlp 無頻道層 family-friendly
+    //    欄位，兒童安全靠：精選頻道白名單過濾（preferTrusted，白名單優先空時才補）
+    //    + 家長黑名單硬擋 + Data API 後備自帶 safeSearch=strict。
+    const flagged = this.flagAndSort(raw)
+    const items = this.preferTrusted(flagged)
 
     log('a1.video.search', {
       query: q,
       source: usedSource,
       raw: raw.length,
+      flagged: flagged.length,
       kept: items.length,
+      trustedOnly: items.length > 0 && items.length < flagged.length,
       curated: items.filter((x) => x.curated).length,
       ms: Date.now() - start,
     })
@@ -180,6 +200,7 @@ export class YoutubeVideoProvider implements VideoSearchProvider {
     }
 
     // 5) 寫回影片庫：分門別類累積（去重持久化）→ 下次同主題免搜尋。
+    //    存「服務出去的集合」（已套白名單閘），庫保持乾淨、離線後備也一致。
     this.bank?.accumulate(category, topic?.trim() || q, q, items)
 
     return { ok: true, query: q, items }

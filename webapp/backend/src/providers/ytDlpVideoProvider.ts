@@ -22,6 +22,7 @@ type FlatEntry = {
   channel_id?: string
   uploader?: string
   uploader_id?: string
+  duration?: number   // 秒；flat 搜尋通常有
 }
 
 function log(event: string, fields: Record<string, unknown>): void {
@@ -101,6 +102,7 @@ export class YtDlpVideoProvider {
         channelTitle: e.channel ?? e.uploader ?? '',
         thumbnail: `https://i.ytimg.com/vi/${e.id}/mqdefault.jpg`,
         curated: false,
+        durationSec: typeof e.duration === 'number' && e.duration > 0 ? e.duration : undefined,
       })
     }
     return items

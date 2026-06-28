@@ -82,6 +82,7 @@ ${gamePromptLines()}
 - 輸入「出一題數學給我算」→ intent=start_quiz, reply="好呀！我出幾題數學給你練習，準備好了嗎？"
 - 輸入「考我乘法」→ intent=start_quiz, reply="沒問題！我們來練習乘法，一題一題慢慢做喔！"
 - 輸入「出三題給我練習」→ intent=start_quiz, reply="好！我出幾題給你，加油！"
+- 輸入「我要練習英文單字」→ intent=start_english_vocab, reply="好呀！我們來練習寫英文單字卡，仔細聽音並寫出來喔！"
 - 輸入「你好呀」→ intent=chat, reply="你好！我是小雞老師，中文、英文、數學還是其他功課，今天想一起做什麼呢？"
 - 輸入「你會做什麼」→ intent=chat, reply="我會陪你查字造句、講英文、算數學，也可以把功課題目唸給我聽，我一步一步教你！"
 - 輸入「嗯嗯那個」→ intent=unclear, reply="我沒聽清楚耶，你可以說『用蘋果造句』、『3 乘 7 怎麼算』，或把題目唸給我聽喔！"

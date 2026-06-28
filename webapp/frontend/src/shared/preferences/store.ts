@@ -243,3 +243,27 @@ export function resetPreferences(): void {
   persist(current)
   notify()
 }
+
+/** 增加全域經驗值，並處理升級邏輯。回傳 { leveledUp: boolean, oldLevel: number, newLevel: number } */
+export function addXp(amount: number): { leveledUp: boolean; oldLevel: number; newLevel: number } {
+  const currentPrefs = getPreferences()
+  const currentXp = currentPrefs.learning.xp ?? 0
+  const currentLevel = currentPrefs.learning.level ?? 1
+  
+  const nextXp = currentXp + amount
+  const nextLevel = Math.floor(nextXp / 100) + 1
+  const leveledUp = nextLevel > currentLevel
+  
+  setPreference({
+    learning: {
+      xp: nextXp,
+      level: nextLevel
+    }
+  })
+  
+  return {
+    leveledUp,
+    oldLevel: currentLevel,
+    newLevel: nextLevel
+  }
+}

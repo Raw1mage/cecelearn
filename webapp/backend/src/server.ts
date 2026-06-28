@@ -6,6 +6,7 @@ import { initRequestLog, logRequest, createRequestId, logUpstream } from './logg
 import { createA1Module } from './modules/a1.js'
 import { createA2Module } from './modules/a2.js'
 import { createA7Module } from './modules/a7.js'
+import { createA6Module } from './modules/a6.js'
 import { GeminiChatProvider } from './providers/geminiChatProvider.js'
 import { OpencodeBareChatProvider } from './providers/opencodeBareChatProvider.js'
 import { CascadeChatProvider } from './providers/cascadeChatProvider.js'
@@ -101,6 +102,7 @@ const a2 = createA2Module(idiomEngine)
 const crosswordEngine = new IdiomCrosswordEngine()
 const explainEngine = new IdiomExplainEngine(env.geminiApiKeys)
 const a7 = createA7Module(crosswordEngine, explainEngine)
+const a6 = createA6Module()
 const vocabEngine = new VocabQuizEngine(env.geminiApiKeys)
 const quizBank = new QuizBankProvider() // 事實科（自然/社會）事實種子池
 // 練習題單元物件插畫圖庫（複合生圖）：build 預生 + runtime 用 image provider 補沒有的（天條 #11 已批准）
@@ -170,6 +172,16 @@ const server = createServer(async (request, response) => {
 
   if (url === '/api/a3' && method === 'GET') {
     send(501, { ok: false, status: 'not_implemented', path: url })
+    return
+  }
+
+  if (url.startsWith('/api/a6/quiz') && method === 'GET') {
+    const qs = new URLSearchParams(url.split('?')[1] ?? '')
+    const count = Math.min(20, Math.max(1, Number(qs.get('count')) || 5))
+    const stage = qs.get('stage') || 'all'
+    const grade = Number(qs.get('grade')) || 0
+    const difficulty = qs.get('difficulty') || 'all'
+    send(200, a6.generate(count, stage, grade, difficulty))
     return
   }
 

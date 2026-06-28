@@ -7,7 +7,7 @@
  */
 
 /** 全螢幕遊戲容器種類，等同 GameEntry.id。 */
-export type OverlayKind = 'dictation' | 'idiom' | 'quiz' | 'crossword'
+export type OverlayKind = 'dictation' | 'idiom' | 'quiz' | 'crossword' | 'english_vocab'
 
 /** 非遊戲啟動的 base intent（語意異質，不進 registry，DD-7）。 */
 export const BASE_INTENTS = [
@@ -85,6 +85,16 @@ export const GAME_REGISTRY = [
     intentDescription:
       '小朋友想玩「成語填字」交叉填字闖關遊戲（在十字交叉格子裡填字組成成語）。注意：這是填字闖關，跟 start_idiom 的成語選擇題不同——只要提到「填字／闖關／格子」就走這個。→ 只填 reply，用一句期待的引導語（例：「好呀！我們來玩成語填字闖關！」）。前端會打開成語填字遊戲畫面。',
     conversationLabel: '成語填字',
+  },
+  {
+    id: 'english_vocab',
+    intent: 'start_english_vocab',
+    label: '英文單字',
+    emoji: '🔤',
+    triggerExamples: ['我要練習英文單字', '考我英文單字', '來玩英文單字', '開始英文單字練習', '英文單字練習'],
+    intentDescription:
+      '小朋友想玩/練習「英文單字」拼寫測驗（看圖聽發音手寫單字字母）。→ 只填 reply，用一句期待的引導語（例：「好呀！我們來玩英文單字卡，仔細聽喔！」）。前端會打開英文練習畫面。',
+    conversationLabel: '英文單字',
   },
 ] as const satisfies readonly GameEntry[]
 

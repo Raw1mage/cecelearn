@@ -91,6 +91,7 @@ export type A1VideoItem = {
   channelTitle: string
   thumbnail: string   // 縮圖 URL
   curated?: boolean   // 命中兒童知識型頻道庫（會被加權排前、標精選）
+  durationSec?: number // 影片長度（秒）；yt-dlp flat 搜尋有，Data API 後備無（undefined）
 }
 
 /** 兒童知識型頻道庫的一筆頻道（curated channel registry）。 */
@@ -402,3 +403,18 @@ export type A7ExplainResponse = A7ExplainSuccessResponse | A7ErrorResponse
 export interface IdiomExplainProvider {
   explain(idiom: string): Promise<A7ExplainResponse>
 }
+
+/* A6 — English Vocabulary Practice */
+
+export type A6EnglishVocabItem = {
+  id: string
+  word: string          // 英文單字，如 "apple"
+  translation: string   // 中文翻譯，如 "蘋果"
+  altText?: string      // 圖像描述，用於生圖/提示
+}
+
+export type A6EnglishVocabResponse = {
+  ok: boolean
+  items: A6EnglishVocabItem[]
+}
+

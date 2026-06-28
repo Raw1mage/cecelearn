@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "state": "verified",
+  "profile": [
+    "docs"
+  ],
+  "history": [
+    {
+      "from": null,
+      "to": "proposed",
+      "at": "2026-06-28T14:40:58.020Z",
+      "by": "pkcs12",
+      "mode": "new",
+      "reason": "initial spec created via plan-init.ts (profile=software)"
+    },
+    {
+      "from": "proposed",
+      "to": "proposed",
+      "at": "2026-06-28T14:41:58.658Z",
+      "by": "pkcs12",
+      "mode": "sync",
+      "reason": "Simplify artifacts requirements to proposal+design+tasks"
+    },
+    {
+      "from": "proposed",
+      "to": "designed",
+      "at": "2026-06-28T14:42:05.934Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "Headings fixed, promoting to designed"
+    },
+    {
+      "from": "designed",
+      "to": "planned",
+      "at": "2026-06-28T14:42:07.390Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "Promote to planned stage"
+    },
+    {
+      "from": "planned",
+      "to": "implementing",
+      "at": "2026-06-28T14:42:08.851Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "Promote to implementing stage"
+    },
+    {
+      "from": "implementing",
+      "to": "verified",
+      "at": "2026-06-28T15:30:26.035Z",
+      "by": "pkcs12",
+      "mode": "promote",
+      "reason": "All tasks completed, compiled successfully, waiting for user manual visual validation"
+    }
+  ]
+}

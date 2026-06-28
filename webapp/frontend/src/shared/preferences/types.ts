@@ -43,6 +43,10 @@ export type LearningPreferences = {
   topics: string[]
   /** 舊 cecelearn-a5-prefs 出題範圍遷移保留區（向後相容 DD-5）。 */
   a5?: Record<string, string>
+  /** 累積經驗值（全域累積） */
+  xp?: number
+  /** 當前等級 */
+  level?: number
 }
 
 export type UiPreferences = {
@@ -90,6 +94,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   },
   learning: {
     topics: [],
+    xp: 0,
+    level: 1,
   },
   ui: {
     fontScale: 1,

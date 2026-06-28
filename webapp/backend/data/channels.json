@@ -169,6 +169,81 @@
       "note": "兒童品德與生命教育取向故事頻道。",
       "status": "active",
       "addedAt": "2026-06-20"
+    },
+    {
+      "channelId": "UC_qs3c0ehDvZkbiEbOj6Drg",
+      "title": "Alphablocks",
+      "handle": "@officialalphablocks",
+      "topics": [
+        "英文",
+        "字母",
+        "自然發音",
+        "phonics",
+        "alphabet",
+        "拼讀",
+        "單字",
+        "啟蒙"
+      ],
+      "note": "BBC CBeebies 自然發音頻道；26 個會說話的字母牽手組成單字，英文字母與拼讀啟蒙。對應家長建議的「alphabet word for kids」。",
+      "status": "active",
+      "addedAt": "2026-06-29"
+    },
+    {
+      "channelId": "UCExx109KH5msQR0n52ZzyAw",
+      "title": "Rock 'N Learn",
+      "handle": "@rocknlearn",
+      "topics": [
+        "英文",
+        "英語",
+        "字母",
+        "自然發音",
+        "phonics",
+        "alphabet",
+        "ABC",
+        "拼讀",
+        "單字",
+        "閱讀"
+      ],
+      "note": "老牌兒童教育頻道；字母、自然發音、閱讀與數學教學，節奏穩、適合 6-9 歲英語學習。",
+      "status": "active",
+      "addedAt": "2026-06-29"
+    },
+    {
+      "channelId": "UCp5Nhw2YMCMUemXC1oWTkkA",
+      "title": "Super Simple ABCs",
+      "handle": "@SuperSimpleABCs",
+      "topics": [
+        "英文",
+        "英語",
+        "字母",
+        "自然發音",
+        "phonics",
+        "alphabet",
+        "ABC",
+        "拼讀",
+        "單字"
+      ],
+      "note": "Super Simple 品牌的字母/自然發音子頻道；唱跳教字母與發音，品質穩定（偏低齡但乾淨）。",
+      "status": "active",
+      "addedAt": "2026-06-29"
+    },
+    {
+      "channelId": "UC6QcqYGpOp3WKjGIlbvvzRg",
+      "title": "Phonics Reading",
+      "handle": "@phonics_reading",
+      "topics": [
+        "英文",
+        "英語",
+        "自然發音",
+        "phonics",
+        "拼讀",
+        "單字",
+        "word family",
+        "閱讀"
+      ],
+      "note": "專做自然發音與 word family（-at、-an…）拼讀；對應「拼出單字」這個技能點。",
+      "status": "active",
+      "addedAt": "2026-06-29"
     }
   ]
 }

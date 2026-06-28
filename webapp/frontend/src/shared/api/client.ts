@@ -78,6 +78,19 @@ export type A7ExplainResponse =
   | { ok: true; idiom: string; meaning: string }
   | { ok: false; error: string; message: string }
 
+/* A6 — English Vocabulary Practice */
+export type A6EnglishVocabItem = {
+  id: string
+  word: string
+  translation: string
+  altText?: string
+}
+
+export type A6EnglishVocabResponse = {
+  ok: boolean
+  items: A6EnglishVocabItem[]
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
     headers: {
@@ -144,6 +157,7 @@ export type A1VideoItem = {
   channelTitle: string
   thumbnail: string
   curated?: boolean   // 來自兒童知識型頻道庫（精選）
+  durationSec?: number // 影片長度（秒）；yt-dlp 搜尋有，Data API 後備無
 }
 
 export type A1VideoSearchResponse = {
@@ -229,7 +243,7 @@ export type A1LookupPayload = {
 
 /** overlay 測驗種類；對應 useConversation 的 activeOverlay 狀態（DD-4）。
  * 與 game registry 的 OverlayKind 對齊（game_launch_framework）。 */
-export type QuizMode = 'dictation' | 'idiom' | 'quiz' | 'crossword'
+export type QuizMode = 'dictation' | 'idiom' | 'quiz' | 'crossword' | 'english_vocab'
 
 /** 測驗完成回流對話的成績總結（DD-6） */
 export type QuizSummary = {
@@ -424,4 +438,6 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ idiom }),
     }),
+  fetchEnglishVocabQuiz: (count: number, stage = 'all', grade = 0, difficulty = 'all') =>
+    request<A6EnglishVocabResponse>(`/a6/quiz?count=${count}&stage=${stage}&grade=${grade}&difficulty=${difficulty}`),
 }

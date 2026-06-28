@@ -5,6 +5,7 @@ import { A2Page } from '../a2/A2Page'
 import { A5Page } from '../a5/A5Page'
 import { QuizPage } from '../a6/QuizPage'
 import { A7Page } from '../a7/A7Page'
+import { A6VocabCard } from '../a6/A6VocabCard'
 
 /**
  * overlayRegistry — overlayKind → 全螢幕遊戲元件（前端側第二張表，DD-2/DD-3）。
@@ -23,6 +24,7 @@ export const OVERLAY_COMPONENTS: Record<OverlayKind, ComponentType<OverlayProps>
   idiom: A2Page,
   quiz: QuizPage,
   crossword: A7Page,
+  english_vocab: A6VocabCard,
 }
 
 /** 取 overlayKind 對應的元件；查無回 null（INV-3 破壞時不掛載，不 silent fallback）。 */
